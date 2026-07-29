@@ -1,0 +1,36 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Node / Next.js
+node_modules/
+.next/
+dist/
+build/
+coverage/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Logs and temporary files
+*.log
+*.tmp
+.tmp/
+tmp/
