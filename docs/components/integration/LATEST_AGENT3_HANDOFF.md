@@ -1,101 +1,44 @@
 # Latest A3-INTEGRATION Handoff
 
-## Identity and outcome
+## INT-DBDEP011-003 result
 
-- Agent 2 ID: `A2-INTEGRATION`
-- Agent 3 role: `A3-INTEGRATION — Integration Coding and Validation Agent`
-- Initial task: `INT-DBDEP011-001 — Repository and ownership reconciliation` (`VALIDATION_ONLY`), completed at the required base.
-- Continuation: final consistency review and commit of the six Integration records.
-- Result: `COMPLETED` for the documentation task; DB-DEP-011 remains `DEPENDENCY_BLOCKED` / `PENDING`.
-- Required next action: collect A2-BACKEND, A2-DEPLOYMENT, and A2-DATABASE acknowledgements.
-- Starting commit: `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`; the continuation commits these six records only.
+- Result: `PASS` — final coordinated ownership decision recorded and validated.
+- Worktree: `/private/tmp/testgap-integration-dbdep011`.
+- Branch: `agent2/integration-dbdep011`.
+- Starting commit: `e8dfd8d022324c5509dbb2db7c71544e7a06d36d`.
+- No scaffold implementation, DB-002 work, owner implementation prompt, or application/deployment/database/test artifact was performed.
 
-## Repository and worktree evidence
+## Documents inspected and changed
 
-- Worktree root: `/private/tmp/testgap-integration-dbdep011`
-- Branch: `agent2/integration-dbdep011`
-- HEAD: `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`
-- Status before edits: `## agent2/integration-dbdep011`, clean.
-- Remotes: origin fetch/push `https://github.com/01fe25bec239-collab/TestGap-Miner.git`.
-- Worktrees: original Database worktree on `agent2/database` and this dedicated Integration worktree, both at the required commit before edits.
+Inspected completely: `COMPONENT_STATUS.md`, `TASK_LEDGER.md`, `OPEN_ISSUES.md`, `DECISION_LOG.md`, `DEPENDENCY_REQUESTS.md`, and this handoff.
 
-## Documents and files inspected
+Changed exactly: `docs/components/integration/COMPONENT_STATUS.md`, `docs/components/integration/TASK_LEDGER.md`, `docs/components/integration/OPEN_ISSUES.md`, `docs/components/integration/DECISION_LOG.md`, `docs/components/integration/DEPENDENCY_REQUESTS.md`, and `docs/components/integration/LATEST_AGENT3_HANDOFF.md`.
 
-- All 15 tracked repository files, including `.gitignore`, `README.md`, all seven files under `docs/specifications/`, and all six Database component records.
-- `/Users/omkar/Downloads/A2_INTEGRATION_DB_DEP_011_MANAGER.md`
-- `/Users/omkar/Documents/TestGap Miner/A2_INTEGRATION_MANAGER.md`
-- `/Users/omkar/Documents/TestGap Miner/A2_BACKEND_MANAGER.md`
-- `/Users/omkar/Documents/TestGap Miner/A2_DEPLOYMENT_MANAGER.md`
-- `/Users/omkar/Documents/TestGap Miner/A2_DATABASE_MANAGER.md`
+## Recorded decision
 
-## Current classification
+- All three owner acknowledgements are accepted; the exact four-owner matrix is in `COMPONENT_STATUS.md`.
+- Compatibility is frozen to uv, Python `>=3.11,<3.13`, synchronous SQLAlchemy `Session`/psycopg 3/Alembic, PostgreSQL 16 (`postgres:16.14-alpine3.24`), service `postgres`, and the stated package/ASGI/settings/test paths.
+- Environment, role boundaries, explicit Alembic commands and precedence, test-database provisioning, merge order, and rollback boundaries are in `DECISION_LOG.md`.
+- DB-DEP-011 remains `PENDING`; scaffold implementation remains `NOT_STARTED`; DB-002 remains `BLOCKED`; combined clean-checkout evidence is absent.
 
-- Repository implementation: `NOT_STARTED`.
-- DB-DEP-011: `DEPENDENCY_BLOCKED`, `PENDING`.
-- This reconciliation and continuation review: `COMPLETED`.
-- `CONTRACT-INTEGRATION-001`: coordination ownership only; no versioned contract file exists.
-- `CONTRACT-DEPLOY-001`: `BLOCKED`; A2-DEPLOYMENT-owned and not approved/published here.
+## Commands and evidence
 
-## Ownership, requests, merge, and rollback
-
-The full pending ownership matrix, protected-path rules, merge order, and rollback boundary are in `COMPONENT_STATUS.md`. Three exact owner-acknowledgement requests (`INT-DBDEP011-BACKEND-001`, `INT-DBDEP011-DEPLOYMENT-001`, and `INT-DBDEP011-DATABASE-001`) are in `DEPENDENCY_REQUESTS.md`; none is approved or received.
-
-## Files changed
-
-- Created and continuation-reviewed: six Integration management records under `docs/components/integration/`.
-- Modified/deleted: none outside those six records.
-- Application/scaffold/migration/environment/container/CI/test/contract files: none.
-
-## Commands and results
-
-- `git rev-parse --show-toplevel` → `/private/tmp/testgap-integration-dbdep011`
-- `git rev-parse HEAD` → `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`
-- `git branch --show-current` → `agent2/integration-dbdep011`
-- `git status --porcelain=v1 --untracked-files=all` → empty before edits.
-- `git ls-tree -r --name-only dd3330...` → 15 tracked files.
-- Targeted manifest/lock/environment/container/CI/test/source/migration/contract/ADR searches → no matches.
-
-## Final validation results
-
-```text
-$ git status --short --branch
-## agent2/integration-dbdep011
-?? docs/components/integration/
-$ git status --porcelain=v1 --untracked-files=all
-?? docs/components/integration/COMPONENT_STATUS.md
-?? docs/components/integration/DECISION_LOG.md
-?? docs/components/integration/DEPENDENCY_REQUESTS.md
-?? docs/components/integration/LATEST_AGENT3_HANDOFF.md
-?? docs/components/integration/OPEN_ISSUES.md
-?? docs/components/integration/TASK_LEDGER.md
-$ git diff --check
-[no output; exit 0]
-$ git diff --stat
-[no output; the six permitted records are untracked]
-$ git diff --name-only dd3330ba31ea3dcb350f818f17fa6a816e1c3a86
-[no output; the six permitted records are untracked]
-$ find docs/components/integration -maxdepth 1 -type f -print | sort
-docs/components/integration/COMPONENT_STATUS.md
-docs/components/integration/DECISION_LOG.md
-docs/components/integration/DEPENDENCY_REQUESTS.md
-docs/components/integration/LATEST_AGENT3_HANDOFF.md
-docs/components/integration/OPEN_ISSUES.md
-docs/components/integration/TASK_LEDGER.md
-```
-
-Diff summary: no tracked base-file change; exactly six permitted, untracked Integration management records were created. No scaffold, application, migration, environment, container, CI, test, or contract path differs from the base commit.
-
-## Failures, limitations, and unresolved conflicts
-
-- Initial `git worktree add` was blocked by sandbox Git-metadata permissions; rerunning with approved escalation created the requested worktree. No project file changed.
-- No owner acknowledgement, scaffold implementation, contract version, local runtime, test harness, or migration exists to validate.
-- Manager research-file suffix mismatch remains open; the repository specification index controls working inputs.
-- No protected-file conflict was found. The early-coordination manager is the controlling phase-specific exception to the general final-integration timing.
+- `git rev-parse --show-toplevel` → `/private/tmp/testgap-integration-dbdep011`.
+- `git rev-parse HEAD` → `e8dfd8d022324c5509dbb2db7c71544e7a06d36d` before edits.
+- `git branch --show-current` → `agent2/integration-dbdep011`.
+- `git status --short --branch` and `git status --porcelain=v1 --untracked-files=all` → clean before edits.
+- `git remote -v` → origin fetch/push `https://github.com/01fe25bec239-collab/TestGap-Miner.git`.
+- `git worktree list --porcelain` → required integration worktree is present at the required baseline.
+- Post-edit validation and staged-commit evidence are recorded by the commit commands for this task.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: Integration management documentation only.
-- `TESTED`: worktree/commit/status/remote/inventory/absence/ownership-record validation.
-- `NOT_TESTED`: dependency installation, FastAPI import, settings loading, PostgreSQL startup, migration, test collection, CI, and deployment.
-- `BLOCKED`: DB-DEP-011 owner acknowledgements; Auth/Workflow DB-002 drafts; Deployment contract contribution.
-- `ASSUMED`: proposed paths are pending owner acknowledgement and do not authorize implementation.
+- `IMPLEMENTED`: six Integration decision records only.
+- `TESTED`: worktree, baseline, branch, status, remote, worktree, complete-record review, ownership-record, and diff-scope validation.
+- `NOT_TESTED`: dependency installation, FastAPI import, settings loading, PostgreSQL startup, migration, test collection, CI, deployment, and clean-checkout scaffold acceptance.
+- `BLOCKED`: owner-specific scaffold commits; clean-checkout combined-scaffold evidence; Auth and Workflow DB-002 prerequisites; integration-commit remote accessibility.
+- `ASSUMED`: the three acknowledgement results supplied as reviewed by A2-INTEGRATION are accepted; no owner implementation evidence exists.
+
+## Recommended next task
+
+Issue the owner-specific scaffold implementation tasks in the approved merge order, then run INT-DBDEP011-004 from a clean checkout.
