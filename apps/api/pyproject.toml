@@ -1,0 +1,31 @@
+[project]
+name = "testgap-api"
+version = "0.1.0"
+description = "TestGap Miner API scaffold"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic-settings>=2.6",
+    "psycopg[binary]>=3.2,<4",
+    "sqlalchemy>=2,<3",
+    "uvicorn>=0.30",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12"]
+build-backend = "uv_build"
+
+[dependency-groups]
+test = [
+    "httpx>=0.28",
+    "pytest>=8.3",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+pythonpath = ["."]
+testpaths = ["../../tests/api"]
+
+[tool.uv.build-backend]
+module-name = "app"
+module-root = ""
