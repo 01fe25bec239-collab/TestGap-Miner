@@ -1,23 +1,24 @@
 # Auth Task Ledger
 
-- Current task: `AUTH-DB002-CONTRACT-001`
-- Scope: `DOCUMENTATION_ONLY`
-- Evidence baseline: `739a331c9942ed64a1ad8276d611889bbee53a27`
+- Parent task: `AUTH-DB002-CONTRACT-001`
+- Continuation task: `AUTH-DB002-CONTRACT-001-C1`
+- Scope: `DOCUMENTATION_ONLY_RECORD_REPAIR`
+- Reviewed implementation commit: `8d8125b2c7d8f40681dee81c61b3cab44e4ca216`
 - Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-contract`
 - Branch: `agent2/auth-contract-db002`
 
 | Task | Status | Evidence / blocker |
 |---|---|---|
-| `AUTH-DB002-CONTRACT-001` — Publish DB-002 Auth contract and records | `ACTIVE` | `CONTRACT-AUTH-001` `1.0.0-draft.1` and six records authored; pending A2-AUTH review and A2-DATABASE acknowledgement. |
-| `AUTH-001` — Auth repository/runtime reconciliation | `NOT_STARTED` | No implementation work authorized. |
-| `AUTH-002` — Human identity implementation | `BLOCKED` | Requires accepted Auth contract and Database implementation boundary. |
-| `AUTH-003` — External subject authentication | `BLOCKED` | Provider runtime metadata is not frozen. |
-| `AUTH-004` — GitHub App installation authentication | `BLOCKED` | Runtime token behavior is outside this documentation task. |
-| `AUTH-005` — Repository authorization enforcement | `BLOCKED` | Requires persistence and Backend integration. |
-| `AUTH-006` — Actor attribution integration | `BLOCKED` | Awaits `CONTRACT-WORKFLOW-001` and Security event guidance. |
-| `AUTH-007` — Lifecycle and revocation enforcement | `BLOCKED` | Freshness and retention rules are not frozen. |
-| `AUTH-008` — Auth acceptance and consumer handoff | `BLOCKED` | Requires implementation, runtime tests, and consumer acknowledgements. |
+| `AUTH-DB002-CONTRACT-001` — Publish DB-002 Auth contract and records | `REPAIR_IMPLEMENTED_PENDING_A2_REVIEW` | `CONTRACT-AUTH-001` semantic content passed A2-AUTH review; management-record repairs were completed by `AUTH-DB002-CONTRACT-001-C1`. |
+| `AUTH-001` — Authentication and trust-boundary audit | `NOT_STARTED` | No implementation work authorized. |
+| `AUTH-002` — Dashboard sign-in and session contract | `BLOCKED` | Blocked by `AUTH-001` and Deployment callback requirements. |
+| `AUTH-003` — Backend JWT validation and user context | `BLOCKED` | Blocked by IdP metadata and the Database user contract. |
+| `AUTH-004` — GitHub App machine authentication | `BLOCKED` | Blocked by GitHub App configuration and Database installation records. |
+| `AUTH-005` — Webhook authenticity and idempotency precheck | `BLOCKED` | Blocked by the Backend webhook route contract. |
+| `AUTH-006` — Repository-scoped authorization | `BLOCKED` | Blocked by Database access records and the Backend route list. |
+| `AUTH-007` — Auth hardening and observability | `BLOCKED` | Blocked by Deployment domains, Security guidance, and prior Auth implementation. |
+| `AUTH-008` — Authentication final acceptance | `BLOCKED` | Blocked by all prior Auth tasks and final Security review. |
 
-Only the current documentation task is active. Auth implementation is missing,
-Auth runtime is `NOT_TESTED`, and no code or test work occurred. DB-002 remains
-blocked until the Auth and Workflow contracts are accepted.
+Auth implementation remains `NOT_STARTED`, Auth runtime remains `NOT_TESTED`,
+and DB-002 remains blocked pending A2-DATABASE acknowledgement and accepted
+`CONTRACT-WORKFLOW-001`.
