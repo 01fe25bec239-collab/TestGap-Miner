@@ -1,16 +1,21 @@
 # Database Decision Log
 
-- Date reconciled: 2026-07-29
+- Date reconciled: 2026-07-30
 - Branch: `agent2/database`
-- Starting commit: `0cfd7c0097707586b3bca1f6d2624a7852681ae5`
-- Repository count baseline: 15 tracked files; seven specification files
-- Initial DB-001 A3 result: `PASS`
-- A2 review result: `PARTIAL`
-- DB-001-C1 result: `PASS` pending A2 review
+- Current scaffold baseline: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- DB-001/DB-001-C1: `PASS`, reviewed, and merged
+- DB-001-C1: historical completed continuation
+- Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
+- Database scaffold: `IMPLEMENTED`; DB-DEP-011 final closure
+  `PENDING_INTEGRATION_VALIDATION`
+- Migration chain: bootstrap exists with zero heads and no revisions
+- Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
+- `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001`: `PENDING`
 
 ## `DB-DEC-001` — Persistence baseline
 
-- Status: `VERIFIED_COMPLETE` as an approved documentation decision; implementation is `NOT_STARTED`.
+- Status: `VERIFIED_COMPLETE`; PostgreSQL/SQLAlchemy/Alembic scaffold
+  implementation is `IMPLEMENTED`, while domain schema is `NOT_STARTED`.
 - Decision: PostgreSQL, SQLAlchemy 2.x-style models, and Alembic migrations.
 - Rejected alternatives for this baseline: SQLite persistence and Liquibase/Flyway.
 
@@ -58,6 +63,30 @@
 
 ## `DB-DEC-010` — Shared scaffold ownership
 
-- Status: `BLOCKED`.
+- Status: `IMPLEMENTED`.
 - Decision: A3-DATABASE will not create unowned protected application-root, package, dependency, lock, environment, container, or test-harness files.
-- Required resolution: A2-INTEGRATION coordinates owner-approved file ownership among A2-BACKEND, A2-DEPLOYMENT, and A2-DATABASE through DB-DEP-011 before DB-002 implementation bootstrap.
+- Resolution: A2-INTEGRATION coordinated ownership; Backend and Deployment
+  scaffolds are merged and the Database-owned scaffold is implemented.
+
+## `DB-DEC-011` — Minimal synchronous Database scaffold
+
+- Date: 2026-07-30
+- Status: `IMPLEMENTED` by
+  `DB-DEP011-DATABASE-SCAFFOLD-001-C1/C2`, pending A2-DATABASE review and
+  Integration PostgreSQL 16 validation.
+- Decision: runtime engines are explicit synchronous SQLAlchemy factories using
+  psycopg 3 and `pool_pre_ping=True`; sessions use `autoflush=False` and
+  `expire_on_commit=False`; request dependencies roll back escaping exceptions,
+  always close, and never auto-commit.
+- Credential boundary: runtime resolution uses `DATABASE_URL` only. Migration
+  resolution prefers `MIGRATION_DATABASE_URL`, permits `DATABASE_URL` fallback
+  only when `TESTGAP_RUNTIME` exactly equals `local`, and otherwise fails closed.
+- Test boundary: `TEST_DATABASE_URL` must use `postgresql+psycopg`, name a
+  database ending exactly in `_test`, and differ from `DATABASE_URL`; errors
+  never include credentials. Deployment/Integration host-registry validation
+  remains pending.
+- Migration boundary: empty `MetaData`, zero heads, no baseline revision,
+  explicit `-c apps/api/alembic.ini`, synchronous online mode, and supported
+  offline mode.
+- Scope: no DB-002 model, table, enum, constraint, index, Auth/Workflow field,
+  or revision exists.
