@@ -1,12 +1,16 @@
 # Database Open Issues
 
-- Date: 2026-07-29
+- Date: 2026-07-30
 - Branch: `agent2/database`
-- Starting commit: `0cfd7c0097707586b3bca1f6d2624a7852681ae5`
-- Repository count baseline: 15 tracked files; seven specification files
-- Initial DB-001 A3 result: `PASS`
-- A2 review result: `PARTIAL`
-- DB-001-C1 result: `PASS` pending A2 review
+- Current scaffold baseline: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- DB-001/DB-001-C1: `PASS`, reviewed, and merged
+- DB-001-C1: historical completed continuation
+- Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
+- Database scaffold: `IMPLEMENTED`
+- Migration chain: bootstrap exists with zero heads and no revisions
+- Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
+- `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001`: `PENDING`
+- DB-DEP-011: `PENDING_INTEGRATION_VALIDATION`
 
 ## `DB-ISSUE-001` — Specification filename mismatch
 
@@ -24,10 +28,13 @@
 
 ## `DB-ISSUE-003` — No implementation baseline
 
-- Classification: `NOT_STARTED`
-- Evidence: no manifests, dependencies, application code, database configuration, ORM models, Alembic files, migrations, tests, CI, containers, contracts, or infrastructure exist.
-- Impact: no database version, ORM implementation, migration head, schema, or test result can be reported.
-- Resolution path: DB-002 directly requires draft CONTRACT-AUTH-001 and CONTRACT-WORKFLOW-001 plus the owner-approved shared scaffold in DB-DEP-011. Other contracts remain scoped constraints.
+- Classification: `PARTIALLY_RESOLVED`
+- Evidence: the shared Database infrastructure, Alembic bootstrap, tests, and
+  documentation now exist. Alembic has zero heads and there is deliberately no
+  ORM model, domain table, or revision.
+- Impact: DB-002 remains unimplemented.
+- Resolution path: A2-DATABASE/A2-INTEGRATION review the scaffold; DB-002 still
+  requires draft CONTRACT-AUTH-001 and CONTRACT-WORKFLOW-001.
 
 ## `DB-ISSUE-004` — Retention and deletion semantics are not frozen
 
@@ -41,12 +48,37 @@
 - Evidence: required critical lookup families are named, but API pagination/filter shapes, dataset scale, and performance targets are not contracted.
 - Blocking contracts/tasks: CONTRACT-API-001, CONTRACT-EVAL-001, DB-007.
 
-## `DB-ISSUE-006` — Shared Python/API/database scaffold is absent
+## `DB-ISSUE-006` — Shared scaffold final validation is pending
 
-- Classification: `BLOCKED`
-- Evidence: no Python/API package scaffold, dependency manifest, lockfile, FastAPI package, test-runner configuration, environment schema/example, local PostgreSQL service, or approved owner map exists.
-- Impact: DB-002 implementation cannot start without A3-DATABASE editing unowned protected files.
-- Resolution path: A2-INTEGRATION coordinates A2-BACKEND, A2-DEPLOYMENT, and A2-DATABASE ownership and supplies an approved scaffold commit/handoff through DB-DEP-011.
+- Classification: `PENDING_INTEGRATION_VALIDATION`
+- Evidence: Backend and Deployment scaffolds are merged at `11b8019`; the
+  Database-owned continuation implements the remaining persistence scaffold
+  without modifying any unowned file. Database unit/bootstrap tests and
+  authenticated temporary PostgreSQL 17.10 checks passed.
+- Remaining action: A2-DATABASE review and A2-INTEGRATION clean-checkout
+  validation with the approved Compose PostgreSQL 16 service.
+
+## `DB-ISSUE-007` — Docker CLI unavailable in A3 environment
+
+- Classification: `ENVIRONMENT_LIMITATION`
+- Evidence: `docker compose up -d --wait postgres` and
+  `docker compose exec -T postgres pg_isready -U postgres -d testgap` were
+  blocked because Docker was unavailable.
+- Mitigation: the Deployment initializer and all authenticated connectivity,
+  zero-head upgrade, Database, Backend, and full-suite checks passed against an
+  isolated temporary PostgreSQL cluster; the cluster was stopped.
+- Approved Compose PostgreSQL 16 validation: `NOT_TESTED`.
+- Resolution: A2-INTEGRATION reruns both commands and the full Database
+  validation in a Docker-enabled clean checkout.
+
+## `DB-ISSUE-008` — Production host registry is not contracted
+
+- Classification: `PENDING`
+- Implemented safety: `TEST_DATABASE_URL` requires the
+  `postgresql+psycopg` scheme, an exact `_test` database-name suffix, and
+  inequality with `DATABASE_URL`.
+- Remaining action: Deployment/Integration owns any authoritative production
+  host registry; no speculative hostnames are encoded.
 
 ## Resolved specification contradictions
 

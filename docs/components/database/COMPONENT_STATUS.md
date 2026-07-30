@@ -1,6 +1,36 @@
 # Database Component Status
 
-## DB-001 continuation result
+## Current state — DB-DEP011-DATABASE-SCAFFOLD-001-C2
+
+- Date: 2026-07-30
+- Task: `DB-DEP011-DATABASE-SCAFFOLD-001-C2`
+- Parent: `DB-DEP011-DATABASE-SCAFFOLD-001-C1`
+- Prompt type: `REPAIR`
+- Starting and synchronized commit: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- Branch: `agent2/database`
+- `DB-001`: `PASS`, reviewed, and merged in PR #1 at `ea5f1f0`.
+- `DB-001-C1`: historical completed continuation.
+- `DB-DEP011-DATABASE-SCAFFOLD-001`: historical `DEPENDENCY_BLOCKED` attempt.
+- C1/C2 result: `IMPLEMENTED` and tested at the Database boundary, pending
+  A2-DATABASE review and A2-INTEGRATION PostgreSQL 16 validation.
+- Implemented: synchronous SQLAlchemy/psycopg 3 engine, session factory,
+  request-session dependency, safe runtime/migration URL resolution,
+  reusable test-database safety validation, connectivity helper, empty-metadata
+  Alembic bootstrap, tests, and docs.
+- Alembic state: zero heads, no revision Python files, and zero domain tables.
+- Test classification: Database unit/bootstrap tests `PASSED`; authenticated
+  temporary PostgreSQL 17.10 checks `PASSED`; approved Compose PostgreSQL 16
+  validation `NOT_TESTED`.
+- Compose blocker: exact Docker Compose commands were `BLOCKED` because Docker
+  was unavailable. A2-INTEGRATION must repeat clean-checkout validation using
+  the approved PostgreSQL 16 Compose service.
+- Scope: DB-002 has not begun. No model, domain table, Auth/Workflow field, or
+  Alembic revision was created.
+- Current blockers: domain schema `NOT_STARTED`; DB-002 `BLOCKED`;
+  `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001` `PENDING`; DB-DEP-011 final
+  acceptance `PENDING_INTEGRATION_VALIDATION`.
+
+## Historical completed DB-001/DB-001-C1 reconciliation
 
 - Date: 2026-07-29
 - Agent 2: A2-DATABASE
@@ -16,14 +46,14 @@
 - Worktrees: one worktree at the repository root on `agent2/database`
 - Initial A3 result: `PASS`
 - A2 review of initial handoff: `PARTIAL`
-- DB-001-C1 A3 result: `PASS` pending A2 review
+- DB-001-C1 result: `PASS`, reviewed, and merged
 - Result classification: `VERIFIED_COMPLETE` for corrected reconciliation documentation
-- Overall component classification: `PARTIAL`
-- Next action: A2-DATABASE review of DB-001-C1; do not begin DB-002.
+- Overall historical task classification: `PASS`
 
-DB-001-C1 corrects repository counts, DB-002 prerequisites, and the missing shared-scaffold dependency. The database component is not implemented.
+DB-001-C1 corrected repository counts, DB-002 prerequisites, and the missing
+shared-scaffold dependency.
 
-## Repository inventory
+## Historical snapshot at bootstrap commit 0cfd7c0
 
 ### Present
 
@@ -59,7 +89,8 @@ Starting-commit totals:
 - Seven files under `docs/specifications/`.
 - Six files under `docs/components/database/`.
 
-Present repository content is documentation and Git ignore configuration only. The six database component records are management documentation, not application implementation.
+At that bootstrap commit, repository content was documentation and Git ignore
+configuration only. This is historical inventory, not current repository state.
 
 ### Absent
 
@@ -80,25 +111,25 @@ Present repository content is documentation and Git ignore configuration only. T
 | Handoff reports | No prior completed handoff; only the initial placeholder existed | `NOT_STARTED` |
 | Deployment infrastructure | No Terraform, cloud configuration, or service manifests | `NOT_STARTED` |
 
-Database version: absent and therefore unverified. ORM choice in code: absent. Migration head: absent; no migration chain exists.
+At commit `0cfd7c0`, the database version, ORM code, and migration chain were
+absent.
 
 ## DB-002 prerequisite boundary
 
 - Direct task prerequisites from the authoritative manager: completed DB-001, draft `CONTRACT-AUTH-001`, and draft `CONTRACT-WORKFLOW-001`.
-- Implementation-bootstrap blocker: owner-approved shared Python/FastAPI workspace scaffold tracked by `DB-DEP-011`.
+- Shared scaffold status: implemented at the Database boundary; final
+  DB-DEP-011 closure awaits A2 review and Integration PostgreSQL 16 validation.
 - API, Queue, Security, Deployment, and Integration inputs remain scoped constraints where their owned fields or protected files are touched; they are not universal direct contract prerequisites for DB-002.
 - No upstream-owned field is frozen.
 
 ## Current database state
 
-`NOT_STARTED` means the requirement is documented but no implementation evidence exists. `BLOCKED` means implementation is absent and a named upstream contract is required before fields may be frozen.
-
 | Area | Classification | Actual state and evidence |
 |---|---|---|
-| PostgreSQL configuration | `NOT_STARTED` | Documentation-only baseline; no runtime configuration or version |
-| SQLAlchemy setup | `NOT_STARTED` | Documentation-only 2.x baseline; no dependency or code |
-| Alembic setup | `NOT_STARTED` | Documentation-only baseline; no configuration or migration head |
-| Migration chain | `NOT_STARTED` | No migration files |
+| PostgreSQL/SQLAlchemy scaffold | `IMPLEMENTED` | Synchronous psycopg 3 engine/session/configuration exists |
+| Alembic setup | `IMPLEMENTED` | Bootstrap configuration and empty metadata exist |
+| Migration chain | `IMPLEMENTED` bootstrap | Zero heads and no revisions |
+| Domain schema | `NOT_STARTED` | Zero domain tables; DB-002 was not run |
 | Users/auth-subject persistence | `BLOCKED` | Missing; awaits CONTRACT-AUTH-001 |
 | GitHub installation persistence | `BLOCKED` | Missing; direct DB-002 contract prerequisite is CONTRACT-AUTH-001; Integration details remain provisional |
 | Repository access | `BLOCKED` | Missing; awaits CONTRACT-AUTH-001 |
@@ -116,8 +147,9 @@ Database version: absent and therefore unverified. ORM choice in code: absent. M
 | Evaluation results | `BLOCKED` | Missing; awaits CONTRACT-EVAL-001 |
 | Audit/security events | `BLOCKED` | Missing; awaits CONTRACT-SEC-001 |
 | Model and cost telemetry | `BLOCKED` | Missing; awaits Workflow, Evaluation, and Security contracts; billing is out of scope |
-| Database tests | `NOT_STARTED` | No implementation exists to test |
-| Migration tests | `BLOCKED` | No migration chain or owner-approved shared test scaffold; begins with DB-002 |
+| Database unit/bootstrap tests | `PASS` | Safety, configuration, engine, session, dependency, connectivity-helper, and zero-head checks pass |
+| Authenticated PostgreSQL checks | `PASS` | Temporary PostgreSQL 17.10 checks passed |
+| Approved Compose PostgreSQL 16 validation | `NOT_TESTED` | Docker unavailable; A2-INTEGRATION must run clean-checkout validation |
 | Index documentation | `PARTIAL` | Requirements mention critical lookups, but no schema-specific index plan exists |
 | Retention documentation | `PARTIAL` | Principles exist, but durations and deletion semantics await Security/Deployment contracts |
 | Organization tenancy and enterprise RBAC | `OUT_OF_SCOPE` | Explicit MVP non-goal |
@@ -125,7 +157,9 @@ Database version: absent and therefore unverified. ORM choice in code: absent. M
 | Generic document ingestion | `OUT_OF_SCOPE` | Explicit MVP non-goal |
 | Mandatory pgvector baseline | `DEPRECATED` | Superseded by deterministic retrieval first; optional feature flag only |
 
-No area is `VERIFIED_COMPLETE` or `UNVERIFIED_COMPLETE` as implementation. Nothing is `BROKEN`; the implementation is intentionally absent.
+Infrastructure is implemented; domain persistence remains intentionally absent.
+DB-002 remains blocked by pending Auth/Workflow contracts and final scaffold
+review/Integration validation.
 
 ## Generic schema keep/adapt/reject matrix
 
@@ -207,4 +241,4 @@ Fields owned by AUTH, BACKEND, RAG, AGENT-WORKFLOW, EVALUATION, SECURITY, DEPLOY
 - Contradictions and all eleven dependency requests are recorded.
 - DB-002 direct contract prerequisites are limited to Auth and Workflow drafts; the owner-approved shared scaffold separately blocks implementation bootstrap.
 - No application implementation or protected specification file was changed.
-- Only the six permitted database component records are intended to differ from the starting commit.
+- DB-001/DB-001-C1 were reviewed and merged in PR #1.

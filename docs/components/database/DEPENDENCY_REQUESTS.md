@@ -1,12 +1,16 @@
 # Database Dependency Requests
 
-- Date prepared: 2026-07-29
+- Date prepared: 2026-07-30
 - Branch: `agent2/database`
-- Starting commit: `0cfd7c0097707586b3bca1f6d2624a7852681ae5`
-- Repository count baseline: 15 tracked files; seven specification files
-- Initial DB-001 A3 result: `PASS`
-- A2 review result: `PARTIAL`
-- DB-001-C1 result: `PASS` pending A2 review
+- Current scaffold baseline: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- DB-001/DB-001-C1: `PASS`, reviewed, and merged
+- DB-001-C1: historical completed continuation
+- Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
+- Database scaffold: `IMPLEMENTED`; DB-DEP-011 final closure
+  `PENDING_INTEGRATION_VALIDATION`
+- Migration chain: bootstrap exists with zero heads and no revisions
+- Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
+- `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001`: `PENDING`
 
 ## `DB-DEP-001` — Auth context
 
@@ -159,5 +163,10 @@
 - Backward-compatibility impact: Initial scaffold. Package layout, dependency management, environment names, and migration execution command become shared conventions and must be versioned or changed through owner approval.
 - Urgency: `HIGH`
 - Proposed acceptance test: From a clean checkout, the approved repository-native commands create the Python environment, import the empty FastAPI package, load validated non-secret database settings, start or connect to the supported local PostgreSQL service, and collect the database test suite without A3-DATABASE modifying unowned protected files.
-- Approval status: `PENDING`
-- Completion evidence: None until an owner-approved scaffold commit and handoff exist.
+- Approval status: `PENDING_INTEGRATION_VALIDATION`
+- Completion evidence: A2-BACKEND dependency PR #5 merged at `11b8019`.
+  `DB-DEP011-DATABASE-SCAFFOLD-001-C1/C2` implements only Database-owned paths;
+  Alembic 1.18.5 reports zero heads, Database unit/bootstrap tests pass, and
+  authenticated temporary PostgreSQL 17.10 checks passed. Approved Compose
+  PostgreSQL 16 validation is `NOT_TESTED` because Docker was unavailable.
+  A2-INTEGRATION must repeat clean-checkout validation with that service.
