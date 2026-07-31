@@ -2,34 +2,35 @@
 
 - Date: 2026-07-31
 - Branch: `agent2/agent-workflow-contract-db002`
-- Current task: `AGW-DB002-CONTRACT-001-C2`
+- Current task: `AGW-DB002-CONTRACT-001-C3-C1`
 - Prompt type: `BUG_FIX`
 
-| Task | Status | Evidence | Blocker / next action |
+| Task | Outcome | Evidence / remaining action |
 |---|---|---|---|
-| Original-task pre-flight | `TESTED` | Clean exact base HEAD with no Agent Workflow directory | None |
-| C1/C2 pre-flight | `TESTED` | Correct worktree/root, dedicated branch, exact base HEAD, only the seven existing Agent Workflow files untracked, no Git locks or concurrent editor | None |
-| Inspect manager and `DB-DEP-004` | `TESTED` | Manager canonical states and Database request reviewed | None |
-| Create `CONTRACT-WORKFLOW-001@1.0.0-draft.1` | `IMPLEMENTED` | Versioned contract contains lifecycle, persistence boundaries, codes, and fixtures | A2-DATABASE acknowledgement |
-| Create six component records | `IMPLEMENTED` | Status, ledger, issues, decisions, requests, and handoff exist | A2 review |
-| C1 lifecycle correction | `IMPLEMENTED` | Repair re-executes buggy then fixed; review-required completion and late-cancellation rules are explicit | A2-DATABASE acknowledgement |
-| C2 terminal-repair correction | `IMPLEMENTED` | Buggy execution is the sole non-terminal repair continuation; five safe terminal exits and publication-side-effect cancellation qualification are explicit | A2-DATABASE acknowledgement |
-| Documentation validation | `TESTED` | Exact commands/results in latest handoff; only seven permitted files changed | None |
-| Workflow runtime | `NOT_TESTED` | Explicitly outside documentation task | Future authorized implementation task |
-| DB-002 | `BLOCKED` | Workflow draft supplied; Auth contract remains independent prerequisite | A2-DATABASE acknowledgement plus `CONTRACT-AUTH-001` |
-| DB-003 | `BLOCKED` | Contract defines step/event semantics but no persistence implementation exists | A2-DATABASE acknowledgement and later DB-003 authorization |
-| Evidence/Queue contracts | `BLOCKED` | Intentionally not created | Separate owner-authorized tasks |
+| `AGW-DB002-CONTRACT-001` | `PASS` | Initial contract documentation |
+| `AGW-DB002-CONTRACT-001-C1` | `PASS` | Lifecycle correction |
+| `AGW-DB002-CONTRACT-001-C2` | `PASS` | Terminal-repair and publication-boundary correction |
+| `AGW-DB002-CONTRACT-001-C3` | consumer acknowledgement reconciliation | Database acceptance recorded; merge remains pending |
+| `AGW-DB002-CONTRACT-001-C3-C1` | final metadata/status correction | `IMPLEMENTED` and documentation-`TESTED`; merge remains pending |
+| `DB-WORKFLOW-CONTRACT-ACK-001` | `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS` | Exact semantic commit `a7c83f4`, contract `1.0.0-draft.1` |
+| Workflow runtime | `NOT_TESTED` | `NOT_STARTED`; future authorized implementation task |
+| DB-002 | `BLOCKED` | Independent `CONTRACT-AUTH-001` prerequisite and final merge/state synchronization |
+| DB-003 | `NOT_STARTED` | Separate future authorization |
+| Evidence/Queue/Security contracts | `BLOCKED` | Separate owner-authorized tasks |
 
 ## Next action
 
-Send the consumer handoff to `A2-DATABASE` for explicit acknowledgement of
-`CONTRACT-WORKFLOW-001@1.0.0-draft.1`. Do not begin DB-002.
+Merge the accepted seven-file documentation set into main and provide
+downstream merge evidence to A2-DATABASE.
+
+The producer task is not finished until merge and downstream merge evidence
+are complete.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: contract and component records.
+- `IMPLEMENTED`: C3-C1 metadata/status correction.
 - `TESTED`: documentation-only validation.
 - `NOT_TESTED`: runtime behavior.
-- `BLOCKED`: consumer acknowledgement, Auth dependency, DB implementation.
+- `BLOCKED`: Auth dependency and DB implementation.
 - `ASSUMED`: no separate draft artefact beyond the issued manager/request/task
   baseline.

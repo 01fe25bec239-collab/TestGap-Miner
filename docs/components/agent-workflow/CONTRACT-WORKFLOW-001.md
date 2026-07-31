@@ -6,10 +6,13 @@
 |---|---|
 | Contract ID | `CONTRACT-WORKFLOW-001` |
 | Version | `1.0.0-draft.1` |
-| Status | `DRAFT_COMPLETE — PENDING_A2_DATABASE_ACKNOWLEDGEMENT` |
+| Status | `ACCEPTED_BY_A2_DATABASE_PENDING_MERGE` |
+| Semantic commit | `a7c83f422bb51deefd233229c7573fda64b097b6` |
 | Owner | `A2-AGENT-WORKFLOW` |
 | Required consumers | Backend, UI, Database, Evaluation, Integration |
 | Database request | `DB-DEP-004` |
+| Database task | `DB-WORKFLOW-CONTRACT-ACK-001` |
+| Database decision | `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS` |
 | Scope | Run lifecycle, workflow steps, ordered events, bounded retry/repair, failure, abstention, cancellation, checkpoint/resume, and human review |
 | Out of scope | Workflow-engine implementation, queue envelope, evidence schema, runtime tests, and DB-002/DB-003 implementation |
 
@@ -449,23 +452,37 @@ These are acceptance requirements, not tests added by this documentation task.
 
 ## A2-DATABASE acknowledgement
 
-To acknowledge `DB-DEP-004`, A2-DATABASE MUST record:
+- Record: `DB-WORKFLOW-CONTRACT-ACK-001`
+- Date: 2026-07-31
+- Exact contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
+- Decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`
 
-1. the exact contract ID/version and acknowledgement date;
-2. acceptance of the canonical states, terminal immutability, transition
-   table, two repair-entry sources, repaired buggy-then-fixed sequence, sole
-   non-terminal repair continuation, terminal repair exits, one-repair limit,
-   publication cancellation qualification, review-required completion rules,
-   identifiers, and idempotency composition;
-3. confirmation that DB-002 implements only run-request/current-run
-   projections while DB-003 owns steps/events;
-4. any physical-schema naming differences that preserve this contract;
-5. planned constraints/fixtures for event uniqueness, attribution, counters,
-   terminal fields, and invalid transitions; and
-6. any conflict as a versioned dependency response rather than a silent schema
-   change.
+A2-DATABASE found no conflict with Workflow-owned semantics and accepted the
+canonical states, terminal immutability, transition and repair rules,
+publication cancellation boundary, review-required completion rules,
+identifier separation, idempotency composition, and DB-002/DB-003 ownership
+split.
 
-Until that record exists, status remains
-`DRAFT_COMPLETE — PENDING_A2_DATABASE_ACKNOWLEDGEMENT`, DB-002 remains blocked
-by the independent `CONTRACT-AUTH-001` dependency, and no runtime readiness is
-claimed.
+The following non-normative, Database-owned physical mappings preserve, and
+do not alter, this contract:
+
+1. `RunState` is stored as text with a Database-owned check constraint.
+2. Request kind is stored as text with a Database-owned check constraint.
+3. Failure, abstention, and cancellation codes are versioned text values with
+   state-shape constraints.
+4. Run projection mutations use state/version compare-and-swap optimistic
+   concurrency.
+5. Request idempotency uses versioned canonical composition, a persisted
+   idempotency-key version, a bounded digest, and a request fingerprint for
+   conflict detection.
+6. DB-002 implements only `run_requests` and `runs`.
+7. DB-003 owns workflow steps, attempts, run events, ordering,
+   producer-event idempotency, and transition history.
+8. Auth-owned identity fields remain provisional until `CONTRACT-AUTH-001`.
+9. Queue transport fields remain deferred to `CONTRACT-QUEUE-001`.
+10. Evidence and Security payload fields remain deferred to
+    `CONTRACT-EVIDENCE-001` and `CONTRACT-SEC-001`.
+
+The Database consumer acknowledgement is complete and merge evidence remains
+pending. DB-002 remains blocked independently by `CONTRACT-AUTH-001` and final
+merge/state synchronization; no runtime readiness is claimed.

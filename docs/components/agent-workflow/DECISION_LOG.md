@@ -2,7 +2,7 @@
 
 - Date: 2026-07-31
 - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
-- Current task: `AGW-DB002-CONTRACT-001-C2` (`BUG_FIX`)
+- Current task: `AGW-DB002-CONTRACT-001-C3-C1` (`BUG_FIX`)
 
 ## `AGW-DEC-001` — Canonical lifecycle is closed and explicit
 
@@ -11,7 +11,8 @@
   the listed lifecycle transitions, including the single bounded repair loop.
   The eight terminal states have no outgoing transitions.
 - Evidence: canonical-state and transition sections in the contract.
-- Next action: A2-DATABASE acknowledges the enum and constraints.
+- Next action: preserve the acknowledged enum and constraints in authorized
+  downstream work.
 
 ## `AGW-DEC-002` — Repair is semantic and single-use
 
@@ -68,8 +69,7 @@
   verified base, so the authoritative manager enumeration, `DB-DEP-004`, and
   issued task requirements were reconciled into the first versioned draft.
 - Compatibility impact: none; this creates the initial contract.
-- Next action: A2-AGENT-WORKFLOW and A2-DATABASE review the draft; semantic
-  corrections must be recorded and versioned.
+- Next action: semantic corrections must be recorded and versioned.
 
 ## `AGW-DEC-008` — Review completion and late cancellation
 
@@ -81,9 +81,8 @@
   cancellation is recorded as not applied.
 - Evidence: corrected transition, cancellation, human-review, and fixture
   sections; C2 invariant output in the latest handoff preserves the C1 paths.
-- Blocker: runtime enforcement is `NOT_TESTED`; A2-DATABASE acknowledgement is
-  `BLOCKED`.
-- Next action: A2-DATABASE acknowledges these lifecycle constraints.
+- Blocker: runtime enforcement is `NOT_TESTED`.
+- Next action: preserve these acknowledged lifecycle constraints.
 
 ## `AGW-DEC-009` — Repair terminal exits and publication boundary
 
@@ -96,13 +95,34 @@
   latest invariant output.
 - Starting-state evidence: original task clean/no directory; C1 and C2 exactly
   seven permitted untracked Markdown files and no other changed path.
-- Blocker: runtime enforcement is `NOT_TESTED`; acknowledgement is `BLOCKED`.
-- Next action: A2-DATABASE acknowledges the corrected lifecycle contract.
+- Blocker: runtime enforcement is `NOT_TESTED`.
+- Next action: preserve the acknowledged lifecycle contract.
+
+## `AGW-DEC-010` — Database acknowledgement accepted
+
+- Status: `IMPLEMENTED` and documentation-`TESTED`
+- Decision: record `DB-WORKFLOW-CONTRACT-ACK-001` as
+  `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS` for the exact semantic commit
+  `a7c83f4`. Database-owned text constraints, state/version compare-and-swap,
+  versioned bounded request idempotency, and DB-002/DB-003 physical ownership
+  preserve the Workflow contract.
+- Evidence: the acknowledgement section in the contract and the C3 handoff.
+- Compatibility impact: none; no Workflow-owned semantic changed.
+- Documentation state: `VERIFIED_COMPLETE_PENDING_MERGE`.
+- Semantic freeze: semantic commit `a7c83f4` is frozen; any semantic change
+  invalidates the Database acknowledgement.
+- Closure requirement: merge evidence is still required before downstream
+  closure.
+- Blocker: Auth, Queue, Evidence, and Security fields remain deferred to their
+  owner contracts; runtime implementation is `NOT_TESTED`.
+- Next action: A2-AGENT-WORKFLOW merges the verified seven-file documentation
+  set and sends merge evidence to A2-DATABASE; keep DB-002/DB-003
+  implementation outside this task.
 
 ## Explicit labels
 
 - `IMPLEMENTED`: decisions encoded in the draft contract.
 - `TESTED`: internal references and invariants documentation-validated.
 - `NOT_TESTED`: runtime enforcement.
-- `BLOCKED`: consumer acknowledgement and downstream implementation.
+- `BLOCKED`: Auth/Queue dependencies and downstream implementation.
 - `ASSUMED`: initial baseline reconciliation in `AGW-DEC-007`.

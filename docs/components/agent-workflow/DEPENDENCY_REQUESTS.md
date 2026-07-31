@@ -2,12 +2,12 @@
 
 - Date: 2026-07-31
 - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
-- Current task: `AGW-DB002-CONTRACT-001-C2` (`BUG_FIX`)
+- Current task: `AGW-DB002-CONTRACT-001-C3-C1` (`BUG_FIX`)
 - Starting-state evidence: the original task began clean with no Agent Workflow
   directory; C1 and C2 began with exactly seven permitted untracked Markdown
   files and no other changed path.
 
-## `AGW-DEP-001` — A2-DATABASE contract acknowledgement
+## `AGW-DEP-001` / `DB-DEP-004` — A2-DATABASE contract acknowledgement
 
 - Request ID: `AGW-DEP-001`
 - Requesting Agent 2: `A2-AGENT-WORKFLOW`
@@ -26,9 +26,18 @@
   one non-terminal repair continuation, five terminal repair exits,
   review-required/no-review completion, and side-effect-aware cancellation,
   while mapping DB-002 versus DB-003 without semantic conflict.
-- Approval status: `PENDING`
-- Completion evidence: none.
-- Next action: A2-DATABASE review and acknowledgement.
+- Approval status: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`
+- Producer status: `PRODUCER_COMPLETE`
+- Consumer status: `CONSUMER_ACCEPTED`
+- Merge status: `PENDING_MERGE`
+- Consumer decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`
+- Semantic commit: `a7c83f4`
+- Contract version: `1.0.0-draft.1`
+- Completion evidence: `DB-WORKFLOW-CONTRACT-ACK-001`, dated 2026-07-31,
+  accepts `CONTRACT-WORKFLOW-001@1.0.0-draft.1` at semantic commit `a7c83f4`.
+- Next action: merge the accepted seven-file documentation set and provide
+  downstream merge evidence to A2-DATABASE. DB-002 remains independently
+  blocked by `CONTRACT-AUTH-001` and final merge/state synchronization.
 
 ## `AGW-DEP-002` — Auth identity contract
 
@@ -67,11 +76,22 @@
 - Completion evidence: none; intentionally not implemented in this task.
 - Next action: issue a separate scoped contract prompt.
 
+## Ownership boundaries
+
+- `CONTRACT-AUTH-001`: owned by `A2-AUTH`.
+- `CONTRACT-QUEUE-001`: owned by `A2-AGENT-WORKFLOW` under a separate task.
+- `CONTRACT-EVIDENCE-001`: owned by `A2-AGENT-WORKFLOW` under a separate task.
+- `CONTRACT-SEC-001`: owned by `A2-SECURITY`.
+
+These contracts remain independent and were not implemented or re-owned by
+this acknowledgement reconciliation.
+
 ## Explicit labels
 
 - `IMPLEMENTED`: dependency request record.
 - `TESTED`: ownership and blocking-task references reconciled.
 - `NOT_TESTED`: consumer/runtime behavior.
-- `BLOCKED`: all three requests remain pending.
+- `BLOCKED`: Auth and Queue requests plus merge evidence remain pending;
+  Database acknowledgement is accepted.
 - `ASSUMED`: A2-AGENT-WORKFLOW retains Queue ownership per the shared registry,
   but a separate task is required.
