@@ -1,7 +1,7 @@
 # Auth Decision Log
 
-- Current task: `AUTH-DB002-CONTRACT-001`
-- Scope: `DOCUMENTATION_ONLY`
+- Current task: `AUTH-DB002-CONTRACT-001-C2`
+- Scope: `DOCUMENTATION_ONLY_CONTRACT_REPAIR`
 - Evidence baseline: `739a331c9942ed64a1ad8276d611889bbee53a27`
 - Auth implementation: `NOT_STARTED`
 - Auth runtime: `NOT_TESTED`
@@ -53,11 +53,33 @@ distinct.
 The initial action vocabulary is semantic. DB-002 adds no enterprise tenancy,
 generic roles, permission tables, user-role tables, or billing.
 
-## `AUTH-DEC-010` — Initial contract version
+## `AUTH-DEC-010` — Contract compatibility policy
 
-The published draft is `CONTRACT-AUTH-001` version `1.0.0-draft.1`, status
-`DRAFT_FOR_CONSUMER_REVIEW`. Breaking semantic changes require a major version
-and coordinated Database and Integration review.
+Breaking semantic changes require a major version and coordinated Database and
+Integration review. Additive clarifications may proceed through the compatible
+draft contract process.
+
+## `AUTH-DEC-011` — Exact issuer comparison
+
+The canonical provider-supplied issuer value is stored and compared exactly
+and case-sensitively. A2-DATABASE performs no independent transformation or
+normalization. Any future normalization or comparison-policy change is
+contract-breaking and requires a new compatible contract decision, A2-AUTH
+approval, A2-DATABASE migration and uniqueness assessment, consumer review,
+and Integration coordination.
+
+## `AUTH-DEC-012` — Distinct access-grant expiration
+
+`expires_at` is the scheduled validity boundary, `expired_at` records when a
+grant was marked expired, and `revoked_at` records explicit withdrawal. At or
+after a scheduled boundary, new authorization is denied even before
+asynchronous status reconciliation. Expiration and revocation remain distinct.
+
+## `AUTH-DEC-013` — Additive consumer-requested draft clarification
+
+`CONTRACT-AUTH-001` version `1.0.0-draft.2` is an additive draft clarification
+requested through `DB-AUTH-CONTRACT-ACK-001`; its status remains
+`DRAFT_FOR_CONSUMER_REVIEW`.
 
 No decision in this log authorizes Auth code, tests, or DB-002 implementation.
 The shared registry's missing Database consumer remains an owner correction.

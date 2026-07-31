@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Contract ID | `CONTRACT-AUTH-001` |
-| Version | `1.0.0-draft.1` |
+| Version | `1.0.0-draft.2` |
 | Status | `DRAFT_FOR_CONSUMER_REVIEW` |
 | Owner | `A2-AUTH` |
 | Blocking consumer | `A2-DATABASE` |
@@ -58,13 +58,28 @@ An external authentication subject linked to a canonical user has:
 - `linked_at`; and
 - nullable `revoked_at`.
 
-The pair `issuer + subject` is unique. One active issuer-subject maps to exactly
-one canonical user; duplicate linkage to another user is rejected. A revoked
-subject cannot authenticate. Email and mutable login names cannot authorize
-access. Provider tokens and refresh tokens are never persisted.
+`issuer` is the canonical issuer string supplied by the configured identity
+provider. The configured provider boundary stores that canonical issuer value
+exactly as supplied. Issuer storage and comparison are exact and
+case-sensitive. A2-DATABASE must not independently lowercase, uppercase,
+rewrite, trim or append URL components, URL-normalize, remove trailing
+characters, resolve aliases, or otherwise transform issuer values.
+
+The pair `(issuer, subject)` is unique using the exact canonical stored issuer
+and exact opaque subject values. `subject` remains opaque and case-sensitive.
+One active issuer-subject maps to exactly one canonical user; duplicate linkage
+to another user is rejected. A revoked subject cannot authenticate. Email and
+mutable login names cannot authorize access. Provider tokens and refresh
+tokens are never persisted.
+
+Any future issuer-normalization or comparison-policy change is
+contract-breaking and requires a new compatible contract decision, A2-AUTH
+approval, A2-DATABASE migration and uniqueness assessment, consumer review,
+and Integration coordination.
 
 These provider-neutral semantics do not freeze a particular OAuth
-implementation for DB-002.
+implementation, identity provider, issuer value, audience value, callback URL,
+or OAuth route for DB-002.
 
 ## GitHub App installation identity and lifecycle
 
@@ -116,11 +131,41 @@ A repository-access grant has:
 - `authorization_source`: `GITHUB_VERIFIED`;
 - `granted_at`;
 - `last_verified_at`; and
+- nullable `expires_at`;
+- nullable `expired_at`; and
 - nullable `revoked_at`.
 
 At most one active grant exists for an exact
 user-installation-repository tuple. A grant must not cross users,
-installations, or repositories. `REVOKED` and `EXPIRED` grants deny new access.
+installations, or repositories.
+
+An `ACTIVE` grant may have a future `expires_at` or no scheduled expiration,
+represented by a null `expires_at`. It must not have an `expired_at` indicating
+that it has already been marked expired. At or after a non-null `expires_at`,
+the grant denies new authorization even if asynchronous persistence
+reconciliation has not yet changed its stored status to `EXPIRED`. Consumers
+must not treat a past `expires_at` as authorized merely because the stored
+status has not yet been updated.
+
+An `EXPIRED` grant denies all new authorization. Its expiration time must be
+represented by at least one of `expires_at`, `expired_at`, or an explicitly
+documented Database-equivalent representation preserving the same Auth
+meaning. `expires_at` is the scheduled validity boundary when one exists;
+`expired_at` is when the grant was recorded or marked expired. When both exist,
+they may differ because persistence reconciliation may occur after the
+scheduled boundary. Historical grant attribution remains preserved.
+
+A `REVOKED` grant denies all new authorization. Revocation uses `revoked_at`
+and is an explicit withdrawal, not expiration. `revoked_at` must not substitute
+for `expires_at` or `expired_at`, and expiration fields must not substitute for
+`revoked_at`.
+
+A2-AUTH owns these lifecycle meanings. A2-DATABASE owns physical column names,
+SQL types, indexes, constraint names, and check-constraint implementation. It
+may use an explicitly documented equivalent physical representation only when
+that representation preserves the same Auth semantics. Database implementation
+must not merge revocation and expiration into one indistinguishable lifecycle
+event and must preserve historical attribution.
 
 This is not enterprise RBAC. DB-002 requires no organization, role, permission,
 user-role, or billing table. Sensitive actions may later require live GitHub
@@ -211,6 +256,7 @@ RBAC, or billing.
 The following are breaking changes:
 
 - changing issuer-subject uniqueness;
+- changing issuer normalization or comparison policy;
 - reusing external IDs as internal IDs;
 - removing actor types;
 - changing the access tuple;

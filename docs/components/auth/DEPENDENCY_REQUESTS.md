@@ -1,10 +1,22 @@
 # Auth Dependency Requests
 
 - Parent task: `AUTH-DB002-CONTRACT-001`
-- Continuation task: `AUTH-DB002-CONTRACT-001-C1`
-- Scope: `DOCUMENTATION_ONLY_RECORD_REPAIR`
+- Current task: `AUTH-DB002-CONTRACT-001-C2`
+- Scope: `DOCUMENTATION_ONLY_CONTRACT_REPAIR`
 - Auth implementation: `NOT_STARTED`
 - Auth runtime: `NOT_TESTED`
+
+## Database consumer review
+
+- Consumer review: `DB-AUTH-CONTRACT-ACK-001`
+- A2-DATABASE result: `ACKNOWLEDGED_WITH_CHANGES`
+- Requested changes: issuer comparison semantics; access-grant expiration
+  timing.
+- Auth response: Addressed in `CONTRACT-AUTH-001` version
+  `1.0.0-draft.2`.
+- Current approval status: `READY_FOR_DATABASE_REREVIEW`
+- Completion evidence: A2-AUTH accepted `CONTRACT-AUTH-001` version
+  `1.0.0-draft.2`; final A2-DATABASE rereview remains pending.
 
 ## `DB-DEP-001` — Incoming Auth context request
 
@@ -19,12 +31,14 @@
 - Backward-compatibility impact: Initial contract; incompatible changes may
   require migrations.
 - Urgency: `HIGH`
-- Proposed acceptance test: Use a fixture with two users, two installations,
-  and two repositories to confirm exact user-installation-repository access,
-  uniqueness and lifecycle behavior, historical attribution, and absence of
-  local credential fields.
-- Approval status: `ADDRESSED_PENDING_ACKNOWLEDGEMENT`
-- Completion evidence: `CONTRACT-AUTH-001` version `1.0.0-draft.1`
+- Proposed acceptance test: Use the original fixture with two users, two
+  installations, two repositories, the five conceptual records, and the exact
+  access tuple; verify exact case-sensitive issuer uniqueness, absence of
+  issuer normalization, separate expiration and revocation timing, historical
+  attribution, and absence of local credential fields.
+- Approval status: `READY_FOR_DATABASE_REREVIEW`
+- Completion evidence: A2-AUTH accepted `CONTRACT-AUTH-001` version
+  `1.0.0-draft.2`; final A2-DATABASE rereview remains pending.
 
 ## `AUTH-DEP-001` — Database consumer acknowledgement
 
@@ -34,17 +48,22 @@
 - Required change and reason: Confirm the Auth contract fully defines the
   conceptual records and guarantees needed by DB-002 while Database retains
   ownership of physical persistence.
+- Initial response: `ACKNOWLEDGED_WITH_CHANGES`
 - Contract affected: `CONTRACT-AUTH-001` and future `CONTRACT-DB-001`
 - Exact blocking task: Final closure of `AUTH-DB002-CONTRACT-001` and readiness
   of `DB-002`
 - Backward-compatibility impact: Initial contract; incompatible changes may
   require migrations.
 - Urgency: `HIGH`
-- Proposed acceptance test: Database confirms the five conceptual records,
-  uniqueness rules, lifecycle rules, exact access tuple, historical
-  attribution, and absence of local credential fields.
+- Proposed acceptance test: Database confirms the original five conceptual
+  records and exact access-tuple fixture, exact case-sensitive issuer
+  uniqueness, absence of issuer normalization, separate expiration and
+  revocation timing, historical attribution, and absence of local credential
+  fields.
 - Approval status: `PENDING`
-- Completion evidence: None.
+- Completion evidence: Initial `ACKNOWLEDGED_WITH_CHANGES` response preserved;
+  A2-AUTH accepted version `1.0.0-draft.2`; final A2-DATABASE rereview remains
+  pending.
 
 ## `AUTH-DEP-002` — Workflow actor compatibility
 
@@ -119,6 +138,6 @@
 - Approval status: `PENDING`
 - Completion evidence: None.
 
-DB-002 remains blocked pending A2-DATABASE acknowledgement and accepted
+DB-002 remains blocked pending final A2-DATABASE acknowledgement and accepted
 `CONTRACT-WORKFLOW-001`. No dependency request authorizes code, tests, or
 Database implementation.

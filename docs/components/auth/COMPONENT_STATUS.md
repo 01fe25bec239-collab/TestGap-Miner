@@ -3,11 +3,12 @@
 - Date: 2026-07-31
 - Agent 2: `A2-AUTH`
 - Paired Agent 3: `A3-AUTH`
+- Current task: `AUTH-DB002-CONTRACT-001-C2`
 - Parent task: `AUTH-DB002-CONTRACT-001`
-- Continuation task: `AUTH-DB002-CONTRACT-001-C1`
-- Prompt type: `CONTINUATION`
-- Scope: `DOCUMENTATION_ONLY_RECORD_REPAIR`
-- Reviewed implementation commit: `8d8125b2c7d8f40681dee81c61b3cab44e4ca216`
+- Consumer review: `DB-AUTH-CONTRACT-ACK-001`
+- Initial Database decision: `ACKNOWLEDGED_WITH_CHANGES`
+- Prompt type: `CONTRACT_REPAIR`
+- Scope: `DOCUMENTATION_ONLY_CONTRACT_REPAIR`
 - Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-contract`
 - Branch: `agent2/auth-contract-db002`
 
@@ -15,14 +16,14 @@
 
 | Area | State | Evidence / next action |
 |---|---|---|
-| Current task result | `REPAIR_IMPLEMENTED_PENDING_A2_REVIEW` | Five management records repaired in `AUTH-DB002-CONTRACT-001-C1`; final A2-AUTH review remains required. |
-| `CONTRACT-AUTH-001` semantic content | `PASS` | A2-AUTH passed version `1.0.0-draft.1`; the contract was not modified by this continuation. |
-| Auth management-record reconciliation | `IMPLEMENTED_PENDING_A2_REVIEW` | Task-ledger, dependency-request, handoff, component-status, and open-issue records were reconciled; final A2-AUTH review remains required. |
+| Current task result | `PASS — A2_AUTH_ACCEPTED` | A2-AUTH reviewed and accepted `CONTRACT-AUTH-001` version `1.0.0-draft.2`. |
+| Requested clarifications | `IMPLEMENTED` | Exact case-sensitive issuer semantics and access-grant expiration timing. |
+| Contract | `1.0.0-draft.2` / `DRAFT_FOR_CONSUMER_REVIEW` | Additive draft clarification for Database rereview. |
+| Consumer-review status | `READY_FOR_DATABASE_REREVIEW` | Final A2-DATABASE acknowledgement remains pending. |
 | Auth implementation | `NOT_STARTED` | No Auth code was authorized or changed. |
 | Auth runtime | `NOT_TESTED` | Documentation-only validation; no runtime claims. |
-| `DB-DEP-001` | `ADDRESSED_PENDING_ACKNOWLEDGEMENT` | A2-DATABASE must acknowledge the passed Auth contract. |
-| `DB-002` | `BLOCKED` | Pending A2-DATABASE acknowledgement and accepted `CONTRACT-WORKFLOW-001`. |
+| `DB-002` | `BLOCKED` | Pending final A2-DATABASE acknowledgement and accepted `CONTRACT-WORKFLOW-001`. |
 
 The Database consumer-registry correction remains open and belongs to Agent 1
-or A2-INTEGRATION. The recommended next action is A2-AUTH final review, followed
-by A2-DATABASE consumer handoff and acknowledgement.
+or A2-INTEGRATION. Recommended next action: commit the accepted documentation
+and send version `1.0.0-draft.2` to A2-DATABASE for rereview.

@@ -1,20 +1,18 @@
 # Auth Open Issues
 
 - Parent task: `AUTH-DB002-CONTRACT-001`
-- Continuation task: `AUTH-DB002-CONTRACT-001-C1`
-- Scope: `DOCUMENTATION_ONLY_RECORD_REPAIR`
-- Reviewed implementation commit: `8d8125b2c7d8f40681dee81c61b3cab44e4ca216`
+- Current task: `AUTH-DB002-CONTRACT-001-C2`
+- Consumer review: `DB-AUTH-CONTRACT-ACK-001`
+- Scope: `DOCUMENTATION_ONLY_CONTRACT_REPAIR`
 - Auth implementation: `NOT_STARTED`
 - Auth runtime: `NOT_TESTED`
 
 ## `AUTH-ISSUE-001` — Auth contract and records were absent
 
-- Classification: `ADDRESSED_PENDING_FINAL_A2_REVIEW`
-- Evidence: `CONTRACT-AUTH-001` semantic content passed A2-AUTH review. The
-  task-ledger and dependency-request record defects identified by A2-AUTH were
-  repaired in `AUTH-DB002-CONTRACT-001-C1`.
-- Resolution: Final A2-AUTH review of the repaired management records remains
-  required before A2-DATABASE handoff.
+- Classification: `CLOSED`
+- Evidence: The Auth contract and six records exist; management-record repairs
+  passed; A2-AUTH final review is complete.
+- Resolution: Closed by A2-AUTH acceptance.
 
 ## `AUTH-ISSUE-002` — Shared registry omits the Database consumer
 
@@ -60,6 +58,26 @@
   runtime tests exist from it.
 - Resolution: Schedule implementation only after contract acceptance.
 
-A2-DATABASE consumer acknowledgement remains required. The expected untracked
-`auth-contract-review.zip` review artifact is not a task change and must remain
+## `AUTH-ISSUE-008` — Issuer comparison semantics were insufficiently explicit
+
+- Classification: `ADDRESSED_PENDING_DATABASE_REREVIEW`
+- Evidence: `CONTRACT-AUTH-001` version `1.0.0-draft.2` defines exact,
+  case-sensitive issuer storage and comparison and prohibits
+  Database-independent normalization.
+- Resolution: A2-DATABASE rereviews the A2-AUTH-accepted repair.
+
+## `AUTH-ISSUE-009` — Access-grant expiration timing was insufficiently explicit
+
+- Classification: `ADDRESSED_PENDING_DATABASE_REREVIEW`
+- Evidence: `CONTRACT-AUTH-001` version `1.0.0-draft.2` distinguishes
+  `expires_at`, `expired_at`, and `revoked_at` and denies authorization at or
+  after a scheduled expiration boundary.
+- Resolution: A2-DATABASE rereviews the A2-AUTH-accepted repair.
+
+A2-DATABASE final acknowledgement remains required. Shared-registry consumer
+correction, accepted `CONTRACT-WORKFLOW-001`, IdP runtime metadata,
+authorization freshness beyond the defined expiration boundary, retention and
+redaction guidance, and Auth runtime `NOT_TESTED` remain open. The expected
+untracked `auth-contract-review.zip`, `auth-contract-repair-review.zip`, and
+`auth-contract-c2-review.zip` artifacts are not task changes and must remain
 unmodified and uncommitted.
