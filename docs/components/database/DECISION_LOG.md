@@ -2,22 +2,24 @@
 
 - Date reconciled: 2026-08-01
 - Branch: `agent2/database`
-- Synchronized baseline: `6cf88f135215984424bec00994a05a1de1dd011e`
+- Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
-- Database scaffold: `IMPLEMENTED`; DB-DEP-011 final closure
-  `PENDING_INTEGRATION_VALIDATION`
-- Migration chain: bootstrap exists with zero heads and no revisions
-- Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
+- Database scaffold: `IMPLEMENTED`; DB-DEP-011:
+  `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
+- Migration chain: exactly one head, `ad3f80907336`
+- Domain schema: `IMPLEMENTED` for DB-002; DB-002:
+  `PASS_PENDING_A2_FINAL_REVIEW`; DB-002-C1: `PASS`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
   `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
 
 ## `DB-DEC-001` — Persistence baseline
 
-- Status: `VERIFIED_COMPLETE`; PostgreSQL/SQLAlchemy/Alembic scaffold
-  implementation is `IMPLEMENTED`, while domain schema is `NOT_STARTED`.
+- Historical status at DB-DEC-001: `VERIFIED_COMPLETE`; the
+  PostgreSQL/SQLAlchemy/Alembic scaffold was `IMPLEMENTED`, while domain schema
+  was `NOT_STARTED`. Current DB-002 domain schema status is `IMPLEMENTED`.
 - Decision: PostgreSQL, SQLAlchemy 2.x-style models, and Alembic migrations.
 - Rejected alternatives for this baseline: SQLite persistence and Liquibase/Flyway.
 
@@ -79,8 +81,10 @@
 
 - Date: 2026-07-30
 - Status: `IMPLEMENTED`, reviewed, and merged through Database PR #6 and merge
-  commit `739a331c9942ed64a1ad8276d611889bbee53a27`. Final DB-DEP-011 closure
-  remains pending only A2-INTEGRATION PostgreSQL 16 validation.
+  commit `739a331c9942ed64a1ad8276d611889bbee53a27`. DB-DEP-011 completed final
+  A2-INTEGRATION clean-checkout PostgreSQL 16 validation and is
+  `ACCEPTED / VERIFIED_COMPLETE / CLOSED` through Integration closeout merge
+  commit `8884b5d540351c735b6cddc01314a7dd9e25af05`.
 - Decision: runtime engines are explicit synchronous SQLAlchemy factories using
   psycopg 3 and `pool_pre_ping=True`; sessions use `autoflush=False` and
   `expire_on_commit=False`; request dependencies roll back escaping exceptions,
@@ -90,13 +94,14 @@
   only when `TESTGAP_RUNTIME` exactly equals `local`, and otherwise fails closed.
 - Test boundary: `TEST_DATABASE_URL` must use `postgresql+psycopg`, name a
   database ending exactly in `_test`, and differ from `DATABASE_URL`; errors
-  never include credentials. Deployment/Integration host-registry validation
-  remains pending.
+  never include credentials. The authoritative production host registry remains
+  separately pending under `DB-ISSUE-008`.
 - Migration boundary: empty `MetaData`, zero heads, no baseline revision,
   explicit `-c apps/api/alembic.ini`, synchronous online mode, and supported
   offline mode.
-- Scope: no DB-002 model, table, enum, constraint, index, Auth/Workflow field,
-  or revision exists.
+- Historical scope at the time of DB-DEC-011: no DB-002 model, table, enum,
+  constraint, index, Auth/Workflow field, or revision existed. DB-002 has since
+  implemented its seven-table slice through `DB-DEC-014`.
 
 ## `DB-DEC-012` — Auth contract acceptance
 
@@ -125,8 +130,9 @@
 - Compatibility: any future incompatible change requires a versioned Auth
   contract update, Database consumer review, migration-impact analysis,
   affected-consumer acknowledgement, and Integration coordination.
-- Runtime boundary: no Auth or Database implementation was performed; DB-002
-  remains `BLOCKED`.
+- Historical runtime boundary at the time of DB-DEC-012: no Auth or Database
+  implementation had been performed and DB-002 was `BLOCKED`. The DB-002 schema
+  has since been implemented; Auth runtime remains unimplemented.
 
 ## `DB-DEC-013` — Workflow contract acceptance
 
@@ -134,10 +140,11 @@
 - Status: `ACCEPTED`; `CONTRACT-WORKFLOW-001@1.0.0-draft.1` is
   `ACKNOWLEDGED_AND_MERGED` through PR #8 and merge commit
   `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`.
-- State decision: persist the exact canonical `RunState` text with
-  Database-owned check constraints for allowed values and transitions. Run
-  projection mutations compare expected state and `version` for optimistic
-  concurrency; terminal projections are immutable after commit.
+- State contract decision: persist the exact canonical `RunState` text and
+  validate allowed stored values. The Workflow runtime is responsible for the
+  allowed-transition table, expected-state-and-version compare/update, and
+  terminal-state update rejection after commit; DB-002 does not implement those
+  operations.
 - Counter decision: `repair_attempts_used` is constrained to `0..1`; repair
   and retry remain separate, and a repaired candidate repeats buggy then fixed
   execution.
@@ -155,5 +162,76 @@
 - Compatibility: any future incompatible Workflow change requires a versioned
   Workflow contract, Database consumer review, migration-impact analysis,
   affected-consumer acknowledgement, and Integration coordination.
-- Runtime boundary: no Workflow or Database implementation was performed;
-  DB-002 remains `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`.
+- Historical runtime boundary at the time of acceptance: no Workflow or Database
+  implementation had been performed. DB-002 has since implemented only the
+  durable request/current-projection storage subset; see `DB-DEC-014`. Workflow
+  runtime and DB-003 event history remain unimplemented.
+
+## `DB-DEC-014` — DB-002 physical schema
+
+- Date: 2026-08-01
+- Status: `IMPLEMENTED`. Alembic revision `ad3f80907336`
+  (`create DB-002 core entities`) is the single head. Full documentation is in
+  `docs/data/database-schema.md`.
+- Declarative boundary: one `MetaData` in `app/db/metadata.py` carrying the
+  constraint and index naming convention, one `DeclarativeBase` in
+  `app/db/base.py`, models in `app/db/models/**`, and `alembic/env.py`
+  importing that package so `target_metadata` contains every DB-002 table.
+  SQLAlchemy remains synchronous on psycopg 3.
+- Identifier decision: UUID primary keys generated client-side as `uuid4`, so no
+  PostgreSQL extension is required. External identifiers use their own types —
+  `BIGINT` for GitHub numeric IDs, bounded text for delivery GUIDs, SHAs,
+  benchmark IDs, model IDs, prompt versions, and correlation IDs.
+- Enumeration decision: statuses, request kinds, states, terminal actor types,
+  abstention codes, and cancellation codes are stored as exact uppercase text
+  with Database-owned check constraints. Failure codes use matching anchored
+  PostgreSQL family patterns — `^INPUT_[A-Z0-9]+(_[A-Z0-9]+)*$`,
+  `^MODEL_[A-Z0-9]+(_[A-Z0-9]+)*$`,
+  `^EXECUTION_[A-Z0-9]+(_[A-Z0-9]+)*$`,
+  `^INFRASTRUCTURE_[A-Z0-9]+(_[A-Z0-9]+)*$`, and
+  `^SECURITY_[A-Z0-9]+(_[A-Z0-9]+)*$` — so unknown additive uppercase codes
+  remain representable while malformed or cross-family values are rejected. No
+  PostgreSQL `ENUM` type is created.
+- Issuer/subject decision: a plain `UNIQUE (issuer, subject)` constraint in the
+  default collation. `citext` and case-folding functional indexes are prohibited
+  and absent.
+- Access-history decision: a partial unique index
+  `uq_repository_access_active` over
+  `(user_id, installation_id, repository_id) WHERE status = 'ACTIVE'`. This
+  enforces at most one active grant per exact tuple while leaving revoked and
+  expired grants stored and attributable, and while keeping a later re-grant
+  representable. A permanent unique constraint was explicitly rejected because it
+  would block a valid future re-grant.
+- Expiry/revocation decision: `expires_at`, `expired_at`, and `revoked_at` are
+  separate columns with check constraints that keep expiration and revocation
+  distinguishable and prevent either from substituting for the other. An
+  `ACTIVE` grant with a past `expires_at` stays storable, because the contract
+  places that authorization boundary at read time, before delayed status
+  reconciliation.
+- Run-projection decision: `runs.run_request_id` remains unique under closed
+  `DB-ISSUE-011` (`ACCEPTED_DATABASE_PHYSICAL_DECISION`); changing that
+  cardinality requires Workflow consumer and migration review. Failure codes use
+  the anchored uppercase family patterns under closed `DB-ISSUE-012`
+  (`ACCEPTED_WITH_PATTERN_ENFORCEMENT`); unknown additive codes remain storable
+  and terminal state stays the compatibility boundary. Terminal attribution is
+  bounded opaque text with no foreign key under `DB-ISSUE-013`
+  (`OPEN_NON_BLOCKING / DEFERRED_CONTRACT_SHAPE`).
+- Index decision: only justified DB-002 lookup paths are indexed — the partial
+  active-access index, the foreign-key reverse-lookup indexes PostgreSQL does not
+  create automatically, and the contract-required unique indexes. No state
+  worklist, timestamp ordering, or other speculative index for a later task was
+  added.
+- Secret decision: no domain table has a password, hash, token, private key,
+  webhook secret, session token, raw Authorization header, raw prompt, repository
+  byte, patch byte, or execution log column. This is asserted over both the ORM
+  metadata and the reflected PostgreSQL columns.
+- Migration decision: a single revision with a complete downgrade, no seed data,
+  and no DB-003 or later table. Multiple revisions were not required.
+- Scope decision: DB-002 created no DB-003 or later table, no Auth or Workflow
+  runtime, no API route, no service orchestration, and no trigger.
+- Enforcement boundary: DB-002 implements and tests stored state vocabulary,
+  terminal/non-terminal row shape, counter bounds, code consistency, version
+  storage, and terminal attribution. It does not implement or test transition
+  execution, expected-state-and-version compare/update, atomic projection/event
+  mutation, transition history, terminal update rejection, regeneration
+  decision-event persistence, or Workflow orchestration.

@@ -2,18 +2,19 @@
 
 - Date: 2026-08-01
 - Branch: `agent2/database`
-- Synchronized baseline: `6cf88f135215984424bec00994a05a1de1dd011e`
+- Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
 - Database scaffold: `IMPLEMENTED`
-- Migration chain: bootstrap exists with zero heads and no revisions
-- Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
+- Migration chain: exactly one head, `ad3f80907336`
+- Domain schema: `IMPLEMENTED` for DB-002; DB-002:
+  `PASS_PENDING_A2_FINAL_REVIEW`; DB-002-C1: `PASS`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `DB-DEP-001`: `ACCEPTED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`
 - `DB-DEP-004`: `ACCEPTED`
-- DB-DEP-011: `PENDING_INTEGRATION_VALIDATION`
+- DB-DEP-011: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
 
 ## `DB-ISSUE-001` — Specification filename mismatch
 
@@ -29,20 +30,20 @@
   `CONTRACT-WORKFLOW-001@1.0.0-draft.1` are acknowledged and merged, so the
   Auth and Workflow portions are closed. Other task-specific contracts remain
   pending as recorded in `DEPENDENCY_REQUESTS.md`.
-- Impact: the direct Auth and Workflow prerequisites are satisfied.
-  DB-002 remains blocked pending the separate final Database readiness
-  assessment. Later
+- Impact: the direct Auth and Workflow prerequisites are satisfied and the
+  DB-002 schema is implemented. DB-002 is
+  `PASS_PENDING_A2_FINAL_REVIEW`; DB-002-C1 is `PASS`. Later
   tasks retain their own prerequisites, and no other upstream-owned fields are
   frozen by this task.
 
 ## `DB-ISSUE-003` — No implementation baseline
 
-- Classification: `PARTIALLY_RESOLVED`
-- Evidence: the shared Database infrastructure, Alembic bootstrap, tests, and
-  documentation now exist. Alembic has zero heads and there is deliberately no
-  ORM model, domain table, or revision.
-- Impact: DB-002 remains unimplemented.
-- Resolution path: perform the separate final DB-002 readiness assessment.
+- Classification: `CLOSED`
+- Evidence: DB-002 implements seven tables through Alembic revision
+  `ad3f80907336`, with 169 Database tests passing on PostgreSQL 16.14 after
+  DB-002-C1.
+- Impact: the Database now has an implementation baseline. Later domains remain
+  intentionally unimplemented under their own tasks and contracts.
 
 ## `DB-ISSUE-004` — Retention and deletion semantics are not frozen
 
@@ -56,28 +57,30 @@
 - Evidence: required critical lookup families are named, but API pagination/filter shapes, dataset scale, and performance targets are not contracted.
 - Blocking contracts/tasks: CONTRACT-API-001, CONTRACT-EVAL-001, DB-007.
 
-## `DB-ISSUE-006` — Shared scaffold final validation is pending
+## `DB-ISSUE-006` — Shared scaffold final validation completed
 
-- Classification: `PENDING_INTEGRATION_VALIDATION`
-- Evidence: Backend and Deployment scaffolds are merged at `11b8019`; the
-  Database-owned continuation implements the remaining persistence scaffold
-  without modifying any unowned file. Database unit/bootstrap tests and
-  authenticated temporary PostgreSQL 17.10 checks passed.
-- Remaining action: A2-INTEGRATION clean-checkout validation with the approved
-  Compose PostgreSQL 16 service.
+- Classification: `CLOSED`
+- Evidence: A2-INTEGRATION recorded `INT-DBDEP011-POSTGRES16-001` as `PASS` at
+  commit `99c8022c9f44e6a54bed624aa0153be7e32f234b`, and DB-DEP-011 is
+  `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
+- Remaining action: none.
 
 ## `DB-ISSUE-007` — Docker CLI unavailable in A3 environment
 
-- Classification: `ENVIRONMENT_LIMITATION`
+- Classification: `CLOSED`
+- DB-002 resolution: Docker `29.6.2` and Compose `5.3.1` were available for
+  DB-002. The approved `testgap-miner` Compose PostgreSQL 16 service ran at
+  server version `16.14`, and every DB-002 migration and test check ran against
+  it. The retained volume was preserved and no destructive reset was performed.
+- Historical classification: `ENVIRONMENT_LIMITATION`
 - Evidence: `docker compose up -d --wait postgres` and
   `docker compose exec -T postgres pg_isready -U postgres -d testgap` were
   blocked because Docker was unavailable.
 - Mitigation: the Deployment initializer and all authenticated connectivity,
   zero-head upgrade, Database, Backend, and full-suite checks passed against an
   isolated temporary PostgreSQL cluster; the cluster was stopped.
-- Approved Compose PostgreSQL 16 validation: `NOT_TESTED`.
-- Resolution: A2-INTEGRATION reruns both commands and the full Database
-  validation in a Docker-enabled clean checkout.
+- Historical approved Compose PostgreSQL 16 validation: `NOT_TESTED` at that
+  time; now `PASS` under both `INT-DBDEP011-POSTGRES16-001` and DB-002.
 
 ## `DB-ISSUE-008` — Production host registry is not contracted
 
@@ -100,9 +103,11 @@
   case-sensitive with no Database normalization; scheduled expiry
   (`expires_at`), recorded expiry (`expired_at`), and explicit revocation
   (`revoked_at`) have distinct meanings.
-- Scope: closure records contract evidence only. Auth runtime remains
-  `NOT_IMPLEMENTED` / `NOT_TESTED`; Database domain schema remains
-  `NOT_STARTED`; DB-002 remains `BLOCKED`.
+- Historical state at the time of the contract reconciliation: closure recorded
+  contract evidence only; Auth runtime was `NOT_IMPLEMENTED` / `NOT_TESTED`, the
+  Database domain schema was `NOT_STARTED`, and DB-002 was `BLOCKED`.
+- Current state: Auth runtime remains `NOT_IMPLEMENTED` / `NOT_TESTED`; the
+  seven-table DB-002 Database domain schema is implemented.
 
 ## `DB-ISSUE-010` — Workflow contract availability and lifecycle ambiguities
 
@@ -121,10 +126,69 @@
   run after human review, new request/run on regeneration, and DB-002 ownership
   of `run_requests`/`runs` versus DB-003 ownership of steps, attempts, events,
   and ordering.
-- Scope: closure records contract evidence only. Workflow runtime remains
-  `NOT_IMPLEMENTED` / `NOT_TESTED`; Database domain schema remains
-  `NOT_STARTED`; DB-002 remains
+- Historical state at the time of the contract reconciliation: closure recorded
+  contract evidence only; Workflow runtime was `NOT_IMPLEMENTED` / `NOT_TESTED`,
+  the Database domain schema was `NOT_STARTED`, and DB-002 was
   `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`.
+- Current state: Workflow runtime remains `NOT_IMPLEMENTED` / `NOT_TESTED`; the
+  seven-table DB-002 Database domain schema is implemented.
+
+## `DB-ISSUE-011` — One run per run request is a Database-owned strengthening
+
+- Classification: `CLOSED / ACCEPTED_DATABASE_PHYSICAL_DECISION`
+- Owner: `A2-AGENT-WORKFLOW`
+- Evidence: `CONTRACT-WORKFLOW-001` states that `RECEIVED` means "a durable run
+  request and initial run projection exist", and that a human regeneration
+  creates a new request and a new run. It does not state the cardinality
+  explicitly.
+- Database decision: `runs.run_request_id` is `UNIQUE`, so exactly one current
+  projection exists per durable request. Without it, request idempotency would
+  not actually deduplicate runs.
+- Accepted disposition: this is the Database physical enforcement for one
+  current projection per durable request. Regeneration creates a new request and
+  run; DB-003 owns historical events rather than duplicate current projections.
+- Compatibility: changing this cardinality later requires Workflow consumer
+  review and Database migration review.
+
+## `DB-ISSUE-012` — Failure codes are checked by family, not by frozen list
+
+- Classification: `CLOSED / ACCEPTED_WITH_PATTERN_ENFORCEMENT`
+- Owner: `A2-AGENT-WORKFLOW`
+- Evidence: the contract publishes an exact failure-code table but also states a
+  consumer MAY preserve an unknown additive code while MUST using the terminal
+  state as the compatibility boundary. A frozen `IN` list would make a run in a
+  valid terminal state unstorable after a minor additive contract revision.
+- Database decision: `ck_runs_failure_code_matches_state` requires a failure code
+  exactly for `FAILED_*` states and applies the matching anchored family pattern.
+  Unknown additive codes remain representable, but codes must remain uppercase
+  and family-compatible; the terminal state remains the compatibility boundary.
+  Bare prefixes, lowercase values, whitespace, invalid punctuation, and
+  cross-family codes are rejected. Abstention and cancellation codes remain
+  frozen lists because their contract vocabularies are closed.
+
+## `DB-ISSUE-013` — Terminal actor identity shape remains provisional
+
+- Classification: `OPEN_NON_BLOCKING / DEFERRED_CONTRACT_SHAPE`
+- Owners: `A2-AGENT-WORKFLOW` and `A2-AUTH`
+- Evidence: `CONTRACT-WORKFLOW-001` marks the Auth-owned human identity shape for
+  terminal attribution as provisional.
+- Database handling: `runs.terminal_actor_id` is bounded opaque text with no
+  foreign key, and `runs.terminal_actor_type` is checked against the Workflow
+  actor vocabulary `SYSTEM` / `WORKFLOW` / `WORKER` / `HUMAN`.
+- DB-002 disposition: the current representation is accepted and does not block
+  DB-002 acceptance. No foreign key is frozen. A future Auth/Workflow contract
+  may add a typed relationship through an additive migration.
+
+## `DB-ISSUE-014` — Repository display metadata is deferred
+
+- Classification: `OPEN`
+- Owners: `A2-AUTH`, `A2-BACKEND`
+- Evidence: `CONTRACT-AUTH-001` states owner/name strings are mutable display
+  metadata that must not authorize access, and no accepted contract requires
+  storing them.
+- Database handling: `repositories` stores identity and lifecycle only. Adding
+  display columns later is an additive migration.
+- Needed resolution: `CONTRACT-API-001` (`DB-DEP-002`) defining the read model.
 
 ## Resolved specification contradictions
 

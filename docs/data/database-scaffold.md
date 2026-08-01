@@ -1,8 +1,9 @@
 # Database scaffold
 
-DB-DEP011-DATABASE-SCAFFOLD-001-C1 provides synchronous SQLAlchemy 2.x and
-psycopg 3 infrastructure only. DB-002 has not begun: metadata is empty, Alembic
-has zero heads, and no domain model, table, or revision exists.
+DB-DEP011-DATABASE-SCAFFOLD-001-C1 provides the synchronous SQLAlchemy 2.x and
+psycopg 3 infrastructure. DB-002 builds the domain schema on top of it; see
+[`database-schema.md`](database-schema.md) for the models, constraints,
+indexes, and migration.
 
 ## Layout and connection boundaries
 
@@ -12,7 +13,10 @@ has zero heads, and no domain model, table, or revision exists.
   `expire_on_commit=False`.
 - `app/db/dependencies.py` yields one request session, rolls back escaping
   exceptions, always closes, and never commits automatically.
-- `app/db/metadata.py` contains the deliberately empty Alembic metadata.
+- `app/db/metadata.py` holds the single Alembic `MetaData` and its constraint
+  and index naming convention.
+- `app/db/base.py` holds the one declarative base bound to that `MetaData`;
+  `app/db/models/**` holds the DB-002 models.
 
 Runtime engines read only `DATABASE_URL`. Migrations prefer
 `MIGRATION_DATABASE_URL`; only when `TESTGAP_RUNTIME` is exactly `local` may
@@ -35,5 +39,6 @@ uv run --project apps/api alembic -c apps/api/alembic.ini history --verbose
 uv run --project apps/api alembic -c apps/api/alembic.ini upgrade head
 ```
 
-Before DB-002, `heads` and `history` produce no revisions and `upgrade head` is
-a no-op. Do not create a baseline revision.
+Since DB-002 there is exactly one head, `ad3f80907336`
+(`create DB-002 core entities`). Alembic `target_metadata` is populated by
+`alembic/env.py` importing `app.db.models`.

@@ -2,14 +2,15 @@
 
 - Date prepared: 2026-08-01
 - Branch: `agent2/database`
-- Synchronized baseline: `6cf88f135215984424bec00994a05a1de1dd011e`
+- Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
-- Database scaffold: `IMPLEMENTED`; DB-DEP-011 final closure
-  `PENDING_INTEGRATION_VALIDATION`
-- Migration chain: bootstrap exists with zero heads and no revisions
-- Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
+- Database scaffold: `IMPLEMENTED`; DB-DEP-011:
+  `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
+- Migration chain: exactly one head, `ad3f80907336`
+- Domain schema: `IMPLEMENTED` for DB-002; DB-002:
+  `PASS_PENDING_A2_FINAL_REVIEW`; DB-002-C1: `PASS`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
   `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
@@ -21,7 +22,8 @@
 - Owning Agent 2: `A2-AUTH`
 - Required change and reason: Publish the versioned authenticated-user, external-auth-subject, GitHub-installation context, repository-access semantics, actor types, lifecycle requirements, and whether any local credential field is required. Database must not invent AUTH-owned identity fields.
 - Contract affected: `CONTRACT-AUTH-001`
-- Exact blocking task: `DB-002`; actor semantics also block `DB-005` and security-event attribution.
+- Historical blocking task: `DB-002`; actor semantics also govern `DB-005` and
+  security-event attribution. The Auth dependency is accepted for DB-002.
 - Backward-compatibility impact: Initial contract; future incompatible identifier or lifecycle changes would require a migration and consumer coordination.
 - Urgency: `HIGH`
 - Proposed acceptance test: Given two users, two installations, and two repositories, contract fixtures prove permitted access, denied cross-scope access, stable external-subject uniqueness, and no raw token/private-key storage.
@@ -56,7 +58,7 @@
 - Owning Agent 2: `A2-BACKEND`
 - Required change and reason: Publish versioned create/read/query shapes for repositories, run requests, runs, publications, human decisions, filtering, sorting, and pagination. These determine safe constraints and critical indexes.
 - Contract affected: `CONTRACT-API-001`
-- Exact blocking task: `DB-005` and DB-007 index validation. API-owned query fields touched during DB-002 remain provisional; CONTRACT-API-001 is a scoped constraint, not a universal DB-002 prerequisite.
+- Exact blocking task: `DB-005` and DB-007 index validation. DB-002 added no speculative index and no API-owned pagination, filter, sort, or repository display field; all remain deferred to CONTRACT-API-001 (see `DB-ISSUE-014`).
 - Backward-compatibility impact: Initial contract; later filter/sort changes should be additive or explicitly versioned.
 - Urgency: `HIGH`
 - Proposed acceptance test: OpenAPI fixtures round-trip UUID internal IDs and separate GitHub IDs, reject cross-scope identifiers, and exercise documented run-list/run-detail pagination and filters.
@@ -84,7 +86,8 @@
 - Owning Agent 2: `A2-AGENT-WORKFLOW`
 - Required change and reason: Publish canonical run states, workflow-step kinds, ordered event shape, retry/repair counters, failure codes, terminal transitions, attribution, and abstention semantics.
 - Contract affected: `CONTRACT-WORKFLOW-001`
-- Exact blocking task: `DB-002` run lifecycle and `DB-003`
+- Historical blocking task: `DB-002` run lifecycle. The dependency is accepted
+  for DB-002; DB-003 remains separately unstarted.
 - Backward-compatibility impact: High; enum removal/rename or event-semantic changes require coordinated migrations. Prefer additive versioning.
 - Urgency: `HIGH`
 - Proposed acceptance test: Contract fixtures cover the successful path, one bounded repair, abstention, cancellation, invalid transitions, ordered append-only events, and rejection of more than one automated repair.
@@ -118,6 +121,10 @@
     events, and ordering.
   - Event payloads contain bounded redacted metadata or opaque references only;
     no raw prompts, repository bytes, patch bytes, logs, or secrets.
+  - DB-002 implements and tests stored projection shape only. Allowed-transition
+    execution, compare/update concurrency, event/projection atomicity, terminal
+    update rejection, transition history, regeneration decision events, and
+    Workflow orchestration remain `NOT_IMPLEMENTED` / `NOT_TESTED`.
 
 ## `DB-DEP-005` — Evidence contract
 
@@ -140,7 +147,7 @@
 - Owning Agent 2: `A2-AGENT-WORKFLOW`
 - Required change and reason: Publish job envelope, source event identifiers, idempotency key, attempt/redelivery semantics, worker-result event, correlation ID, and poison/dead-letter handling so uniqueness constraints match at-least-once delivery.
 - Contract affected: `CONTRACT-QUEUE-001`
-- Exact blocking task: `DB-003`. Queue-owned idempotency/envelope fields touched during DB-002 remain provisional; CONTRACT-QUEUE-001 is a scoped constraint, not a universal DB-002 prerequisite.
+- Exact blocking task: `DB-003`. DB-002 did not persist any Queue-owned envelope, lease, visibility-timeout, or redelivery field; all remain deferred to CONTRACT-QUEUE-001.
 - Backward-compatibility impact: High; idempotency key changes can create duplicates. Version the envelope/key algorithm.
 - Urgency: `HIGH`
 - Proposed acceptance test: Replaying the same GitHub delivery GUID + repository ID + SHA and the same benchmark tuple links to one run request, while a legitimately different SHA/configuration creates a new request.
@@ -168,7 +175,7 @@
 - Owning Agent 2: `A2-SECURITY`
 - Required change and reason: Publish domain data classifications, redaction-result fields, security-event taxonomy, audit immutability requirements, IP/user metadata policy, retention/deletion constraints, and prohibited relational payloads.
 - Contract affected: `CONTRACT-SEC-001`
-- Exact blocking task: security-sensitive portions of DB-003 through DB-007. Security-owned fields touched during DB-002 remain provisional; CONTRACT-SEC-001 is a scoped constraint, not a universal DB-002 prerequisite.
+- Exact blocking task: security-sensitive portions of DB-003 through DB-007. DB-002 persisted no Security-owned redaction, classification, or event field, and stores no secret-bearing column; retention durations remain deferred to CONTRACT-SEC-001.
 - Backward-compatibility impact: Security controls may tighten additively; relaxation or event removal requires escalation.
 - Urgency: `HIGH`
 - Proposed acceptance test: Fixtures prove raw secrets and unredacted prompts/logs cannot enter normal relational fields, security events remain searchable and attributable, and artefact deletion preserves required audit metadata.
@@ -182,7 +189,7 @@
 - Owning Agent 2: `A2-DEPLOYMENT`
 - Required change and reason: Publish supported PostgreSQL version, connection/runtime variables, migration execution owner and ordering, pooling assumptions, object-storage metadata contract, backup/PITR targets, restore procedure, retention enforcement boundary, and observability requirements.
 - Contract affected: `CONTRACT-DEPLOY-001`
-- Exact blocking task: `DB-007` and `DB-008`; version choice should be known before DB-002 migration implementation.
+- Exact blocking task: `DB-007` and `DB-008`. The version question is resolved in practice: `CONTRACT-DEPLOY-001` and `compose.yml` pin PostgreSQL 16, and the DB-002 migration and tests are validated against server `16.14`. Backup, PITR, restore, retention enforcement, and observability requirements remain outstanding.
 - Backward-compatibility impact: Runtime variable and migration-command changes affect deployment and rollback; version them and retain a transition path.
 - Urgency: `HIGH`
 - Proposed acceptance test: A clean supported PostgreSQL instance applies all migrations, a representative snapshot restores, the application health check verifies connectivity, and object references resolve without public bucket access.
@@ -196,7 +203,7 @@
 - Owning Agent 2: `A2-INTEGRATION`
 - Required change and reason: Publish versioned component-handoff, dependency-resolution, contract-compatibility, schema/migration evidence, and release-readiness formats, including consumer acknowledgement requirements.
 - Contract affected: `CONTRACT-INTEGRATION-001`
-- Exact blocking task: `DB-005` integration coordination and final acceptance `DB-008`. Integration-owned fields touched during DB-002 remain provisional; CONTRACT-INTEGRATION-001 is not a universal DB-002 contract prerequisite. DB-DEP-011 separately blocks the shared implementation scaffold.
+- Exact blocking task: `DB-005` integration coordination and final acceptance `DB-008`. Integration-owned fields touched during DB-002 remain provisional; CONTRACT-INTEGRATION-001 is not a universal DB-002 contract prerequisite. DB-DEP-011 is closed. DB-DEP-010 remains relevant to DB-005 integration coordination and DB-008 final acceptance, but it is not a DB-002 blocker.
 - Backward-compatibility impact: Initial contract; later required evidence should be additive where possible.
 - Urgency: `MEDIUM`
 - Proposed acceptance test: A database handoff fixture identifies migration head, schema version, exact tests, consumers, unresolved requests, rollback procedure, and produces a deterministic release-readiness decision.
@@ -210,14 +217,21 @@
 - Owning Agent 2: `A2-INTEGRATION`
 - Required change and reason: Coordinate and record owner-approved creation of the shared Python/FastAPI workspace scaffold, dependency manifest and lockfile, test harness, environment schema, and local PostgreSQL development boundary required before A3-DATABASE can implement DB-002 without editing unowned protected files. Identify which files belong to A2-BACKEND, A2-DEPLOYMENT, and A2-DATABASE.
 - Contract affected: `CONTRACT-INTEGRATION-001` and `CONTRACT-DEPLOY-001`
-- Exact blocking task: `DB-002 implementation bootstrap`
+- Historical blocking task: `DB-002 implementation bootstrap`; resolved and
+  closed before DB-002 implementation.
 - Backward-compatibility impact: Initial scaffold. Package layout, dependency management, environment names, and migration execution command become shared conventions and must be versioned or changed through owner approval.
 - Urgency: `HIGH`
 - Proposed acceptance test: From a clean checkout, the approved repository-native commands create the Python environment, import the empty FastAPI package, load validated non-secret database settings, start or connect to the supported local PostgreSQL service, and collect the database test suite without A3-DATABASE modifying unowned protected files.
-- Approval status: `PENDING_INTEGRATION_VALIDATION`
+- Approval status: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
 - Completion evidence: A2-BACKEND dependency PR #5 merged at `11b8019`.
-  `DB-DEP011-DATABASE-SCAFFOLD-001-C1/C2` implements only Database-owned paths;
-  Alembic 1.18.5 reports zero heads, Database unit/bootstrap tests pass, and
-  authenticated temporary PostgreSQL 17.10 checks passed. Approved Compose
-  PostgreSQL 16 validation is `NOT_TESTED` because Docker was unavailable.
-  A2-INTEGRATION must repeat clean-checkout validation with that service.
+  `DB-DEP011-DATABASE-SCAFFOLD-001-C1/C2` implements only Database-owned paths.
+  A2-INTEGRATION recorded `INT-DBDEP011-POSTGRES16-001` as `PASS` at commit
+  `99c8022c9f44e6a54bed624aa0153be7e32f234b`, and closed DB-DEP-011 through
+  `INT-DBDEP011-CLOSEOUT-002` merged at
+  `8884b5d540351c735b6cddc01314a7dd9e25af05`.
+- DB-002 consumption: the scaffold supported DB-002 unchanged. No manifest,
+  lockfile, environment, Compose, container, CI, or Deployment file was
+  modified, and no new dependency or environment variable was required. The
+  DB-002 migration tests reuse the existing `MIGRATION_DATABASE_URL` role
+  against the existing `TEST_DATABASE_URL` database, exactly as
+  `CONTRACT-DEPLOY-001` defines those roles.

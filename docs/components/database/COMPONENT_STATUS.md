@@ -1,55 +1,135 @@
 # Database Component Status
 
-## Current state — DB-WORKFLOW-CONTRACT-MERGE-001
+## Current state — DB-002
+
+- Date: 2026-08-01
+- Task: `DB-002 — Core identity, repository-context, run-request, and run
+  persistence`
+- Scope: `IMPLEMENTATION`
+- Branch: `agent2/database`
+- Baseline commit: `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Result: `DB-002` `PASS_PENDING_A2_FINAL_REVIEW`; `DB-002-C1` `PASS`.
+- Accepted contracts implemented against: `CONTRACT-AUTH-001@1.0.0-draft.2`
+  (`ACKNOWLEDGED_AND_MERGED`) and `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
+  (`ACKNOWLEDGED_AND_MERGED`).
+- `DB-DEP-001`: `ACCEPTED`. `DB-DEP-004`: `ACCEPTED`.
+- `DB-DEP-011`: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
+- Database domain schema: `IMPLEMENTED` — seven DB-002 tables.
+- Alembic state: exactly one head, `ad3f80907336`
+  (`create DB-002 core entities`), down revision `None`.
+- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- Workflow runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- `DB-003`: `NOT_STARTED`; no step, attempt, event, ordering, or transition
+  record was created.
+
+### Implemented DB-002 entities
+
+| Table | Domain | Contract source |
+|---|---|---|
+| `users` | Canonical users | `CONTRACT-AUTH-001` |
+| `auth_subjects` | External authentication subjects | `CONTRACT-AUTH-001` |
+| `github_installations` | GitHub App installations | `CONTRACT-AUTH-001` |
+| `repositories` | GitHub repositories | `CONTRACT-AUTH-001` |
+| `repository_access` | Repository-access grants | `CONTRACT-AUTH-001` |
+| `run_requests` | Run requests | `CONTRACT-WORKFLOW-001` |
+| `runs` | Current run projection | `CONTRACT-WORKFLOW-001` |
+
+Full field, constraint, index, and lifecycle documentation is in
+`docs/data/database-schema.md`.
+
+### DB-002 validation evidence
+
+| Check | Result |
+|---|---|
+| `uv sync --project apps/api --all-groups --locked` | `PASS`; no manifest or lockfile change |
+| Compose PostgreSQL 16 service | `PASS`; `postgres:16.14-alpine3.24`, server `16.14`, healthy |
+| `alembic -c apps/api/alembic.ini heads` | `PASS`; exactly one head `ad3f80907336` |
+| Upgrade from empty test database | `PASS`; seven DB-002 tables, 55 constraints, 21 indexes |
+| Downgrade to base | `PASS`; zero DB-002 tables remain |
+| Second upgrade to head | `PASS`; identical constraint and index counts restored |
+| Database tests (`tests/database`) | `PASS`; 169 passed |
+| Backend tests (`tests/api`) | `PASS`; 5 passed |
+| Full suite (`tests`) | `PASS`; 174 passed |
+| Forbidden DB-003/later tables | `ABSENT`; migrated schema is exactly the seven DB-002 tables plus `alembic_version` |
+| Secret-bearing columns | `ABSENT`; asserted over both ORM metadata and reflected columns |
+| `git diff --check` | `PASS` |
+
+### Accepted-semantics preservation
+
+- Internal identifiers are UUIDs; every external identifier
+  (GitHub numeric IDs, delivery GUIDs, commit SHAs, benchmark IDs, model IDs,
+  prompt versions, correlation IDs) is separately typed and never populates a
+  UUID.
+- Issuer and subject storage and comparison are exact and case-sensitive on a
+  plain `(issuer, subject)` unique constraint. No `citext`, no functional
+  case-folding index, and no Database normalization of any kind.
+- GitHub installation and repository numeric IDs are each unique.
+- Repository access is scoped to the exact user + installation + repository
+  tuple, with a partial unique index restricted to `ACTIVE` grants so historical
+  revoked and expired grants remain stored and a later re-grant stays
+  representable.
+- `expires_at`, `expired_at`, and `revoked_at` retain distinct meanings, and an
+  `ACTIVE` grant with a past `expires_at` remains storable pending delayed
+  status reconciliation.
+- All twenty canonical `RunState` values are persisted as exact uppercase text;
+  no transition order is inferred from declaration order and no transition
+  service exists.
+- `repair_attempts_used` is constrained to `0..1`; retry counters are separate
+  and bounded by the snapshotted `retry_limit`.
+- Request idempotency uses a versioned composition with a persisted key version,
+  a bounded digest, and a request fingerprint for conflict detection.
+- No password, hash, token, private key, webhook secret, session token, raw
+  Authorization header, raw prompt, repository byte, patch byte, or execution
+  log is stored.
+
+### Runtime-enforcement boundary
+
+- `IMPLEMENTED` / `TESTED`: allowed stored `RunState` values; terminal and
+  non-terminal row-shape consistency; counter bounds; failure, abstention, and
+  cancellation code consistency; optimistic-concurrency version storage; and
+  terminal-attribution storage.
+- `NOT_IMPLEMENTED` / `NOT_TESTED`: allowed-transition execution; an
+  expected-state-and-version compare/update operation; atomic projection/event
+  mutation; append-only transition history; terminal-state update rejection
+  after commit; regeneration decision-event persistence; and Workflow
+  orchestration.
+- DB-002 has no transition trigger or service. Terminal immutability remains a
+  Workflow runtime and DB-003 event-history requirement, not a DB-002 database
+  enforcement claim.
+
+### Deliberate DB-002 exclusions
+
+Workflow steps, attempts, append-only events, event ordering, producer-event
+idempotency, transition history, context selections, candidate patches, patch
+contents, execution evidence and attempts, artefact metadata, publications,
+human decisions, benchmark cases, evaluation results, audit and security events,
+model and cost telemetry, notifications, generic organizations, tenants, roles,
+permissions, billing, API-key tables, embedding tables, pgvector, Auth runtime,
+Workflow runtime, API routes, service orchestration, queue consumers, automatic
+publication, and orchestration triggers were all deliberately not created.
+
+## Historical DB-WORKFLOW-CONTRACT-MERGE-001
 
 - Date: 2026-08-01
 - Task: `DB-WORKFLOW-CONTRACT-MERGE-001`
 - Scope: `DOCUMENTATION_ONLY`
-- Prompt type: `POST_MERGE_CONTRACT_RECONCILIATION`
-- Starting commit: `6cf88f135215984424bec00994a05a1de1dd011e`
+- Result: `PASS`
 - Synchronized commit: `6cf88f135215984424bec00994a05a1de1dd011e`
-- Branch: `agent2/database`
-- Synchronization: already equal to fetched `origin/main`, including Workflow
-  PR #8 merge commit `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`
-  and latest required PR #9 merge commit
-  `6cf88f135215984424bec00994a05a1de1dd011e`.
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`.
-- `DB-DEP-001`: `ACCEPTED`.
-- `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
-  `ACKNOWLEDGED_AND_MERGED`.
+- `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`.
 - Workflow semantic commit: `a7c83f422bb51deefd233229c7573fda64b097b6`.
 - Database acknowledgement commit:
   `5eb2e98d5a8189b5a4da3f3f5d0dc0013dca3dc0`.
-- Database consumer decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`.
-- `DB-DEP-004`: `ACCEPTED`.
-- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
-- Workflow runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
-- Database domain schema: `NOT_STARTED`.
-- Result: `DB-WORKFLOW-CONTRACT-MERGE-001` `PASS`.
-- `DB-001`: `PASS`, reviewed, and merged in PR #1; PR head commit `ea5f1f0`; merged through merge commit `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`.
+- `DB-001`: `PASS`, reviewed, and merged in PR #1; PR head commit `ea5f1f0`;
+  merged through merge commit `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`.
 - `DB-001-C1`: historical completed continuation.
 - `DB-DEP011-DATABASE-SCAFFOLD-001`: historical `DEPENDENCY_BLOCKED` attempt.
 - C1/C2 result: `IMPLEMENTED`, reviewed, and merged through Database PR #6 and
   merge commit `739a331c9942ed64a1ad8276d611889bbee53a27`.
-  A2-INTEGRATION PostgreSQL 16 validation remains pending.
 - Implemented: synchronous SQLAlchemy/psycopg 3 engine, session factory,
   request-session dependency, safe runtime/migration URL resolution,
   reusable test-database safety validation, connectivity helper, empty-metadata
   Alembic bootstrap, tests, and docs.
-- Alembic state: zero heads, no revision Python files, and zero domain tables.
-- Test classification: Database unit/bootstrap tests `PASSED`; authenticated
-  temporary PostgreSQL 17.10 checks `PASSED`; approved Compose PostgreSQL 16
-  validation `NOT_TESTED`.
-- Compose blocker: exact Docker Compose commands were `BLOCKED` because Docker
-  was unavailable. A2-INTEGRATION must repeat clean-checkout validation using
-  the approved PostgreSQL 16 Compose service.
-- Scope: DB-002 has not begun. No model, domain table, Auth/Workflow field, or
-  Alembic revision was created.
-- No Workflow or Database runtime implementation was performed. No domain model,
-  table, enum, constraint, index, migration, fixture, or test was created.
-- Current blocker: DB-002 remains `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`;
-  the accepted Auth and Workflow dependencies do not authorize implementation.
-- A3-DATABASE has no DB-002 implementation authorization.
 
 ## Historical completed DB-001/DB-001-C1 reconciliation
 
@@ -141,9 +221,8 @@ absent.
   accepted Auth and Workflow contracts. Auth is satisfied by
   `CONTRACT-AUTH-001@1.0.0-draft.2`; Workflow is satisfied by
   `CONTRACT-WORKFLOW-001@1.0.0-draft.1` and accepted `DB-DEP-004`.
-- Shared scaffold status: implemented at the Database boundary. DB-DEP-011
-  Database implementation review is complete; final closure awaits only
-  A2-INTEGRATION clean-checkout PostgreSQL 16 validation.
+- Shared scaffold status: `DB-DEP-011` is `ACCEPTED / VERIFIED_COMPLETE /
+  CLOSED` after A2-INTEGRATION clean-checkout PostgreSQL 16 validation.
 - API, Queue, Security, Deployment, and Integration inputs remain scoped constraints where their owned fields or protected files are touched; they are not universal direct contract prerequisites for DB-002.
 - No upstream-owned field is frozen.
 
@@ -152,16 +231,16 @@ absent.
 | Area | Classification | Actual state and evidence |
 |---|---|---|
 | PostgreSQL/SQLAlchemy scaffold | `IMPLEMENTED` | Synchronous psycopg 3 engine/session/configuration exists |
-| Alembic setup | `IMPLEMENTED` | Bootstrap configuration and empty metadata exist |
-| Migration chain | `IMPLEMENTED` bootstrap | Zero heads and no revisions |
-| Domain schema | `NOT_STARTED` | Zero domain tables; DB-002 was not run |
-| Users/auth-subject persistence | `BLOCKED` | Auth contract accepted; implementation not authorized while DB-002 remains blocked |
-| GitHub installation persistence | `BLOCKED` | Auth contract accepted; Integration details and DB-002 readiness remain unresolved |
-| Repository access | `BLOCKED` | Auth contract accepted; implementation not authorized while DB-002 remains blocked |
-| Repositories | `BLOCKED` | Auth contract accepted; API/Integration-owned query fields and DB-002 readiness remain provisional |
-| Run requests | `BLOCKED` | Missing; accepted Workflow semantics apply, while API/Queue/Security-owned fields remain provisional; DB-002 awaits final readiness assessment |
-| Runs | `BLOCKED` | Missing; accepted Workflow semantics apply; DB-002 awaits final readiness assessment |
-| Workflow steps/events | `BLOCKED` | Missing; DB-003 owns these records and still has scoped Queue dependencies |
+| Alembic setup | `IMPLEMENTED` | Configuration plus `target_metadata` containing every DB-002 model |
+| Migration chain | `IMPLEMENTED` | Exactly one head `ad3f80907336`; upgrade/downgrade/upgrade validated on PostgreSQL 16.14 |
+| Domain schema | `IMPLEMENTED` for DB-002 | Seven DB-002 tables; DB-003 and later domains remain absent |
+| Users/auth-subject persistence | `IMPLEMENTED` | `users` and `auth_subjects` with exact case-sensitive `(issuer, subject)` uniqueness |
+| GitHub installation persistence | `IMPLEMENTED` | `github_installations` with a unique GitHub numeric installation ID and no token or key storage |
+| Repository access | `IMPLEMENTED` | `repository_access` scoped to the exact tuple with an `ACTIVE`-only partial unique index |
+| Repositories | `IMPLEMENTED` | `repositories` with a unique GitHub numeric repository ID; API/Integration-owned display and query fields remain deferred |
+| Run requests | `IMPLEMENTED` | `run_requests` with versioned idempotency uniqueness and kind-shape constraints; Queue/Security-owned fields remain deferred |
+| Runs | `IMPLEMENTED` | `runs` current projection with canonical state, counter, terminal, and attribution constraints |
+| Workflow steps/events | `NOT_STARTED` | Deliberately absent; DB-003 owns these records and still has scoped Queue dependencies |
 | Context selections | `BLOCKED` | Missing; awaits CONTRACT-RAG-001 |
 | Candidate patches | `BLOCKED` | Missing; awaits CONTRACT-EVIDENCE-001 |
 | Execution attempts | `BLOCKED` | Missing; accepted Workflow semantics apply; awaits Evidence contract |
@@ -172,24 +251,24 @@ absent.
 | Evaluation results | `BLOCKED` | Missing; awaits CONTRACT-EVAL-001 |
 | Audit/security events | `BLOCKED` | Missing; awaits CONTRACT-SEC-001 |
 | Model and cost telemetry | `BLOCKED` | Missing; accepted Workflow semantics apply; awaits Evaluation and Security contracts; billing is out of scope |
-| Database unit/bootstrap tests | `PASS` | Safety, configuration, engine, session, dependency, connectivity-helper, and zero-head checks pass |
+| Database unit/bootstrap tests | `PASS` | 169 Database tests pass, covering scaffold safety plus DB-002 schema, migration cycle, Auth constraints, and Workflow projection constraints |
 | Authenticated PostgreSQL checks | `PASS` | Temporary PostgreSQL 17.10 checks passed |
-| Approved Compose PostgreSQL 16 validation | `NOT_TESTED` | Docker unavailable; A2-INTEGRATION must run clean-checkout validation |
-| Index documentation | `PARTIAL` | Requirements mention critical lookups, but no schema-specific index plan exists |
+| Approved Compose PostgreSQL 16 validation | `PASS` | DB-002 validated against the Compose `postgres:16.14-alpine3.24` service, server `16.14` |
+| Index documentation | `IMPLEMENTED` for DB-002 | Every DB-002 index is documented in `docs/data/database-schema.md` with its query, selectivity, uniqueness, and lifecycle implication; DB-007 still owns whole-schema index validation |
 | Retention documentation | `PARTIAL` | Principles exist, but durations and deletion semantics await Security/Deployment contracts |
 | Organization tenancy and enterprise RBAC | `OUT_OF_SCOPE` | Explicit MVP non-goal |
 | Billing schema | `OUT_OF_SCOPE` | Explicit MVP non-goal |
 | Generic document ingestion | `OUT_OF_SCOPE` | Explicit MVP non-goal |
 | Mandatory pgvector baseline | `DEPRECATED` | Superseded by deterministic retrieval first; optional feature flag only |
 
-Infrastructure is implemented; domain persistence remains intentionally absent.
-The accepted Auth and Workflow prerequisites are merged. DB-002 remains
-blocked pending the separate final Database readiness assessment; this task
-does not mark it ready.
+Infrastructure and the DB-002 domain persistence are implemented against the
+merged Auth and Workflow contracts. Every later domain remains intentionally
+absent and awaits its own contract and task authorization.
 
 ## Generic schema keep/adapt/reject matrix
 
-No generic entity has an `ALREADY_IMPLEMENTED_EQUIVALENT`, because there is no application schema.
+This is the historical DB-001 generic-schema disposition. At that time no
+application schema existed; DB-002 has since implemented its seven-table slice.
 
 | Generic entity | Decision | TestGap Miner treatment |
 |---|---|---|
@@ -218,19 +297,19 @@ No generic entity has an `ALREADY_IMPLEMENTED_EQUIVALENT`, because there is no a
 | APIKeys | `REJECT` | Raw secrets belong in managed secret storage, not database tables |
 | UsageCostRecords | `ADAPT` | Model/tool usage and cost telemetry only; no billing ledger |
 
-## Provisional TestGap Miner schema map
+## Historical DB-001 provisional schema map with current DB-002 disposition
 
 This is a domain map, not a frozen field list. Internal identifiers are UUIDs. GitHub numeric identifiers and delivery GUIDs remain separate external values. Object bytes and large logs remain in private object storage.
 
 | Domain | Purpose and ownership | Likely ID / important uniqueness | Data handling | Required contract | DB-002 readiness |
 |---|---|---|---|---|---|
-| users | Minimal local principal; DB persistence, AUTH semantics | UUID; AUTH-defined subject linkage | `CONFIDENTIAL` PII; relational | AUTH | `BLOCKED` |
-| auth_subjects | Map external provider subjects to users; AUTH owns provider semantics | UUID; unique provider + external subject | `CONFIDENTIAL`; relational; no password hash unless AUTH requires it | AUTH | `BLOCKED` |
-| github_installations | Persist GitHub App installation identity, never tokens | UUID; unique GitHub numeric installation ID | `INTERNAL`; relational; secrets external | AUTH; Integration is a scoped constraint | `BLOCKED` |
-| repository_access | Scope user/install/repository access | UUID or composite; unique user + installation + repository | `INTERNAL`; relational | AUTH | `BLOCKED` |
-| repositories | Repository identity and relevant SHA metadata | UUID; unique GitHub numeric repository ID, external IDs separate | `INTERNAL`; relational metadata; source bytes external/ephemeral | AUTH direct; API/Integration scoped | `BLOCKED` |
-| run_requests | Durable invocation and idempotency boundary | UUID; unique contract-defined idempotency key | `CONFIDENTIAL`; relational metadata; large input external/redacted | WORKFLOW direct; API/Queue/Security scoped | `BLOCKED` |
-| runs | Current lifecycle/provenance for one execution | UUID; request/attempt uniqueness defined by WORKFLOW | `INTERNAL`; relational | WORKFLOW, EVIDENCE | `BLOCKED` |
+| users | Minimal local principal; DB persistence, AUTH semantics | UUID; AUTH-defined subject linkage | `CONFIDENTIAL` PII; relational | AUTH | `IMPLEMENTED` in DB-002 |
+| auth_subjects | Map external provider subjects to users; AUTH owns provider semantics | UUID; unique provider + external subject | `CONFIDENTIAL`; relational; no password hash unless AUTH requires it | AUTH | `IMPLEMENTED` in DB-002 |
+| github_installations | Persist GitHub App installation identity, never tokens | UUID; unique GitHub numeric installation ID | `INTERNAL`; relational; secrets external | AUTH; Integration is a scoped constraint | `IMPLEMENTED` in DB-002 |
+| repository_access | Scope user/install/repository access | UUID or composite; unique user + installation + repository | `INTERNAL`; relational | AUTH | `IMPLEMENTED` in DB-002 |
+| repositories | Repository identity and relevant SHA metadata | UUID; unique GitHub numeric repository ID, external IDs separate | `INTERNAL`; relational metadata; source bytes external/ephemeral | AUTH direct; API/Integration scoped | `IMPLEMENTED` in DB-002 |
+| run_requests | Durable invocation and idempotency boundary | UUID; unique contract-defined idempotency key | `CONFIDENTIAL`; relational metadata; large input external/redacted | WORKFLOW direct; API/Queue/Security scoped | `IMPLEMENTED` in DB-002 |
+| runs | Current lifecycle/provenance for one execution | UUID; request/attempt uniqueness defined by WORKFLOW | `INTERNAL`; relational | WORKFLOW, EVIDENCE | `IMPLEMENTED` in DB-002 |
 | workflow_steps | Ordered step attempts and outcomes | UUID; unique run + contract-defined sequence/attempt | `INTERNAL`; relational; large inputs/outputs external | WORKFLOW | `OUT_OF_SCOPE` for DB-002; DB-003 |
 | run_events | Append-only attributable timeline | UUID; unique run + monotonic contract event position/idempotency token | `INTERNAL`; relational; redacted payloads | WORKFLOW, QUEUE, SEC | `OUT_OF_SCOPE` for DB-002; DB-003 |
 | context_selections | Record ranked repository context used by a run | UUID; unique run + context item/version/rank rule | `CONFIDENTIAL`; relational references; file bytes external | RAG, SEC | `OUT_OF_SCOPE` for DB-002; DB-004 |
