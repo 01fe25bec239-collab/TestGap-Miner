@@ -1,44 +1,52 @@
 # Latest A3-INTEGRATION Handoff
 
-## INT-DBDEP011-003 result
+## Result
 
-- Result: `PASS` — final coordinated ownership decision recorded and validated.
-- Worktree: `/private/tmp/testgap-integration-dbdep011`.
-- Branch: `agent2/integration-dbdep011`.
-- Starting commit: `e8dfd8d022324c5509dbb2db7c71544e7a06d36d`.
-- No scaffold implementation, DB-002 work, owner implementation prompt, or application/deployment/database/test artifact was performed.
+- Task: `INT-DBDEP011-CLOSEOUT-002`.
+- Validation task: `INT-DBDEP011-POSTGRES16-001`.
+- Result: `PASS`.
+- DB-DEP-011: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
+- Tested commit: `99c8022c9f44e6a54bed624aa0153be7e32f234b`.
+- Repository: `/Users/omkar/Documents/TestGap Miner_App`.
+- Branch: `agent2/integration-dbdep011-closeout`.
+- Scope: Integration documentation only; DB-002 was not started.
 
-## Documents inspected and changed
+## Validation evidence recorded
 
-Inspected completely: `COMPONENT_STATUS.md`, `TASK_LEDGER.md`, `OPEN_ISSUES.md`, `DECISION_LOG.md`, `DEPENDENCY_REQUESTS.md`, and this handoff.
+- Docker client/server `29.6.2`; Docker Compose `5.3.1`.
+- PostgreSQL image `postgres:16.14-alpine3.24`; server `16.14`; service `postgres` healthy.
+- Runtime `testgap` and isolated test database `testgap_test` passed Database-owned SQLAlchemy `SELECT 1` checks.
+- Alembic reported zero heads and zero revisions; no-op `upgrade head` passed.
+- Database tests: 23 passed. Backend tests: 5 passed. Full suite: 28 passed, 0 failed, 0 skipped.
+- No domain model, domain table, DB-002 implementation, real secret, protected-file ownership conflict, or validation-worktree change was found.
+- Port 5432 was occupied; the approved loopback `POSTGRES_HOST_PORT` override used port 55478.
+- Non-blocking limitation: fresh-volume initialization was not repeated; retained-volume idempotent provisioning passed.
 
-Changed exactly: `docs/components/integration/COMPONENT_STATUS.md`, `docs/components/integration/TASK_LEDGER.md`, `docs/components/integration/OPEN_ISSUES.md`, `docs/components/integration/DECISION_LOG.md`, `docs/components/integration/DEPENDENCY_REQUESTS.md`, and `docs/components/integration/LATEST_AGENT3_HANDOFF.md`.
+## Closure changes
 
-## Recorded decision
+Changed exactly the six Integration-owned records:
 
-- All three owner acknowledgements are accepted; the exact four-owner matrix is in `COMPONENT_STATUS.md`.
-- Compatibility is frozen to uv, Python `>=3.11,<3.13`, synchronous SQLAlchemy `Session`/psycopg 3/Alembic, PostgreSQL 16 (`postgres:16.14-alpine3.24`), service `postgres`, and the stated package/ASGI/settings/test paths.
-- Environment, role boundaries, explicit Alembic commands and precedence, test-database provisioning, merge order, and rollback boundaries are in `DECISION_LOG.md`.
-- DB-DEP-011 remains `PENDING`; scaffold implementation remains `NOT_STARTED`; DB-002 remains `BLOCKED`; combined clean-checkout evidence is absent.
+1. `docs/components/integration/COMPONENT_STATUS.md`
+2. `docs/components/integration/TASK_LEDGER.md`
+3. `docs/components/integration/OPEN_ISSUES.md`
+4. `docs/components/integration/DECISION_LOG.md`
+5. `docs/components/integration/DEPENDENCY_REQUESTS.md`
+6. `docs/components/integration/LATEST_AGENT3_HANDOFF.md`
 
-## Commands and evidence
+The records close obsolete scaffold-absence issues, mark `INT-DBDEP011-004` and final PostgreSQL validation complete, record merged Auth and Workflow Database reconciliations, and close DB-DEP-011.
 
-- `git rev-parse --show-toplevel` → `/private/tmp/testgap-integration-dbdep011`.
-- `git rev-parse HEAD` → `e8dfd8d022324c5509dbb2db7c71544e7a06d36d` before edits.
-- `git branch --show-current` → `agent2/integration-dbdep011`.
-- `git status --short --branch` and `git status --porcelain=v1 --untracked-files=all` → clean before edits.
-- `git remote -v` → origin fetch/push `https://github.com/01fe25bec239-collab/TestGap-Miner.git`.
-- `git worktree list --porcelain` → required integration worktree is present at the required baseline.
-- Post-edit validation and staged-commit evidence are recorded by the commit commands for this task.
+## DB-002 boundary
+
+DB-002 is `NOT_STARTED`. A2-DATABASE must perform a separate readiness assessment and obtain explicit authorization before implementation. This handoff does not issue an A3-DATABASE prompt.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: six Integration decision records only.
-- `TESTED`: worktree, baseline, branch, status, remote, worktree, complete-record review, ownership-record, and diff-scope validation.
-- `NOT_TESTED`: dependency installation, FastAPI import, settings loading, PostgreSQL startup, migration, test collection, CI, deployment, and clean-checkout scaffold acceptance.
-- `BLOCKED`: owner-specific scaffold commits; clean-checkout combined-scaffold evidence; Auth and Workflow DB-002 prerequisites; integration-commit remote accessibility.
-- `ASSUMED`: the three acknowledgement results supplied as reviewed by A2-INTEGRATION are accepted; no owner implementation evidence exists.
+- `IMPLEMENTED`: Integration closure records only; the owner scaffolds were already merged.
+- `TESTED`: final clean-checkout PostgreSQL 16 validation evidence recorded from `INT-DBDEP011-POSTGRES16-001`.
+- `NOT_TESTED`: fresh-volume initialization, production, and CI runtime.
+- `BLOCKED`: DB-002 pending separate A2-DATABASE readiness assessment and authorization; no DB-DEP-011 blocker remains.
+- `ASSUMED`: supplied successful validation evidence is authoritative for this documentation-only closeout.
 
-## Recommended next task
+## Recommended next action
 
-Issue the owner-specific scaffold implementation tasks in the approved merge order, then run INT-DBDEP011-004 from a clean checkout.
+A2-DATABASE performs the final DB-002 readiness assessment after this DB-DEP-011 closure is accepted and recorded. Do not begin DB-002 without explicit authorization.

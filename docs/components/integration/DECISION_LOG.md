@@ -39,10 +39,21 @@ uv run --project apps/api alembic -c apps/api/alembic.ini history --verbose
 uv run --project apps/api alembic -c apps/api/alembic.ini upgrade head
 ```
 
-All commands are `PROPOSED_COMMAND — NOT_YET_EXECUTABLE`. Connection precedence is: (1) `MIGRATION_DATABASE_URL` when present; (2) `DATABASE_URL` only for explicitly permitted local development; (3) `TEST_DATABASE_URL` only when deliberately mapped into `MIGRATION_DATABASE_URL` for migration testing. Zero heads are acceptable before DB-002. DB-DEP-011 creates no domain model or revision. Once DB-002 creates the first revision, exactly one head is required. Only A2-DATABASE authors revisions; Deployment executes but does not own migration contents.
+The final PostgreSQL 16 validation executed the applicable commands successfully: zero heads, zero revisions, and a no-op `upgrade head`. Connection precedence is: (1) `MIGRATION_DATABASE_URL` when present; (2) `DATABASE_URL` only for explicitly permitted local development; (3) `TEST_DATABASE_URL` only when deliberately mapped into `MIGRATION_DATABASE_URL` for migration testing. Zero heads are acceptable before DB-002. DB-DEP-011 creates no domain model or revision. Once DB-002 creates the first revision, exactly one head is required. Only A2-DATABASE authors revisions; Deployment executes but does not own migration contents.
 
 Test database provisioning is owned by A2-DEPLOYMENT at `docker/postgres/init/10-create-test-database.sh`. It runs only in local or CI, creates `testgap_test` idempotently, never runs in production, and no Alembic revision creates the database. CI uses isolated project-scoped storage and project-scoped cleanup. Database retains schema-migration ownership inside `testgap_test`.
 
 ## INT-DEC-011 — Merge and rollback boundary
 
 The final merge order and owner-specific rollback allocations are approved in `COMPONENT_STATUS.md`. Applied migrations and shared consumed contracts require coordinated rollback; environment-variable renames require coordinated compatibility and rollback planning.
+
+## INT-DEC-012 — DB-DEP-011 final acceptance
+
+- Status: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
+- Validation: `INT-DBDEP011-POSTGRES16-001` returned `PASS` against commit `99c8022c9f44e6a54bed624aa0153be7e32f234b`.
+- Evidence: PostgreSQL `16.14` ran healthy from `postgres:16.14-alpine3.24`; runtime and isolated test connectivity passed; Alembic remained at zero heads/revisions; the no-op upgrade and all 28 tests passed with zero failures and zero skips.
+- Scope: no domain model, domain table, DB-002 implementation, real secret, or ownership conflict was introduced.
+- Local port: because 5432 was occupied, the approved loopback `POSTGRES_HOST_PORT=55478` override was used.
+- Limitation: fresh-volume initialization was not repeated; retained-volume idempotent provisioning passed and is non-blocking.
+- Auth and Workflow Database reconciliations are merged through PRs #9 and #10.
+- DB-002 remains `NOT_STARTED` pending a separate A2-DATABASE readiness assessment and explicit authorization.

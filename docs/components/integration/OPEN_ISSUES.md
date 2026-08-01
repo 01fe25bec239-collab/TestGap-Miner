@@ -7,30 +7,32 @@
 
 ## INT-ISSUE-002 — Integration coordination commit remote accessibility
 
-- Classification: `OPEN`
-- Evidence: the integration coordination commit is local to `agent2/integration-dbdep011`; remote accessibility is not evidenced by this validation-only task.
-- Resolution: publish or otherwise provide remote commit evidence when authorized.
+- Classification: `CLOSED`
+- Evidence: the coordinated scaffold and reconciliations are merged in `origin/main` through tested commit `99c8022c9f44e6a54bed624aa0153be7e32f234b`.
 
 ## INT-ISSUE-003 — Scaffold implementation absent
 
-- Classification: `BLOCKED`
-- Evidence: no workspace, environment, Compose, database/Alembic, or shared-test scaffold implementation exists.
-- Resolution: await the owner-specific scaffold commits in the approved order.
+- Classification: `CLOSED`
+- Evidence: Backend, Deployment, and Database scaffold implementations are merged and passed final Integration validation.
 
 ## INT-ISSUE-004 — Owner-specific commits absent
 
-- Classification: `BLOCKED`
-- Evidence: no Backend, Deployment, or Database scaffold commit is available for cross-component validation.
-- Resolution: owners deliver their bounded scaffold commits.
+- Classification: `CLOSED`
+- Evidence: Backend PR #5, Deployment PR #4, and Database PR #6 are merged and contained in the tested commit.
 
-## INT-ISSUE-005 — Auth and Workflow remain DB-002 blockers
+## INT-ISSUE-005 — Auth and Workflow Database reconciliations
 
-- Classification: `BLOCKED`
-- Evidence: DB-002 still requires the Auth and Workflow prerequisite contracts.
-- Resolution: do not begin DB-002 until those blockers are resolved by their owners.
+- Classification: `CLOSED`
+- Evidence: Auth Database reconciliation PR #9 and Workflow Database reconciliation PR #10 are merged in the tested commit.
+- Boundary: this closes the reconciliation issue but does not start or authorize DB-002.
 
 ## INT-ISSUE-006 — Clean-checkout combined-scaffold evidence absent
 
-- Classification: `BLOCKED`
-- Evidence: the committed owner scaffolds, runtime, and test harness do not exist.
-- Resolution: INT-DBDEP011-004 validates the combined scaffold from a clean checkout after owner commits.
+- Classification: `CLOSED`
+- Evidence: `INT-DBDEP011-POSTGRES16-001` passed from a clean checkout; PostgreSQL 16, connectivity, Alembic, schemas, and 28 tests passed with zero skips.
+
+## INT-ISSUE-007 — DB-002 readiness and authorization
+
+- Classification: `OPEN / OUTSIDE_DB-DEP-011`
+- Evidence: DB-DEP-011 is closed, but DB-002 was not implemented or assessed by Integration closeout.
+- Resolution: A2-DATABASE performs a separate readiness assessment and obtains explicit authorization before DB-002 begins.

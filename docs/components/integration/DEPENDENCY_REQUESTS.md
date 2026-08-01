@@ -20,4 +20,14 @@
 - Approval status: `ACCEPTED` / `VERIFIED_COMPLETE`.
 - Preserved response summary: accepts primary ownership of DB/ORM/Alembic paths, database tests, data and component records, `CONTRACT-DB-001`, synchronous SQLAlchemy/psycopg 3 semantics, migrations, ordering, and schema-validation requirements. Approves the explicit Alembic configuration path, the stated connection precedence, zero heads before DB-002, exactly one head after its first revision, and Database-only authorship of revisions. Database rollback is limited to its unmerged Alembic bootstrap and DB-fixture commit.
 
-No implementation request is created by INT-DBDEP011-003. Owner-specific scaffold requests and commits are the prerequisite for INT-DBDEP011-004.
+## DB-DEP-011 closure evidence
+
+- Backend scaffold: merged through PR #5.
+- Deployment scaffold: merged through PR #4.
+- Database scaffold: implementation commit `4daa4967e4cb4963ee82c7a1c9fdc7336fe7e6a7`, merged through PR #6 at `739a331c9942ed64a1ad8276d611889bbee53a27`.
+- Auth Database reconciliation: PR #9, merge `6cf88f135215984424bec00994a05a1de1dd011e`.
+- Workflow Database reconciliation: PR #10, merge and tested commit `99c8022c9f44e6a54bed624aa0153be7e32f234b`.
+- Final Integration validation: `INT-DBDEP011-POSTGRES16-001` returned `PASS`.
+- Dependency result: `DB-DEP-011` is `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
+
+No DB-002 implementation request or authorization is created by this closure. A2-DATABASE owns the separate readiness assessment.
