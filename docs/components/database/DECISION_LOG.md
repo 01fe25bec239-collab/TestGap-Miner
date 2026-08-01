@@ -1,8 +1,8 @@
 # Database Decision Log
 
-- Date reconciled: 2026-07-30
+- Date reconciled: 2026-07-31
 - Branch: `agent2/database`
-- Current scaffold baseline: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- Synchronized baseline: `f54f8755c0589db704bd0f94c891da11c42398a6`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -10,7 +10,8 @@
   `PENDING_INTEGRATION_VALIDATION`
 - Migration chain: bootstrap exists with zero heads and no revisions
 - Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
-- `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001`: `PENDING`
+- `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
+- Workflow: separate verified Database post-merge reconciliation required
 
 ## `DB-DEC-001` — Persistence baseline
 
@@ -38,7 +39,9 @@
 ## `DB-DEC-005` — Secret and identity handling
 
 - Status: `VERIFIED_COMPLETE` as an approved documentation decision; implementation is `BLOCKED`.
-- Decision: never store raw private keys, installation tokens, provider keys, API keys, or other secrets in ordinary tables. Do not add local password hashes unless CONTRACT-AUTH-001 explicitly requires them.
+- Decision: never store raw private keys, installation tokens, provider keys,
+  API keys, password hashes, local credentials, or other secrets in ordinary
+  tables. `CONTRACT-AUTH-001@1.0.0-draft.2` requires no local credential field.
 
 ## `DB-DEC-006` — Retrieval persistence
 
@@ -59,7 +62,10 @@
 
 - Status: `VERIFIED_COMPLETE`.
 - Decision: DB-001 may document provisional domains, but it does not freeze fields owned by AUTH, BACKEND, RAG, AGENT-WORKFLOW, EVALUATION, SECURITY, DEPLOYMENT, or INTEGRATION.
-- DB-002 boundary: its direct contract prerequisites are draft CONTRACT-AUTH-001 and CONTRACT-WORKFLOW-001. API, Queue, Security, Deployment, and Integration are scoped constraints where applicable, not universal prerequisites.
+- DB-002 boundary: the Auth prerequisite is satisfied. Workflow requires its
+  separate verified Database post-merge reconciliation. API, Queue, Security,
+  Deployment, and Integration are scoped constraints where applicable, not
+  universal prerequisites.
 
 ## `DB-DEC-010` — Shared scaffold ownership
 
@@ -90,3 +96,33 @@
   offline mode.
 - Scope: no DB-002 model, table, enum, constraint, index, Auth/Workflow field,
   or revision exists.
+
+## `DB-DEC-012` — Auth contract acceptance
+
+- Date: 2026-07-31
+- Status: `ACCEPTED`; `CONTRACT-AUTH-001@1.0.0-draft.2` is
+  `ACKNOWLEDGED_AND_MERGED` through PR #7 and merge commit
+  `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- Identity decision: internal identifiers are UUIDs; immutable external
+  identifiers remain separate. Issuer and opaque subject storage/comparison is
+  exact and case-sensitive, `(issuer, subject)` is unique on the exact stored
+  values, and Database performs no independent lowercase, uppercase, trimming,
+  URL normalization, alias resolution, or other issuer transformation.
+- Scope decision: GitHub numeric installation ID and repository ID are each
+  unique; repository access is scoped to the exact
+  user-installation-repository tuple.
+- Lifecycle decision: scheduled expiry (`expires_at`), recorded expiry
+  (`expired_at`), and explicit revocation (`revoked_at`) retain distinct
+  meanings. Suspension, revocation, expiration, deletion, and deprovisioning
+  deny new actions without destroying historical attribution.
+- Actor and credential decision: human and machine actors remain distinct.
+  Database persists no local credentials, password hashes, raw tokens, private
+  keys, or other secrets. Generic organization tenancy, generic RBAC, and
+  billing schema remain out of scope.
+- Ownership: A2-DATABASE owns physical names, SQL types, constraints, indexes,
+  ORM mappings, migrations, and ordering, but must not change Auth semantics.
+- Compatibility: any future incompatible change requires a versioned Auth
+  contract update, Database consumer review, migration-impact analysis,
+  affected-consumer acknowledgement, and Integration coordination.
+- Runtime boundary: no Auth or Database implementation was performed; DB-002
+  remains `BLOCKED`.
