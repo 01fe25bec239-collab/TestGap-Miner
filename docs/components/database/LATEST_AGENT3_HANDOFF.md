@@ -1,19 +1,69 @@
 # Latest A3-DATABASE Handoff
 
-## DB-002-MERGE-001 post-merge reconciliation result
+## DB-002-PREREQUISITE-RECONCILIATION-001-C1 durable-record correction result
+
+- Date: 2026-08-02
+- Task: `DB-002-PREREQUISITE-RECONCILIATION-001-C1`
+- Parent task: `DB-002-PREREQUISITE-RECONCILIATION-001-CLOSEOUT`
+- Parent validation result: `CHANGE_REQUIRED`
+- Prompt type: `DOCUMENTATION_CORRECTION_ONLY`
+- Correction scope: Database durable records only; documentation only
+- Result classification: `PASS`
+- Branch: `agent2/database`
+- Verified repository baseline:
+  `1511f474ee301651b631c8adfe406aeb775327aa`
+- `DB-002`: `PASS / VERIFIED_COMPLETE / MERGED`; `DB-002-C1`: `PASS`;
+  `DB-002-C2`: `PASS`; `DB-002-MERGE-001`: `PASS`
+- DB-002 implementation evidence: pull request #12; implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; implementation merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
+- DB-002 durable-record reconciliation evidence: documentation pull request
+  #13 (`docs(database): close merged DB-002`); head commit
+  `861781b1c91cc5eed870653bc35b2d39fc9c1021`; reconciliation merge commit
+  `1511f474ee301651b631c8adfe406aeb775327aa`
+- Alembic head: `ad3f80907336`; exactly one head
+- `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`;
+  `DB-DEP-001`: `ACCEPTED`
+- `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`;
+  `DB-DEP-004`: `ACCEPTED`
+- `DB-DEP-011`: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
+- `DB-003`: `NOT_STARTED` / `NOT_AUTHORIZED`; not begun and not assessed for
+  readiness by this correction
+
+### Six Database records corrected
+
+1. `docs/components/database/COMPONENT_STATUS.md`
+2. `docs/components/database/TASK_LEDGER.md`
+3. `docs/components/database/DEPENDENCY_REQUESTS.md`
+4. `docs/components/database/DECISION_LOG.md`
+5. `docs/components/database/OPEN_ISSUES.md`
+6. `docs/components/database/LATEST_AGENT3_HANDOFF.md` (this file)
+
+The correction distinguishes PR #12 implementation evidence from PR #13
+documentation-closeout evidence and records the verified repository baseline.
+No code, ORM model, Alembic revision, migration, test, schema implementation,
+manifest, lockfile, application-code, or upstream-owned file was changed.
+DB-003 remains `NOT_STARTED` / `NOT_AUTHORIZED`.
+
+### Recommended next action
+
+A2-DATABASE performs a separate DB-003 readiness assessment. This correction
+did not begin or authorize DB-003.
+
+## Historical DB-002-MERGE-001 post-merge reconciliation result
 
 - Date: 2026-08-02
 - Task: `DB-002-MERGE-001`; parent task `DB-002`
 - Prompt type: `POST_MERGE_TASK_RECONCILIATION`
 - Scope: `DOCUMENTATION_ONLY`
 - Result classification: `PASS`
-- Branch: `agent2/database`; synchronized commit
+- Branch: `agent2/database`; synchronized commit at that time
   `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
 - `DB-002`: `PASS / VERIFIED_COMPLETE / MERGED`
 - `DB-002-C1`: `PASS`; `DB-002-C2`: `PASS`; `DB-002-MERGE-001`: `PASS`
 - Pull request: #12 — `feat(database): implement DB-002 core persistence`
 - Implementation commit: `5506ab59211fbaba79f77d4fb5899a587c0e0236`
-- Merge commit: `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
+- Implementation merge commit: `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
 - Alembic head: `ad3f80907336`; exactly one head
 - A2-DATABASE final decision: `PASS`
 - `DB-DEP-011`: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
@@ -587,7 +637,8 @@ trees are all unchanged. No dependency was added or changed.
 
 A2-DATABASE performing the final DB-002-C1 review was the recommended next
 action at that time; it is complete, with decision `PASS` and DB-002 merged in
-PR #12 at `3701520e6d61e2bb80391e7af888d0d530bdb6c4`. The current recommended
+implementation PR #12 at implementation merge commit
+`3701520e6d61e2bb80391e7af888d0d530bdb6c4`. The current recommended
 next action is recorded in the DB-002-MERGE-001 section above. DB-003 required
 separate explicit authorization, was not begun, and remains `NOT_STARTED` /
 `NOT_AUTHORIZED`.
