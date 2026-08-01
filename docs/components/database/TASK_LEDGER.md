@@ -1,8 +1,9 @@
 # Database Task Ledger
 
-- Date: 2026-08-01
+- Date: 2026-08-02
 - Branch: `agent2/database`
 - Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Synchronized commit: `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
 - Database scaffold: `IMPLEMENTED`; historical validation evidence is preserved.
 - Domain schema: `IMPLEMENTED` for DB-002; exactly one Alembic head
   `ad3f80907336`.
@@ -11,8 +12,12 @@
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`.
 - `DB-DEP-004`: `ACCEPTED`.
 - `DB-DEP-011`: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
-- `DB-002`: `PASS_PENDING_A2_FINAL_REVIEW`; `DB-002-C1`: `PASS`.
-- `DB-003`: `NOT_STARTED`; not authorized by this task.
+- `DB-002`: `PASS / VERIFIED_COMPLETE / MERGED`; `DB-002-C1`: `PASS`;
+  `DB-002-C2`: `PASS`; `DB-002-MERGE-001`: `PASS`.
+- DB-002 merge evidence: pull request #12; implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`; A2-DATABASE final decision `PASS`.
+- `DB-003`: `NOT_STARTED` / `NOT_AUTHORIZED`; not authorized by this task.
 
 | Task | Status | Evidence | Blocker / next action |
 |---|---|---|---|
@@ -24,13 +29,16 @@
 | DB-DEP011-DATABASE-SCAFFOLD-001 | Historical `DEPENDENCY_BLOCKED` | Alembic was not available before A2-BACKEND PR #5. | Superseded by continuation C1. |
 | DB-DEP011-DATABASE-SCAFFOLD-001-C1/C2 | `IMPLEMENTED` | Database unit/bootstrap tests and authenticated temporary PostgreSQL 17.10 checks passed. | Closed: A2-INTEGRATION clean-checkout PostgreSQL 16 validation passed and DB-DEP-011 is `CLOSED`. |
 | DB-001 / DB-001-C1 | `PASS`, reviewed, merged | PR #1 head commit `ea5f1f0`; merged through merge commit `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`; C1 is historical completed work. | None. |
-| DB-002 — Canonical identifiers and core entities | `PASS_PENDING_A2_FINAL_REVIEW` | Seven tables, 55 constraints, and 21 indexes created by revision `ad3f80907336`; upgrade/downgrade/upgrade validated on PostgreSQL 16.14; 169 Database, 5 Backend, and 174 full-suite tests pass after DB-002-C1. | A2-DATABASE final review. |
-| DB-002-C1 — Failure-code and durable-record correction | `PASS` | Anchored uppercase family patterns accept published and additive codes, reject malformed/cross-family/non-failure codes on PostgreSQL, and durable records state the runtime boundary accurately. | A2-DATABASE final review. |
-| DB-003 — Workflow persistence and event history | `NOT_STARTED` | No implementation exists; accepted Workflow ownership assigns steps, attempts, events, and ordering to DB-003, and DB-002 deliberately created none of them. | Separate future authorization; Queue semantics remain a scoped dependency. |
+| DB-002 — Canonical identifiers and core entities | `PASS` / `VERIFIED_COMPLETE` / `MERGED` | Seven tables, 55 constraints, and 21 indexes created by revision `ad3f80907336`; exactly one Alembic head; upgrade/downgrade/upgrade validated on PostgreSQL 16.14; 169 Database, 5 Backend, and 174 full-suite tests pass with zero failures and zero skips; A2-DATABASE final decision `PASS`; merged in PR #12, implementation commit `5506ab59211fbaba79f77d4fb5899a587c0e0236`, merge commit `3701520e6d61e2bb80391e7af888d0d530bdb6c4`. | None. |
+| DB-002-C1 — Failure-code and durable-record correction | `PASS` | Anchored uppercase family patterns accept published and additive codes, reject malformed/cross-family/non-failure codes on PostgreSQL, and durable records state the runtime boundary accurately. | None; closed by PR #12. |
+| DB-002-C2 — Durable-record documentation correction | `PASS` | Documentation-only correction of the Database durable records; no ORM, migration, schema, or test change. | None; closed by PR #12. |
+| DB-002-MERGE-001 — Post-merge task reconciliation | `PASS` | Documentation-only closure of DB-002 after merge; the six Database management records state `PASS / VERIFIED_COMPLETE / MERGED`, PR #12, both commits, and Alembic head `ad3f80907336`. | None. |
+| DB-003 — Workflow persistence and event history | `NOT_STARTED` / `NOT_AUTHORIZED` | No implementation exists; accepted Workflow ownership assigns steps, attempts, events, and ordering to DB-003, and DB-002 deliberately created none of them. DB-002-MERGE-001 did not begin, authorize, or assess DB-003. | Separate future authorization and a separate DB-003 readiness assessment; Queue semantics remain a scoped dependency. |
 | DB-004 — Context, patch, execution, and artefact metadata | `BLOCKED` | No implementation exists. | Requires CONTRACT-RAG-001 and CONTRACT-EVIDENCE-001, plus Security/Deployment data-handling constraints. |
 | DB-005 — GitHub publication and human decisions | `BLOCKED` | No implementation exists. | Requires API, Evidence, and Integration contracts; accepted Auth semantics remain binding. |
 | DB-006 — Evaluation, provenance, and usage metadata | `BLOCKED` | No implementation exists. | Requires CONTRACT-EVAL-001 plus Workflow/Security telemetry fields. |
 | DB-007 — Indexes, retention, migrations, and recovery | `BLOCKED` | Only high-level documentation exists. | Requires DB-002 through DB-006 and CONTRACT-DEPLOY-001/CONTRACT-SEC-001. |
 | DB-008 — Database final acceptance | `BLOCKED` | The DB-002 domain slice exists; DB-003 through DB-007 and their consumer handoffs remain incomplete. | Requires all prior DB tasks and CONTRACT-INTEGRATION-001. |
 
-DB-002 is implemented. No DB-003 through DB-008 implementation was attempted.
+DB-002 is implemented and merged. No DB-003 through DB-008 implementation was
+attempted.

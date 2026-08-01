@@ -1,8 +1,9 @@
 # Database Decision Log
 
-- Date reconciled: 2026-08-01
+- Date reconciled: 2026-08-02
 - Branch: `agent2/database`
 - Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Synchronized commit: `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -10,7 +11,12 @@
   `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
 - Migration chain: exactly one head, `ad3f80907336`
 - Domain schema: `IMPLEMENTED` for DB-002; DB-002:
-  `PASS_PENDING_A2_FINAL_REVIEW`; DB-002-C1: `PASS`
+  `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1: `PASS`; DB-002-C2: `PASS`;
+  DB-002-MERGE-001: `PASS`
+- DB-002 merge evidence: pull request #12; implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
+- DB-003: `NOT_STARTED` / `NOT_AUTHORIZED`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
   `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
@@ -170,7 +176,9 @@
 ## `DB-DEC-014` — DB-002 physical schema
 
 - Date: 2026-08-01
-- Status: `IMPLEMENTED`. Alembic revision `ad3f80907336`
+- Status: `IMPLEMENTED` and `MERGED` through pull request #12, implementation
+  commit `5506ab59211fbaba79f77d4fb5899a587c0e0236` and merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`. Alembic revision `ad3f80907336`
   (`create DB-002 core entities`) is the single head. Full documentation is in
   `docs/data/database-schema.md`.
 - Declarative boundary: one `MetaData` in `app/db/metadata.py` carrying the
