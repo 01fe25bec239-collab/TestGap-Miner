@@ -1,18 +1,89 @@
 # Latest A3-DATABASE Handoff
 
-## DB-002-C2 documentation correction result
+## DB-002-MERGE-001 post-merge reconciliation result
+
+- Date: 2026-08-02
+- Task: `DB-002-MERGE-001`; parent task `DB-002`
+- Prompt type: `POST_MERGE_TASK_RECONCILIATION`
+- Scope: `DOCUMENTATION_ONLY`
+- Result classification: `PASS`
+- Branch: `agent2/database`; synchronized commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
+- `DB-002`: `PASS / VERIFIED_COMPLETE / MERGED`
+- `DB-002-C1`: `PASS`; `DB-002-C2`: `PASS`; `DB-002-MERGE-001`: `PASS`
+- Pull request: #12 — `feat(database): implement DB-002 core persistence`
+- Implementation commit: `5506ab59211fbaba79f77d4fb5899a587c0e0236`
+- Merge commit: `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
+- Alembic head: `ad3f80907336`; exactly one head
+- A2-DATABASE final decision: `PASS`
+- `DB-DEP-011`: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
+- `DB-003`: `NOT_STARTED` / `NOT_AUTHORIZED`; not begun, not authorized, and not
+  assessed for readiness by this task
+
+### Merged DB-002 validation evidence
+
+| Check | Result |
+|---|---|
+| DB-002 tables | Seven |
+| Constraints | 55 |
+| Indexes | 21 |
+| Alembic heads | Exactly one — `ad3f80907336` |
+| PostgreSQL 16.14 migration cycle | `PASS` |
+| Database tests | 169 passed |
+| Backend tests | 5 passed |
+| Full suite | 174 passed |
+| Failures / skips | Zero / zero |
+| DB-003 implementation | Absent |
+
+### Files modified by DB-002-MERGE-001
+
+1. `docs/components/database/COMPONENT_STATUS.md`
+2. `docs/components/database/TASK_LEDGER.md`
+3. `docs/components/database/OPEN_ISSUES.md`
+4. `docs/components/database/DECISION_LOG.md`
+5. `docs/components/database/DEPENDENCY_REQUESTS.md`
+6. `docs/components/database/LATEST_AGENT3_HANDOFF.md` (this file)
+
+No ORM model, Alembic revision, migration, test, schema file, manifest,
+lockfile, application-code file, or Auth-, Workflow-, Integration-, or
+Deployment-owned file was changed. No commit, push, or pull request was made.
+
+### Preserved records
+
+- `DB-DEP-011`: `CLOSED`.
+- `CONTRACT-AUTH-001@1.0.0-draft.2` and `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
+  acceptance is unchanged.
+- The seven-table DB-002 boundary is unchanged.
+- The runtime-enforcement limitations are unchanged: transition execution,
+  expected-state-and-version compare/update, atomic projection/event mutation,
+  append-only transition history, terminal-state update rejection after commit,
+  regeneration decision-event persistence, and Workflow orchestration remain
+  `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- `DB-ISSUE-013` and `DB-ISSUE-014` remain open, deferred, and nonblocking.
+- All later-task blockers are unchanged: `DB-004` through `DB-008` remain
+  `BLOCKED`, and `DB-DEP-002`, `DB-DEP-003`, and `DB-DEP-005` through
+  `DB-DEP-010` remain `PENDING`.
+
+### Recommended next action
+
+A2-DATABASE reviews and merges this reconciliation, followed by a separate
+DB-003 readiness assessment. DB-003 was not begun.
+
+## Historical DB-002-C2 documentation correction result
 
 - DB-002-C2: `PASS`
-- DB-002: `PASS_PENDING_A2_FINAL_REVIEW`
+- DB-002 status at that time: `PASS_PENDING_A2_FINAL_REVIEW`; superseded by
+  `PASS / VERIFIED_COMPLETE / MERGED` above
 - Code/schema changes: none
 - DB-DEP-011: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
 - DB-003: `NOT_STARTED`
 
-## DB-002-C1 corrective result
+## Historical DB-002-C1 corrective result
 
 1. Result classification: `PASS`.
 2. Task: `DB-002-C1`; scope: `DB-002_CORRECTION_ONLY`.
-3. Current DB-002 status: `PASS_PENDING_A2_FINAL_REVIEW`.
+3. DB-002 status at that time: `PASS_PENDING_A2_FINAL_REVIEW`; superseded by
+   `PASS / VERIFIED_COMPLETE / MERGED` above.
 4. Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05` on
    `agent2/database`.
 5. No commit, push, pull request, second migration, or DB-003 work occurred.
@@ -148,11 +219,14 @@ and constraint checks; no constant-only test is counted as enforcement evidence.
 9. `docs/components/database/DEPENDENCY_REQUESTS.md`
 10. `docs/components/database/LATEST_AGENT3_HANDOFF.md`
 
-### Final disposition
+### Historical DB-002-C1 disposition
 
-`DB-002-C1`: `PASS`. `DB-002`: `PASS_PENDING_A2_FINAL_REVIEW`.
-Recommended next action: A2-DATABASE final review. DB-003 requires separate
-authorization and was not begun.
+`DB-002-C1`: `PASS`. `DB-002` at that time: `PASS_PENDING_A2_FINAL_REVIEW`, with
+the recommended next action being A2-DATABASE final review. That review has since
+completed with decision `PASS` and DB-002 merged in PR #12; the current DB-002
+status is `PASS / VERIFIED_COMPLETE / MERGED`. DB-003 required separate
+authorization and was not begun, and it remains `NOT_STARTED` /
+`NOT_AUTHORIZED`.
 
 ## Retained original DB-002 implementation evidence
 
@@ -498,7 +572,7 @@ Every changed and new path lies under `apps/api/app/db/**`,
 the Auth, Agent-Workflow, Backend, Deployment, and Integration documentation
 trees are all unchanged. No dependency was added or changed.
 
-## Current remaining non-DB-002-C1 items
+## Remaining non-DB-002 items (still current after merge)
 
 - `DB-ISSUE-011` and `DB-ISSUE-012` are closed by DB-002-C1.
 - `DB-ISSUE-013` is explicitly open, deferred, and nonblocking.
@@ -509,9 +583,14 @@ trees are all unchanged. No dependency was added or changed.
 - `DB-DEP-002`, `DB-DEP-003`, `DB-DEP-005` through `DB-DEP-010` remain
   `PENDING` and block their own later Database tasks.
 
-## Recommended next action
+## Historical DB-002-C1 recommended next action
 
-A2-DATABASE performs the final DB-002-C1 review. DB-003 requires separate
-explicit authorization and was not begun.
+A2-DATABASE performing the final DB-002-C1 review was the recommended next
+action at that time; it is complete, with decision `PASS` and DB-002 merged in
+PR #12 at `3701520e6d61e2bb80391e7af888d0d530bdb6c4`. The current recommended
+next action is recorded in the DB-002-MERGE-001 section above. DB-003 required
+separate explicit authorization, was not begun, and remains `NOT_STARTED` /
+`NOT_AUTHORIZED`.
 
-No commit, push, pull request, DB-003 work, or rollback action was performed.
+No commit, push, pull request, DB-003 work, or rollback action was performed by
+DB-002-C1 or by DB-002-MERGE-001.

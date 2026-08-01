@@ -2,13 +2,18 @@
 
 ## Current state — DB-002
 
-- Date: 2026-08-01
+- Date: 2026-08-02
 - Task: `DB-002 — Core identity, repository-context, run-request, and run
   persistence`
 - Scope: `IMPLEMENTATION`
 - Branch: `agent2/database`
 - Baseline commit: `8884b5d540351c735b6cddc01314a7dd9e25af05`
-- Result: `DB-002` `PASS_PENDING_A2_FINAL_REVIEW`; `DB-002-C1` `PASS`.
+- Result: `DB-002` `PASS / VERIFIED_COMPLETE / MERGED`; `DB-002-C1` `PASS`;
+  `DB-002-C2` `PASS`; `DB-002-MERGE-001` `PASS`.
+- Merge evidence: pull request #12; implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`. A2-DATABASE recorded the final
+  decision `PASS`; no DB-002 review or merge action remains outstanding.
 - Accepted contracts implemented against: `CONTRACT-AUTH-001@1.0.0-draft.2`
   (`ACKNOWLEDGED_AND_MERGED`) and `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
   (`ACKNOWLEDGED_AND_MERGED`).
@@ -19,8 +24,8 @@
   (`create DB-002 core entities`), down revision `None`.
 - Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
 - Workflow runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
-- `DB-003`: `NOT_STARTED`; no step, attempt, event, ordering, or transition
-  record was created.
+- `DB-003`: `NOT_STARTED` / `NOT_AUTHORIZED`; no step, attempt, event, ordering,
+  or transition record was created, and no task authorizes one.
 
 ### Implemented DB-002 entities
 

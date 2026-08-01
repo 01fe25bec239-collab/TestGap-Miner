@@ -1,20 +1,26 @@
 # Database Open Issues
 
-- Date: 2026-08-01
+- Date: 2026-08-02
 - Branch: `agent2/database`
 - Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Synchronized commit: `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
 - Database scaffold: `IMPLEMENTED`
 - Migration chain: exactly one head, `ad3f80907336`
 - Domain schema: `IMPLEMENTED` for DB-002; DB-002:
-  `PASS_PENDING_A2_FINAL_REVIEW`; DB-002-C1: `PASS`
+  `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1: `PASS`; DB-002-C2: `PASS`;
+  DB-002-MERGE-001: `PASS`
+- DB-002 merge evidence: pull request #12; implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `DB-DEP-001`: `ACCEPTED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`
 - `DB-DEP-004`: `ACCEPTED`
 - DB-DEP-011: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
+- DB-003: `NOT_STARTED` / `NOT_AUTHORIZED`
 
 ## `DB-ISSUE-001` — Specification filename mismatch
 
@@ -31,17 +37,18 @@
   Auth and Workflow portions are closed. Other task-specific contracts remain
   pending as recorded in `DEPENDENCY_REQUESTS.md`.
 - Impact: the direct Auth and Workflow prerequisites are satisfied and the
-  DB-002 schema is implemented. DB-002 is
-  `PASS_PENDING_A2_FINAL_REVIEW`; DB-002-C1 is `PASS`. Later
-  tasks retain their own prerequisites, and no other upstream-owned fields are
-  frozen by this task.
+  DB-002 schema is implemented and merged. DB-002 is
+  `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1, DB-002-C2, and
+  DB-002-MERGE-001 are each `PASS`. Later tasks retain their own prerequisites,
+  and no other upstream-owned fields are frozen by this task.
 
 ## `DB-ISSUE-003` — No implementation baseline
 
 - Classification: `CLOSED`
 - Evidence: DB-002 implements seven tables through Alembic revision
   `ad3f80907336`, with 169 Database tests passing on PostgreSQL 16.14 after
-  DB-002-C1.
+  DB-002-C1, and is merged through PR #12 at
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`.
 - Impact: the Database now has an implementation baseline. Later domains remain
   intentionally unimplemented under their own tasks and contracts.
 
@@ -175,13 +182,14 @@
 - Database handling: `runs.terminal_actor_id` is bounded opaque text with no
   foreign key, and `runs.terminal_actor_type` is checked against the Workflow
   actor vocabulary `SYSTEM` / `WORKFLOW` / `WORKER` / `HUMAN`.
-- DB-002 disposition: the current representation is accepted and does not block
-  DB-002 acceptance. No foreign key is frozen. A future Auth/Workflow contract
-  may add a typed relationship through an additive migration.
+- DB-002 disposition: the current representation is accepted and did not block
+  DB-002 acceptance or merge. No foreign key is frozen. A future Auth/Workflow
+  contract may add a typed relationship through an additive migration. This item
+  remains open, deferred, and nonblocking after the DB-002 merge.
 
 ## `DB-ISSUE-014` — Repository display metadata is deferred
 
-- Classification: `OPEN`
+- Classification: `OPEN_NON_BLOCKING / DEFERRED_READ_MODEL`
 - Owners: `A2-AUTH`, `A2-BACKEND`
 - Evidence: `CONTRACT-AUTH-001` states owner/name strings are mutable display
   metadata that must not authorize access, and no accepted contract requires
@@ -189,6 +197,8 @@
 - Database handling: `repositories` stores identity and lifecycle only. Adding
   display columns later is an additive migration.
 - Needed resolution: `CONTRACT-API-001` (`DB-DEP-002`) defining the read model.
+- DB-002 disposition: this item did not block DB-002 acceptance or merge and
+  remains open, deferred, and nonblocking afterwards.
 
 ## Resolved specification contradictions
 
