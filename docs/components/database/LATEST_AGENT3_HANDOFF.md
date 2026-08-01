@@ -3,12 +3,12 @@
 ## Result
 
 - Result classification: `PASS`.
-- Task: `DB-AUTH-CONTRACT-MERGE-001`.
+- Task: `DB-WORKFLOW-CONTRACT-MERGE-001`.
 - Prompt type: `POST_MERGE_CONTRACT_RECONCILIATION`.
 - Scope: `DOCUMENTATION_ONLY`.
 - Agent 2: `A2-DATABASE`.
 - Paired Agent 3: `A3-DATABASE — Database Coding Agent`.
-- Date: 2026-07-31.
+- Date: 2026-08-01.
 - No DB-002 implementation was authorized or performed.
 
 ## Repository evidence
@@ -16,37 +16,35 @@
 - Root: `/Users/omkar/Documents/TestGap Miner_App`.
 - Branch: `agent2/database`.
 - Remote: `https://github.com/01fe25bec239-collab/TestGap-Miner.git`.
-- Starting commit: `739a331c9942ed64a1ad8276d611889bbee53a27`.
-- Starting `origin/main` before fetch: `739a331c9942ed64a1ad8276d611889bbee53a27`.
-- Fetched `origin/main`: `f54f8755c0589db704bd0f94c891da11c42398a6`.
-- Synchronized commit/HEAD: `f54f8755c0589db704bd0f94c891da11c42398a6`.
-- `origin/agent2/database`: `739a331c9942ed64a1ad8276d611889bbee53a27`.
-- Pre-sync divergence after fetch: `0 7`; local branch was an ancestor of
-  `origin/main`, so synchronization was fast-forward-only.
-- Worktree before synchronization: clean; no tracked or unexplained untracked
+- Starting commit: `6cf88f135215984424bec00994a05a1de1dd011e`.
+- Starting `origin/main`: `6cf88f135215984424bec00994a05a1de1dd011e`.
+- Fetched `origin/main`: `6cf88f135215984424bec00994a05a1de1dd011e`.
+- Synchronized commit/HEAD: `6cf88f135215984424bec00994a05a1de1dd011e`.
+- Synchronization result: already synchronized; no merge, rebase, reset,
+  stash, or other history mutation was required.
+- Initial and post-fetch worktree: clean; no tracked or unexplained untracked
   files (`## agent2/database...origin/agent2/database`).
-- Worktree immediately after synchronization: clean;
-  `## agent2/database...origin/agent2/database [ahead 7]`.
-- Synchronization command: `git merge --ff-only origin/main`.
-- Managed workspace permissions initially denied `.git/FETCH_HEAD` and
-  `.git/ORIG_HEAD.lock` writes (exit 128); the approved `git fetch origin` and
-  verified `git merge --ff-only origin/main` reruns each exited 0.
-- Auth merge ancestry: merge commit `f54f8755...` is contained in both
-  `origin/main` and synchronized `HEAD`.
+- Required ancestry checks for Workflow merge `7da1132b...` and latest main
+  merge `6cf88f1...` both exited 0.
 
-## Contract evidence
+## Workflow contract evidence
 
-- Contract: `CONTRACT-AUTH-001`.
-- Version: `1.0.0-draft.2`.
-- Durable state: `ACKNOWLEDGED_AND_MERGED`.
-- Path: `docs/components/auth/CONTRACT-AUTH-001.md`.
-- Pull request: #7.
-- Producer head commit: `20a6fa12398a29bfed3a28005aa71e2ffe0ba7d48`.
-- Merge commit: `f54f8755c0589db704bd0f94c891da11c42398a6`.
-- Auth producer decision: `PASS — A2_AUTH_ACCEPTED`.
-- Database consumer decision: `ACKNOWLEDGED`.
-- Inspected evidence includes exact case-sensitive issuer semantics and the
-  distinct `expires_at`, `expired_at`, and `revoked_at` meanings.
+- Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`.
+- Durable Database state: `ACKNOWLEDGED_AND_MERGED`.
+- Path: `docs/components/agent-workflow/CONTRACT-WORKFLOW-001.md`.
+- Semantic commit: `a7c83f422bb51deefd233229c7573fda64b097b6`.
+- Database acknowledgement commit:
+  `5eb2e98d5a8189b5a4da3f3f5d0dc0013dca3dc0`.
+- Pull request: #8.
+- Workflow merge commit: `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`.
+- Database consumer decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`.
+- `DB-DEP-004`: `ACCEPTED`.
+- Inspected evidence: exact canonical states and transition table, terminal
+  immutability, repair/retry separation, one-repair maximum, repeated
+  buggy-then-fixed execution after repair, cancellation/publication boundary,
+  human-review completion and regeneration semantics, UUID separation,
+  idempotency composition, DB-002/DB-003 ownership, ordered events, and bounded
+  redacted payload requirements.
 
 ## Exact files modified
 
@@ -57,77 +55,112 @@
 5. `docs/components/database/DEPENDENCY_REQUESTS.md`
 6. `docs/components/database/LATEST_AGENT3_HANDOFF.md`
 
-No Auth-owned, Workflow-owned, Integration-owned, data, application, test,
+No Workflow-owned, Auth-owned, Integration-owned, data, application, test,
 manifest, lockfile, environment, container, CI, migration, or deployment file
 was modified.
 
 ## Durable-record changes
 
-- `COMPONENT_STATUS.md`: records this task, fast-forward evidence, Auth
-  `ACKNOWLEDGED_AND_MERGED`, producer/consumer results, accepted dependency,
-  documentation-only scope, preserved scaffold history, domain schema
-  `NOT_STARTED`, and DB-002 `BLOCKED`.
-- `TASK_LEDGER.md`: preserves the historical
-  `DB-AUTH-CONTRACT-ACK-001` `ACKNOWLEDGED_WITH_CHANGES`, records C1 as
-  `PASS` / `ACKNOWLEDGED`, records this merge task `PASS`, and keeps DB-002
-  blocked behind the remaining readiness gates.
-- `DEPENDENCY_REQUESTS.md`: changes only DB-DEP-001 to `ACCEPTED` with exact
-  contract, producer, consumer, PR, commit, path, and semantic evidence.
-- `OPEN_ISSUES.md`: closes/supersedes only the Auth availability,
-  acknowledgement, merge, issuer-comparison/normalization, expiration-timing,
-  and expiration-versus-revocation issues. Unrelated issues remain open.
-- `DECISION_LOG.md`: accepts the Auth identity, issuer, uniqueness, grant,
-  lifecycle, historical-attribution, actor, credential, ownership, and future
-  compatibility boundaries.
-- This handoff replaces the prior latest handoff while preserving its scaffold
-  work and validation as historical evidence.
+- `COMPONENT_STATUS.md`: records this task and synchronized merge evidence;
+  marks Workflow acknowledged/merged and DB-DEP-004 accepted; preserves Auth,
+  scaffold, PostgreSQL validation, and zero-head Alembic history; confirms no
+  runtime/schema work and keeps DB-002 blocked pending final readiness.
+- `TASK_LEDGER.md`: records `DB-WORKFLOW-CONTRACT-ACK-001` as `PASS` /
+  `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`, records this reconciliation as
+  `PASS`, preserves Auth tasks, and keeps DB-002 blocked rather than READY.
+- `DEPENDENCY_REQUESTS.md`: changes only DB-DEP-004 from pending to `ACCEPTED`
+  with exact contract, semantic commit, acknowledgement commit, PR, merge, and
+  accepted semantic-boundary evidence. Other dependencies retain their state.
+- `OPEN_ISSUES.md`: closes/supersedes only missing Workflow contract,
+  acknowledgement, merge evidence, state, repair/retry, cancellation/review,
+  and DB-002/DB-003 ownership issues. Queue, Evidence, Security, Integration,
+  Deployment, and scaffold-readiness issues remain open.
+- `DECISION_LOG.md`: accepts exact state text persistence, Database check
+  constraints, state/version optimistic concurrency, immutable terminals,
+  one repair, versioned idempotency composition and request fingerprinting,
+  DB-002 projection versus DB-003 history ownership, deferred owner payloads,
+  and future incompatible-change coordination.
+- This handoff replaces the prior latest handoff while preserving Auth and
+  scaffold reconciliation as historical durable records.
 
 ## Required state confirmation
 
+- `CONTRACT-AUTH-001`: `ACKNOWLEDGED_AND_MERGED`.
 - `DB-DEP-001`: `ACCEPTED`.
-- `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`.
-- Auth semantics changed by this task: no.
-- Auth-owned files modified: none.
-- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- `CONTRACT-WORKFLOW-001`: `ACKNOWLEDGED_AND_MERGED`.
+- `DB-DEP-004`: `ACCEPTED`.
+- Auth acceptance changed by this task: no.
+- Workflow or Database runtime implementation: none.
 - Database domain schema: `NOT_STARTED`.
-- Domain implementation, migration, fixture, or test created: none.
-- `DB-AUTH-CONTRACT-MERGE-001`: `PASS`.
-- `DB-002`: `BLOCKED`, not READY.
-- A3-DATABASE DB-002 authorization: none.
+- Alembic revisions: `ZERO`.
+- Model, table, enum, constraint, index, migration, fixture, or test created:
+  none.
+- `DB-WORKFLOW-CONTRACT-MERGE-001`: `PASS`.
+- `DB-002`: `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`, not READY.
+- A3-DATABASE DB-002 implementation authorization: none.
 
 ## Validation
 
-All required validation commands completed with exit status 0 except the
-intentional no-match implementation-scope check, whose grep exit status was 1
-with no output:
-
 | Command / check | Exit | Result |
 |---|---:|---|
-| `git diff --check` | 0 | Passed |
+| `git fetch origin` | 0 | Fetched successfully; `HEAD == origin/main` |
+| Workflow merge ancestry check | 0 | `7da1132b...` is an ancestor of HEAD |
+| Latest-main merge ancestry check | 0 | `6cf88f1...` is an ancestor of HEAD |
+| `git diff --check` | 0 | Passed; no output |
 | `git diff --stat` | 0 | Six permitted Database records only |
 | `git diff --name-only` | 0 | Exact six-file allowed set |
-| `git status --short --branch` | 0 | Branch ahead of remote by seven; six documentation files modified |
-| Sorted allowed-file subset check | 0 | Passed |
-| Stale Auth dependency search plus manual review | 0 | One unrelated false positive: `authorizes ... pending Agent 1 confirmation`; no stale Auth dependency remains |
-| Required draft.2, merge-commit, DB-DEP-001, and acknowledgement searches | 0 | Evidence present |
+| `git status --short --branch` | 0 | Six Database documentation files modified |
+| Allowed-file subset check | 0 | Passed |
+| Required contract, merge, DB-DEP-004, and decision searches | 0 | Evidence present |
+| Stale Workflow blocker search | 1 | Expected no-match result; no output |
 | Forbidden implementation-path diff grep | 1 | Expected no-match result; no output |
 
-`git diff --check` produced no output.
+### Final diff stat
+
+```text
+ docs/components/database/COMPONENT_STATUS.md      |  58 ++++---
+ docs/components/database/DECISION_LOG.md          |  37 +++-
+ docs/components/database/DEPENDENCY_REQUESTS.md   |  39 ++++-
+ docs/components/database/LATEST_AGENT3_HANDOFF.md | 201 +++++++++++++---------
+ docs/components/database/OPEN_ISSUES.md           |  46 +++--
+ docs/components/database/TASK_LEDGER.md           |  17 +-
+ 6 files changed, 261 insertions(+), 137 deletions(-)
+```
+
+### Final diff name-only
+
+```text
+docs/components/database/COMPONENT_STATUS.md
+docs/components/database/DECISION_LOG.md
+docs/components/database/DEPENDENCY_REQUESTS.md
+docs/components/database/LATEST_AGENT3_HANDOFF.md
+docs/components/database/OPEN_ISSUES.md
+docs/components/database/TASK_LEDGER.md
+```
+
+### Final git status
+
+```text
+## agent2/database...origin/agent2/database
+ M docs/components/database/COMPONENT_STATUS.md
+ M docs/components/database/DECISION_LOG.md
+ M docs/components/database/DEPENDENCY_REQUESTS.md
+ M docs/components/database/LATEST_AGENT3_HANDOFF.md
+ M docs/components/database/OPEN_ISSUES.md
+ M docs/components/database/TASK_LEDGER.md
+```
 
 ## Remaining blockers and next action
 
-DB-002 remains blocked by the separate verified Database post-merge
-reconciliation of `CONTRACT-WORKFLOW-001`, final Database scaffold/readiness
-verification, a clean synchronized implementation worktree, and confirmation
-that no contract conflict remains. This Auth task does not accept Workflow
-solely because its files exist.
+DB-002 remains blocked pending the separate final Database readiness
+assessment. That assessment must resolve the still-open scaffold/Integration
+PostgreSQL 16 validation evidence and confirm a clean, synchronized
+implementation worktree with no unresolved contract conflict. Queue, Evidence,
+Security, Deployment, and Integration dependencies remain scoped blockers for
+their owned fields and later Database tasks; none was closed here.
 
-A2-DATABASE should review this handoff, commit and merge only these Database
-documentation changes, then perform the separate Workflow reconciliation and a
-final DB-002 readiness assessment. Do not begin DB-002 from this handoff.
+A2-DATABASE should review, commit, and merge this Workflow reconciliation,
+then perform a separate final DB-002 readiness assessment. Do not begin DB-002
+from this handoff.
 
-Rollback before merge is limited to these six Database documentation changes.
-Do not revert PR #7, Auth or Workflow files, Database scaffold code, Alembic,
-Backend, Deployment, Integration records, or merged main history. After this
-reconciliation is merged and consumed, rollback requires A2-DATABASE and
-A2-INTEGRATION coordination.
+No commit, push, PR, DB-002 implementation, or rollback action was performed.

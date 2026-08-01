@@ -1,8 +1,8 @@
 # Database Dependency Requests
 
-- Date prepared: 2026-07-31
+- Date prepared: 2026-08-01
 - Branch: `agent2/database`
-- Synchronized baseline: `f54f8755c0589db704bd0f94c891da11c42398a6`
+- Synchronized baseline: `6cf88f135215984424bec00994a05a1de1dd011e`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -11,7 +11,8 @@
 - Migration chain: bootstrap exists with zero heads and no revisions
 - Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
-- Workflow: separate verified Database post-merge reconciliation required
+- `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
+  `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
 
 ## `DB-DEP-001` — Auth context
 
@@ -87,8 +88,36 @@
 - Backward-compatibility impact: High; enum removal/rename or event-semantic changes require coordinated migrations. Prefer additive versioning.
 - Urgency: `HIGH`
 - Proposed acceptance test: Contract fixtures cover the successful path, one bounded repair, abstention, cancellation, invalid transitions, ordered append-only events, and rejection of more than one automated repair.
-- Approval status: `PENDING`
-- Completion evidence: None; no versioned contract or handoff exists.
+- Approval status: `ACCEPTED`
+- Consumer decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`
+- Completion evidence:
+  - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`.
+  - Path: `docs/components/agent-workflow/CONTRACT-WORKFLOW-001.md`.
+  - Semantic commit: `a7c83f422bb51deefd233229c7573fda64b097b6`.
+  - Database acknowledgement commit:
+    `5eb2e98d5a8189b5a4da3f3f5d0dc0013dca3dc0`.
+  - Pull request: #8.
+  - Merge commit: `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`.
+- Accepted semantic boundaries:
+  - Exact canonical `RunState` values: `RECEIVED`, `VALIDATING`, `QUEUED`,
+    `PLANNING`, `LOCALISING`, `GENERATING`, `EXECUTING_BUGGY`,
+    `EXECUTING_FIXED`, `REPAIRING`, `SCORING`, `PUBLISHING`,
+    `AWAITING_HUMAN_REVIEW`, `COMPLETED`, `ABSTAINED`, `FAILED_INPUT`,
+    `FAILED_MODEL`, `FAILED_EXECUTION`, `FAILED_INFRASTRUCTURE`,
+    `FAILED_SECURITY`, and `CANCELLED`.
+  - The contract's allowed-transition table and terminal-state immutability.
+  - `repair_attempts_used` constrained to `0..1`; retry and repair remain
+    separate.
+  - Repaired candidates repeat `EXECUTING_BUGGY` then `EXECUTING_FIXED`.
+  - Cancellation loses after human review begins or a publication side effect
+    commits.
+  - Human review completes the existing run; regeneration creates a new
+    request and run.
+  - Internal UUIDs remain separate from external identifiers.
+  - DB-002 owns `run_requests` and `runs` only; DB-003 owns steps, attempts,
+    events, and ordering.
+  - Event payloads contain bounded redacted metadata or opaque references only;
+    no raw prompts, repository bytes, patch bytes, logs, or secrets.
 
 ## `DB-DEP-005` — Evidence contract
 

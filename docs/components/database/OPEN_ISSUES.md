@@ -1,8 +1,8 @@
 # Database Open Issues
 
-- Date: 2026-07-31
+- Date: 2026-08-01
 - Branch: `agent2/database`
-- Synchronized baseline: `f54f8755c0589db704bd0f94c891da11c42398a6`
+- Synchronized baseline: `6cf88f135215984424bec00994a05a1de1dd011e`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -11,7 +11,8 @@
 - Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `DB-DEP-001`: `ACCEPTED`
-- Workflow: separate verified Database post-merge reconciliation required
+- `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`
+- `DB-DEP-004`: `ACCEPTED`
 - DB-DEP-011: `PENDING_INTEGRATION_VALIDATION`
 
 ## `DB-ISSUE-001` — Specification filename mismatch
@@ -24,12 +25,13 @@
 ## `DB-ISSUE-002` — Upstream contract registry is incomplete
 
 - Classification: `PARTIALLY_RESOLVED`
-- Evidence: `CONTRACT-AUTH-001@1.0.0-draft.2` is acknowledged and merged, so
-  the Auth portion is closed. Workflow documentation is merged but requires a
-  separate verified Database post-merge reconciliation. Other task-specific
-  contracts remain pending as recorded in `DEPENDENCY_REQUESTS.md`.
-- Impact: DB-002 no longer awaits Auth. It remains blocked on Workflow
-  reconciliation and final Database scaffold/readiness verification. Later
+- Evidence: `CONTRACT-AUTH-001@1.0.0-draft.2` and
+  `CONTRACT-WORKFLOW-001@1.0.0-draft.1` are acknowledged and merged, so the
+  Auth and Workflow portions are closed. Other task-specific contracts remain
+  pending as recorded in `DEPENDENCY_REQUESTS.md`.
+- Impact: the direct Auth and Workflow prerequisites are satisfied.
+  DB-002 remains blocked pending the separate final Database readiness
+  assessment. Later
   tasks retain their own prerequisites, and no other upstream-owned fields are
   frozen by this task.
 
@@ -40,9 +42,7 @@
   documentation now exist. Alembic has zero heads and there is deliberately no
   ORM model, domain table, or revision.
 - Impact: DB-002 remains unimplemented.
-- Resolution path: complete final Database scaffold/readiness verification and
-  the separate Workflow post-merge reconciliation before assessing DB-002
-  readiness.
+- Resolution path: perform the separate final DB-002 readiness assessment.
 
 ## `DB-ISSUE-004` — Retention and deletion semantics are not frozen
 
@@ -63,8 +63,8 @@
   Database-owned continuation implements the remaining persistence scaffold
   without modifying any unowned file. Database unit/bootstrap tests and
   authenticated temporary PostgreSQL 17.10 checks passed.
-- Remaining action: A2-DATABASE review and A2-INTEGRATION clean-checkout
-  validation with the approved Compose PostgreSQL 16 service.
+- Remaining action: A2-INTEGRATION clean-checkout validation with the approved
+  Compose PostgreSQL 16 service.
 
 ## `DB-ISSUE-007` — Docker CLI unavailable in A3 environment
 
@@ -103,6 +103,28 @@
 - Scope: closure records contract evidence only. Auth runtime remains
   `NOT_IMPLEMENTED` / `NOT_TESTED`; Database domain schema remains
   `NOT_STARTED`; DB-002 remains `BLOCKED`.
+
+## `DB-ISSUE-010` — Workflow contract availability and lifecycle ambiguities
+
+- Classification: `CLOSED`.
+- Resolution: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` was acknowledged by
+  A2-DATABASE with decision `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS` and
+  merged in PR #8 at
+  `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`.
+- Superseded Workflow blockers: missing contract, missing consumer
+  acknowledgement, missing merge evidence, unresolved canonical states,
+  repair/retry ambiguity, cancellation and human-review lifecycle ambiguity,
+  and DB-002/DB-003 ownership ambiguity.
+- Accepted resolution: exact canonical states and transitions, immutable
+  terminal projections, one repair with repaired buggy-then-fixed execution,
+  separate bounded retries, late-cancellation rules, completion of the existing
+  run after human review, new request/run on regeneration, and DB-002 ownership
+  of `run_requests`/`runs` versus DB-003 ownership of steps, attempts, events,
+  and ordering.
+- Scope: closure records contract evidence only. Workflow runtime remains
+  `NOT_IMPLEMENTED` / `NOT_TESTED`; Database domain schema remains
+  `NOT_STARTED`; DB-002 remains
+  `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`.
 
 ## Resolved specification contradictions
 
