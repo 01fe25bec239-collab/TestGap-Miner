@@ -33,6 +33,20 @@
 
 ## INT-ISSUE-007 — DB-002 readiness and authorization
 
-- Classification: `OPEN / OUTSIDE_DB-DEP-011`
-- Evidence: DB-DEP-011 is closed, but DB-002 was not implemented or assessed by Integration closeout.
-- Resolution: A2-DATABASE performs a separate readiness assessment and obtains explicit authorization before DB-002 begins.
+- Classification: `CLOSED / HISTORICAL_CONTEXT_PRESERVED`
+- Historical evidence: at the DB-DEP-011 closeout snapshot and tested commit
+  `99c8022c9f44e6a54bed624aa0153be7e32f234b`, DB-002 was correctly
+  `NOT_STARTED` and outside that task's authorization.
+- Current resolution: A2-DATABASE later implemented and validated DB-002. PR
+  #12 used implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236` and merge
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`; A2-DATABASE's final decision was
+  `PASS`. Database closeout PR #13 merged at
+  `1511f474ee301651b631c8adfe406aeb775327aa`, and correction PR #14 merged at
+  current baseline `602fe45c623ac546a11149a54f16a4c84e9f734a`.
+- Current state: DB-002 is `PASS / VERIFIED_COMPLETE / MERGED`.
+- Evidence boundary: Integration reconciled accepted merged Database evidence;
+  it did not independently execute the DB-002 validation suite.
+- Remaining boundary: DB-003 is `NOT_STARTED / NOT_AUTHORIZED`. Auth runtime
+  and Workflow runtime remain `NOT_IMPLEMENTED / NOT_TESTED`; DB-002 provides
+  no Workflow orchestration or transition history.

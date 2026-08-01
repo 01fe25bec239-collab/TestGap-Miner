@@ -56,4 +56,34 @@ The final merge order and owner-specific rollback allocations are approved in `C
 - Local port: because 5432 was occupied, the approved loopback `POSTGRES_HOST_PORT=55478` override was used.
 - Limitation: fresh-volume initialization was not repeated; retained-volume idempotent provisioning passed and is non-blocking.
 - Auth and Workflow Database reconciliations are merged through PRs #9 and #10.
-- DB-002 remains `NOT_STARTED` pending a separate A2-DATABASE readiness assessment and explicit authorization.
+- Historical boundary: at tested commit
+  `99c8022c9f44e6a54bed624aa0153be7e32f234b`, DB-002 was correctly
+  `NOT_STARTED` pending separate A2-DATABASE readiness and authorization. This
+  remains valid DB-DEP-011 closeout evidence.
+
+## INT-DEC-013 — Reconcile current merged DB-002 state
+
+- Date: 2026-08-02.
+- Task: `INT-DB002-POSTMERGE-RECONCILE-001`.
+- Status: `APPROVED / VERIFIED_COMPLETE`.
+- Decision: at repository baseline
+  `602fe45c623ac546a11149a54f16a4c84e9f734a`, DB-002 is
+  `PASS / VERIFIED_COMPLETE / MERGED`.
+- No historical decision is reversed. INT-DEC-012 accurately recorded the
+  repository at `99c8022c9f44e6a54bed624aa0153be7e32f234b`; current status changed
+  later through accepted A2-DATABASE implementation PR #12, Database closeout
+  PR #13, and Database correction PR #14.
+- Implementation evidence: PR #12, implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`, implementation merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`, and A2-DATABASE final decision
+  `PASS`.
+- Database reconciliation evidence: PR #13 head
+  `861781b1c91cc5eed870653bc35b2d39fc9c1021`, merge
+  `1511f474ee301651b631c8adfe406aeb775327aa`; PR #14 head
+  `c914f8b7443b143241d8c52da0032ee83ecd614e`, merge
+  `602fe45c623ac546a11149a54f16a4c84e9f734a`.
+- Evidence ownership: A2-DATABASE performed and accepted DB-002 implementation
+  and validation. Integration performed no new DB-002 runtime validation and
+  only reconciled its durable records to accepted merged Database evidence.
+- DB-DEP-011 remains `ACCEPTED / VERIFIED_COMPLETE / CLOSED`. DB-003 remains
+  `NOT_STARTED / NOT_AUTHORIZED`; this decision authorizes no later persistence.

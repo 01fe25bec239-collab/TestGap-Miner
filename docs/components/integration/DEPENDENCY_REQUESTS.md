@@ -30,4 +30,28 @@
 - Final Integration validation: `INT-DBDEP011-POSTGRES16-001` returned `PASS`.
 - Dependency result: `DB-DEP-011` is `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
 
-No DB-002 implementation request or authorization is created by this closure. A2-DATABASE owns the separate readiness assessment.
+The historical closure created no DB-002 implementation request or
+authorization. At tested commit
+`99c8022c9f44e6a54bed624aa0153be7e32f234b`, DB-002 was correctly
+`NOT_STARTED`; that completed dependency history remains unchanged.
+
+## Current DB-002 dependency disposition
+
+- Reconciliation task: `INT-DB002-POSTMERGE-RECONCILE-001`.
+- Current baseline: `602fe45c623ac546a11149a54f16a4c84e9f734a`.
+- DB-002: `PASS / VERIFIED_COMPLETE / MERGED`; no Integration dependency
+  request for DB-002 readiness or implementation remains pending.
+- A2-DATABASE evidence: PR #12; implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; implementation merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`; final decision `PASS`; Alembic
+  head `ad3f80907336`; 169 Database tests, 5 Backend tests, and 174 full-suite
+  tests passed with zero failures and zero skips.
+- Database record evidence: PR #13 head
+  `861781b1c91cc5eed870653bc35b2d39fc9c1021`, merge
+  `1511f474ee301651b631c8adfe406aeb775327aa`; PR #14 head
+  `c914f8b7443b143241d8c52da0032ee83ecd614e`, merge
+  `602fe45c623ac546a11149a54f16a4c84e9f734a`.
+- Integration accepts that merged Database evidence without claiming a new
+  Integration execution of the DB-002 validation suite.
+- DB-003 remains `NOT_STARTED / NOT_AUTHORIZED`; no dependency request here
+  authorizes its readiness assessment or implementation.
