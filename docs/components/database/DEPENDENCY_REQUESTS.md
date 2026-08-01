@@ -1,8 +1,8 @@
 # Database Dependency Requests
 
-- Date prepared: 2026-07-30
+- Date prepared: 2026-07-31
 - Branch: `agent2/database`
-- Current scaffold baseline: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- Synchronized baseline: `f54f8755c0589db704bd0f94c891da11c42398a6`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -10,7 +10,8 @@
   `PENDING_INTEGRATION_VALIDATION`
 - Migration chain: bootstrap exists with zero heads and no revisions
 - Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
-- `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001`: `PENDING`
+- `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
+- Workflow: separate verified Database post-merge reconciliation required
 
 ## `DB-DEP-001` — Auth context
 
@@ -23,8 +24,29 @@
 - Backward-compatibility impact: Initial contract; future incompatible identifier or lifecycle changes would require a migration and consumer coordination.
 - Urgency: `HIGH`
 - Proposed acceptance test: Given two users, two installations, and two repositories, contract fixtures prove permitted access, denied cross-scope access, stable external-subject uniqueness, and no raw token/private-key storage.
-- Approval status: `PENDING`
-- Completion evidence: None; no versioned contract or handoff exists.
+- Approval status: `ACCEPTED`
+- Completion evidence:
+  - Contract: `CONTRACT-AUTH-001@1.0.0-draft.2`.
+  - Path: `docs/components/auth/CONTRACT-AUTH-001.md`.
+  - Auth producer: `PASS — A2_AUTH_ACCEPTED`.
+  - Database consumer: A2-DATABASE `ACKNOWLEDGED`.
+  - Pull request: #7.
+  - Producer head commit: `20a6fa12398a29bfed3a28005aa71e2ffe0ba7d48`.
+  - Merge commit: `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- Accepted semantic boundaries:
+  - UUID internal identifiers and separate immutable external identifiers.
+  - Exact case-sensitive issuer and opaque subject storage/comparison; unique
+    exact issuer + subject; no independent Database normalization.
+  - Unique GitHub installation numeric ID and unique GitHub repository numeric
+    ID.
+  - Exact user + installation + repository access tuple.
+  - Distinct meanings for `expires_at`, `expired_at`, and `revoked_at`.
+  - Historical attribution after suspension, revocation, expiration, deletion,
+    or deprovisioning.
+  - Distinct human and machine actors.
+  - No local credentials, password hashes, raw tokens, private keys, or other
+    secret persistence.
+  - No generic organization tenancy, generic RBAC, or billing schema.
 
 ## `DB-DEP-002` — API query contract
 

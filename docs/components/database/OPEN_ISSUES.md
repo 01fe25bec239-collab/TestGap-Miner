@@ -1,15 +1,17 @@
 # Database Open Issues
 
-- Date: 2026-07-30
+- Date: 2026-07-31
 - Branch: `agent2/database`
-- Current scaffold baseline: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- Synchronized baseline: `f54f8755c0589db704bd0f94c891da11c42398a6`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
 - Database scaffold: `IMPLEMENTED`
 - Migration chain: bootstrap exists with zero heads and no revisions
 - Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
-- `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001`: `PENDING`
+- `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
+- `DB-DEP-001`: `ACCEPTED`
+- Workflow: separate verified Database post-merge reconciliation required
 - DB-DEP-011: `PENDING_INTEGRATION_VALIDATION`
 
 ## `DB-ISSUE-001` — Specification filename mismatch
@@ -19,12 +21,17 @@
 - Current handling: `SPECIFICATION_INDEX.md` designates the present files as working inputs.
 - Needed resolution: Agent 1 confirms revision lineage. This does not block DB-001 but must be resolved before final acceptance.
 
-## `DB-ISSUE-002` — Upstream contract registry is documentation-only
+## `DB-ISSUE-002` — Upstream contract registry is incomplete
 
-- Classification: `BLOCKED`
-- Evidence: no versioned contract artefacts or completed handoffs exist for CONTRACT-AUTH-001, CONTRACT-API-001, CONTRACT-RAG-001, CONTRACT-WORKFLOW-001, CONTRACT-EVIDENCE-001, CONTRACT-QUEUE-001, CONTRACT-EVAL-001, CONTRACT-SEC-001, CONTRACT-DEPLOY-001, or CONTRACT-INTEGRATION-001.
-- Impact: DB-002 directly awaits Auth and Workflow drafts. Later tasks retain their task-specific prerequisites, and no upstream-owned fields may be frozen.
-- Tracking: eleven requests are prepared in `DEPENDENCY_REQUESTS.md`.
+- Classification: `PARTIALLY_RESOLVED`
+- Evidence: `CONTRACT-AUTH-001@1.0.0-draft.2` is acknowledged and merged, so
+  the Auth portion is closed. Workflow documentation is merged but requires a
+  separate verified Database post-merge reconciliation. Other task-specific
+  contracts remain pending as recorded in `DEPENDENCY_REQUESTS.md`.
+- Impact: DB-002 no longer awaits Auth. It remains blocked on Workflow
+  reconciliation and final Database scaffold/readiness verification. Later
+  tasks retain their own prerequisites, and no other upstream-owned fields are
+  frozen by this task.
 
 ## `DB-ISSUE-003` — No implementation baseline
 
@@ -33,8 +40,9 @@
   documentation now exist. Alembic has zero heads and there is deliberately no
   ORM model, domain table, or revision.
 - Impact: DB-002 remains unimplemented.
-- Resolution path: A2-DATABASE/A2-INTEGRATION review the scaffold; DB-002 still
-  requires draft CONTRACT-AUTH-001 and CONTRACT-WORKFLOW-001.
+- Resolution path: complete final Database scaffold/readiness verification and
+  the separate Workflow post-merge reconciliation before assessing DB-002
+  readiness.
 
 ## `DB-ISSUE-004` — Retention and deletion semantics are not frozen
 
@@ -79,6 +87,22 @@
   inequality with `DATABASE_URL`.
 - Remaining action: Deployment/Integration owns any authoritative production
   host registry; no speculative hostnames are encoded.
+
+## `DB-ISSUE-009` — Auth contract availability and semantic clarifications
+
+- Classification: `CLOSED`
+- Resolution: `CONTRACT-AUTH-001@1.0.0-draft.2` was accepted by A2-AUTH,
+  acknowledged by A2-DATABASE, and merged in PR #7 at
+  `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- Superseded Auth blockers: unavailable producer evidence, missing Database
+  consumer acknowledgement, and the unmerged Auth contract.
+- Accepted clarifications: issuer storage/comparison is exact and
+  case-sensitive with no Database normalization; scheduled expiry
+  (`expires_at`), recorded expiry (`expired_at`), and explicit revocation
+  (`revoked_at`) have distinct meanings.
+- Scope: closure records contract evidence only. Auth runtime remains
+  `NOT_IMPLEMENTED` / `NOT_TESTED`; Database domain schema remains
+  `NOT_STARTED`; DB-002 remains `BLOCKED`.
 
 ## Resolved specification contradictions
 

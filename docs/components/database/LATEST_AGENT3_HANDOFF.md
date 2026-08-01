@@ -1,141 +1,133 @@
 # Latest A3-DATABASE Handoff
 
-## Identity and result
+## Result
 
-- Agent 2: `A2-DATABASE`
-- Agent 3: `A3-DATABASE — Database Coding Agent`
-- Task: `DB-DEP011-DATABASE-SCAFFOLD-001-C2`
-- Parent: `DB-DEP011-DATABASE-SCAFFOLD-001-C1`
-- Prompt: `REPAIR`
-- Date: 2026-07-30
-- Branch: `agent2/database`
-- Starting/HEAD commit: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
-- C2 result: `IMPLEMENTED` and tested at the Database boundary, pending
-  A2-DATABASE review and A2-INTEGRATION PostgreSQL 16 validation.
-- DB-DEP-011 final acceptance: `PENDING_INTEGRATION_VALIDATION`.
+- Result classification: `PASS`.
+- Task: `DB-AUTH-CONTRACT-MERGE-001`.
+- Prompt type: `POST_MERGE_CONTRACT_RECONCILIATION`.
+- Scope: `DOCUMENTATION_ONLY`.
+- Agent 2: `A2-DATABASE`.
+- Paired Agent 3: `A3-DATABASE — Database Coding Agent`.
+- Date: 2026-07-31.
+- No DB-002 implementation was authorized or performed.
 
-## Current component state
+## Repository evidence
 
-- `DB-001`: `PASS`, reviewed, and merged in PR #1 at `ea5f1f0`.
-- `DB-001-C1`: historical completed continuation.
-- `DB-DEP011-DATABASE-SCAFFOLD-001`: historical `DEPENDENCY_BLOCKED` attempt;
-  its records remain safely in `stash@{0}` and were not restored.
-- `DB-DEP011-DATABASE-SCAFFOLD-001-C1/C2`: Database scaffold `IMPLEMENTED`.
-- PostgreSQL/SQLAlchemy/Alembic scaffold: `IMPLEMENTED`.
-- Migration chain: bootstrap exists with zero heads and no revisions.
-- Domain schema: `NOT_STARTED`.
-- DB-002: `BLOCKED` and not run.
-- `CONTRACT-AUTH-001`: `PENDING`.
-- `CONTRACT-WORKFLOW-001`: `PENDING`.
-- DB-DEP-011: `PENDING_INTEGRATION_VALIDATION`.
+- Root: `/Users/omkar/Documents/TestGap Miner_App`.
+- Branch: `agent2/database`.
+- Remote: `https://github.com/01fe25bec239-collab/TestGap-Miner.git`.
+- Starting commit: `739a331c9942ed64a1ad8276d611889bbee53a27`.
+- Starting `origin/main` before fetch: `739a331c9942ed64a1ad8276d611889bbee53a27`.
+- Fetched `origin/main`: `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- Synchronized commit/HEAD: `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- `origin/agent2/database`: `739a331c9942ed64a1ad8276d611889bbee53a27`.
+- Pre-sync divergence after fetch: `0 7`; local branch was an ancestor of
+  `origin/main`, so synchronization was fast-forward-only.
+- Worktree before synchronization: clean; no tracked or unexplained untracked
+  files (`## agent2/database...origin/agent2/database`).
+- Worktree immediately after synchronization: clean;
+  `## agent2/database...origin/agent2/database [ahead 7]`.
+- Synchronization command: `git merge --ff-only origin/main`.
+- Managed workspace permissions initially denied `.git/FETCH_HEAD` and
+  `.git/ORIG_HEAD.lock` writes (exit 128); the approved `git fetch origin` and
+  verified `git merge --ff-only origin/main` reruns each exited 0.
+- Auth merge ancestry: merge commit `f54f8755...` is contained in both
+  `origin/main` and synchronized `HEAD`.
 
-## Repair summary
+## Contract evidence
 
-Added reusable `validate_test_database_url` protection at the shared Database
-configuration boundary. It:
+- Contract: `CONTRACT-AUTH-001`.
+- Version: `1.0.0-draft.2`.
+- Durable state: `ACKNOWLEDGED_AND_MERGED`.
+- Path: `docs/components/auth/CONTRACT-AUTH-001.md`.
+- Pull request: #7.
+- Producer head commit: `20a6fa12398a29bfed3a28005aa71e2ffe0ba7d48`.
+- Merge commit: `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- Auth producer decision: `PASS — A2_AUTH_ACCEPTED`.
+- Database consumer decision: `ACKNOWLEDGED`.
+- Inspected evidence includes exact case-sensitive issuer semantics and the
+  distinct `expires_at`, `expired_at`, and `revoked_at` meanings.
 
-- requires a non-empty `postgresql+psycopg` URL;
-- requires the database name to end exactly in `_test`;
-- rejects equality with `DATABASE_URL`;
-- returns the original URL without rewriting it;
-- accepts explicit values for deterministic tests;
-- reads only process environment defaults, never `.env` files;
-- creates no engine during import; and
-- emits safe errors without URL values, usernames, passwords, or credentials.
+## Exact files modified
 
-The real `TEST_DATABASE_URL` connectivity test now calls the validator before
-creating its engine. Documentation requires any future Alembic test using
-`TEST_DATABASE_URL` to do the same. No authoritative production-host registry
-exists, so no hostnames were invented; Deployment/Integration host-registry
-validation remains pending.
+1. `docs/components/database/COMPONENT_STATUS.md`
+2. `docs/components/database/TASK_LEDGER.md`
+3. `docs/components/database/OPEN_ISSUES.md`
+4. `docs/components/database/DECISION_LOG.md`
+5. `docs/components/database/DEPENDENCY_REQUESTS.md`
+6. `docs/components/database/LATEST_AGENT3_HANDOFF.md`
 
-Tests cover valid, missing, non-PostgreSQL, missing-suffix, equal runtime/test,
-credential-redaction, and production-like missing-suffix cases.
+No Auth-owned, Workflow-owned, Integration-owned, data, application, test,
+manifest, lockfile, environment, container, CI, migration, or deployment file
+was modified.
 
-## Test classification
+## Durable-record changes
 
-- Database unit/bootstrap tests: `PASSED`.
-- Authenticated temporary PostgreSQL checks: `PASSED`.
-- Temporary PostgreSQL version used: `17.10`.
-- Approved Compose PostgreSQL 16 validation: `NOT_TESTED`.
-- Exact Docker Compose commands:
-  - `docker compose up -d --wait postgres`
-  - `docker compose exec -T postgres pg_isready -U postgres -d testgap`
-- Compose result: `BLOCKED` because Docker was unavailable.
-- Required closure: A2-INTEGRATION must repeat clean-checkout validation using
-  the approved PostgreSQL 16 Compose service.
+- `COMPONENT_STATUS.md`: records this task, fast-forward evidence, Auth
+  `ACKNOWLEDGED_AND_MERGED`, producer/consumer results, accepted dependency,
+  documentation-only scope, preserved scaffold history, domain schema
+  `NOT_STARTED`, and DB-002 `BLOCKED`.
+- `TASK_LEDGER.md`: preserves the historical
+  `DB-AUTH-CONTRACT-ACK-001` `ACKNOWLEDGED_WITH_CHANGES`, records C1 as
+  `PASS` / `ACKNOWLEDGED`, records this merge task `PASS`, and keeps DB-002
+  blocked behind the remaining readiness gates.
+- `DEPENDENCY_REQUESTS.md`: changes only DB-DEP-001 to `ACCEPTED` with exact
+  contract, producer, consumer, PR, commit, path, and semantic evidence.
+- `OPEN_ISSUES.md`: closes/supersedes only the Auth availability,
+  acknowledgement, merge, issuer-comparison/normalization, expiration-timing,
+  and expiration-versus-revocation issues. Unrelated issues remain open.
+- `DECISION_LOG.md`: accepts the Auth identity, issuer, uniqueness, grant,
+  lifecycle, historical-attribution, actor, credential, ownership, and future
+  compatibility boundaries.
+- This handoff replaces the prior latest handoff while preserving its scaffold
+  work and validation as historical evidence.
 
-The scaffold is not classified as fully tested without that qualification.
+## Required state confirmation
 
-## Validation evidence
+- `DB-DEP-001`: `ACCEPTED`.
+- `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`.
+- Auth semantics changed by this task: no.
+- Auth-owned files modified: none.
+- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- Database domain schema: `NOT_STARTED`.
+- Domain implementation, migration, fixture, or test created: none.
+- `DB-AUTH-CONTRACT-MERGE-001`: `PASS`.
+- `DB-002`: `BLOCKED`, not READY.
+- A3-DATABASE DB-002 authorization: none.
 
-All C2 commands ran from the repository root.
+## Validation
 
-| Command / check | Result |
-|---|---|
-| Pre-flight branch and HEAD | `agent2/database`; exact `11b8019f...` |
-| `HEAD...origin/main` | `0 0` |
-| Stash inventory | `stash@{0}` intact |
-| Locked dependency sync | Passed |
-| Database test collection | 23 tests collected |
-| Database tests without connection URLs | 20 passed, 3 explicitly skipped |
-| Backend tests | 5 passed |
-| Full suite without connection URLs | 25 passed, 3 explicitly skipped |
-| C1 authenticated temporary PostgreSQL checks | Passed on PostgreSQL 17.10 |
-| Alembic `heads` | Empty output |
-| Programmatic Alembic heads | `[]`; `zero heads verified` |
-| Revision Python-file search | Empty output |
-| Domain tables/models | None created |
-| Cache/review-artifact tracking check | No tracked cache or review artifact |
+All required validation commands completed with exit status 0 except the
+intentional no-match implementation-scope check, whose grep exit status was 1
+with no output:
 
-The three skips are the live `DATABASE_URL`, `TEST_DATABASE_URL`, and
-`MIGRATION_DATABASE_URL` connectivity tests because those variables were
-absent. Their authenticated PostgreSQL paths passed during C1. C2 adds and
-passes the test-database safety checks before the test connection path.
+| Command / check | Exit | Result |
+|---|---:|---|
+| `git diff --check` | 0 | Passed |
+| `git diff --stat` | 0 | Six permitted Database records only |
+| `git diff --name-only` | 0 | Exact six-file allowed set |
+| `git status --short --branch` | 0 | Branch ahead of remote by seven; six documentation files modified |
+| Sorted allowed-file subset check | 0 | Passed |
+| Stale Auth dependency search plus manual review | 0 | One unrelated false positive: `authorizes ... pending Agent 1 confirmation`; no stale Auth dependency remains |
+| Required draft.2, merge-commit, DB-DEP-001, and acknowledgement searches | 0 | Evidence present |
+| Forbidden implementation-path diff grep | 1 | Expected no-match result; no output |
 
-One pre-existing Starlette/httpx deprecation warning remains; no protected
-dependency file was changed to address it.
+`git diff --check` produced no output.
 
-## Files in the uncommitted C1/C2 implementation
+## Remaining blockers and next action
 
-Database scaffold:
+DB-002 remains blocked by the separate verified Database post-merge
+reconciliation of `CONTRACT-WORKFLOW-001`, final Database scaffold/readiness
+verification, a clean synchronized implementation worktree, and confirmation
+that no contract conflict remains. This Auth task does not accept Workflow
+solely because its files exist.
 
-- `apps/api/app/db/__init__.py`
-- `apps/api/app/db/config.py`
-- `apps/api/app/db/dependencies.py`
-- `apps/api/app/db/engine.py`
-- `apps/api/app/db/metadata.py`
-- `apps/api/app/db/session.py`
-- `apps/api/alembic.ini`
-- `apps/api/alembic/env.py`
-- `apps/api/alembic/script.py.mako`
-- `apps/api/alembic/versions/.gitkeep`
+A2-DATABASE should review this handoff, commit and merge only these Database
+documentation changes, then perform the separate Workflow reconciliation and a
+final DB-002 readiness assessment. Do not begin DB-002 from this handoff.
 
-Tests and Database documentation:
-
-- `tests/database/test_alembic.py`
-- `tests/database/test_config.py`
-- `tests/database/test_connectivity.py`
-- `tests/database/test_scaffold.py`
-- `docs/data/database-scaffold.md`
-- all six Database component records
-
-No Alembic revision, model, table, constraint, index, Auth field, Workflow
-field, domain schema, manifest, lockfile, environment file, container, CI,
-route, or deployment script was created or modified.
-
-## Review-artifact cleanliness
-
-Pytest created ignored `__pycache__`/`.pyc` files, and the existing virtual
-environment contains ignored caches. `git check-ignore` confirms the project
-caches are covered by `.gitignore`; `git ls-files` reports no tracked cache,
-ZIP, patch, or review-state artifact. `.gitignore` was not modified.
-
-## A2-DATABASE review request
-
-Review the C2 safety helper, its connectivity call site, required tests, and
-the six reconciled records. Final DB-DEP-011 closure remains with
-A2-INTEGRATION after a clean-checkout PostgreSQL 16 Compose run.
-
-No stash was restored. No DB-002 work, commit, push, or pull request was
-performed.
+Rollback before merge is limited to these six Database documentation changes.
+Do not revert PR #7, Auth or Workflow files, Database scaffold code, Alembic,
+Backend, Deployment, Integration records, or merged main history. After this
+reconciliation is merged and consumed, rollback requires A2-DATABASE and
+A2-INTEGRATION coordination.

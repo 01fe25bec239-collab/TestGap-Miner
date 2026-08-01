@@ -1,14 +1,24 @@
 # Database Component Status
 
-## Current state — DB-DEP011-DATABASE-SCAFFOLD-001-C2
+## Current state — DB-AUTH-CONTRACT-MERGE-001
 
-- Date: 2026-07-30
-- Task: `DB-DEP011-DATABASE-SCAFFOLD-001-C2`
-- Parent: `DB-DEP011-DATABASE-SCAFFOLD-001-C1`
-- Prompt type: `REPAIR`
-- Starting and synchronized commit: `11b8019f91921f9be5cc162ac3db48e9bd2d5364`
+- Date: 2026-07-31
+- Task: `DB-AUTH-CONTRACT-MERGE-001`
+- Scope: `DOCUMENTATION_ONLY`
+- Prompt type: `POST_MERGE_CONTRACT_RECONCILIATION`
+- Starting commit: `739a331c9942ed64a1ad8276d611889bbee53a27`
+- Synchronized commit: `f54f8755c0589db704bd0f94c891da11c42398a6`
 - Branch: `agent2/database`
-- `DB-001`: `PASS`, reviewed, and merged in PR #1 at `ea5f1f0`.
+- Synchronization: fast-forwarded to `origin/main`, which contains Auth PR #7
+  merge commit `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`.
+- Auth producer result: `PASS — A2_AUTH_ACCEPTED`.
+- Database consumer result: `ACKNOWLEDGED`.
+- `DB-DEP-001`: `ACCEPTED`.
+- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- Database domain schema: `NOT_STARTED`.
+- Result: `DB-AUTH-CONTRACT-MERGE-001` `PASS`.
+- `DB-001`: `PASS`, reviewed, and merged in PR #1; PR head commit `ea5f1f0`; merged through merge commit `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`.
 - `DB-001-C1`: historical completed continuation.
 - `DB-DEP011-DATABASE-SCAFFOLD-001`: historical `DEPENDENCY_BLOCKED` attempt.
 - C1/C2 result: `IMPLEMENTED` and tested at the Database boundary, pending
@@ -26,9 +36,13 @@
   the approved PostgreSQL 16 Compose service.
 - Scope: DB-002 has not begun. No model, domain table, Auth/Workflow field, or
   Alembic revision was created.
-- Current blockers: domain schema `NOT_STARTED`; DB-002 `BLOCKED`;
-  `CONTRACT-AUTH-001` and `CONTRACT-WORKFLOW-001` `PENDING`; DB-DEP-011 final
-  acceptance `PENDING_INTEGRATION_VALIDATION`.
+- No Auth or Database runtime implementation was performed. No domain model,
+  table, enum, constraint, index, migration, fixture, or test was created.
+- Current blockers: DB-002 remains `BLOCKED`; Workflow requires its separate
+  verified Database post-merge reconciliation; final Database scaffold/readiness
+  verification remains required; and the implementation worktree must be clean,
+  synchronized, and free of unresolved contract conflicts before authorization.
+- A3-DATABASE has no DB-002 implementation authorization.
 
 ## Historical completed DB-001/DB-001-C1 reconciliation
 
@@ -116,7 +130,10 @@ absent.
 
 ## DB-002 prerequisite boundary
 
-- Direct task prerequisites from the authoritative manager: completed DB-001, draft `CONTRACT-AUTH-001`, and draft `CONTRACT-WORKFLOW-001`.
+- Direct task prerequisites from the authoritative manager: completed DB-001,
+  accepted Auth and Workflow contracts. The Auth prerequisite is satisfied by
+  `CONTRACT-AUTH-001@1.0.0-draft.2`; Workflow requires a separate verified
+  Database post-merge reconciliation and is not accepted by this task.
 - Shared scaffold status: implemented at the Database boundary; final
   DB-DEP-011 closure awaits A2 review and Integration PostgreSQL 16 validation.
 - API, Queue, Security, Deployment, and Integration inputs remain scoped constraints where their owned fields or protected files are touched; they are not universal direct contract prerequisites for DB-002.
@@ -130,10 +147,10 @@ absent.
 | Alembic setup | `IMPLEMENTED` | Bootstrap configuration and empty metadata exist |
 | Migration chain | `IMPLEMENTED` bootstrap | Zero heads and no revisions |
 | Domain schema | `NOT_STARTED` | Zero domain tables; DB-002 was not run |
-| Users/auth-subject persistence | `BLOCKED` | Missing; awaits CONTRACT-AUTH-001 |
-| GitHub installation persistence | `BLOCKED` | Missing; direct DB-002 contract prerequisite is CONTRACT-AUTH-001; Integration details remain provisional |
-| Repository access | `BLOCKED` | Missing; awaits CONTRACT-AUTH-001 |
-| Repositories | `BLOCKED` | Missing; awaits direct Auth draft; API/Integration-owned query fields remain provisional |
+| Users/auth-subject persistence | `BLOCKED` | Auth contract accepted; implementation not authorized while DB-002 remains blocked |
+| GitHub installation persistence | `BLOCKED` | Auth contract accepted; Integration details and DB-002 readiness remain unresolved |
+| Repository access | `BLOCKED` | Auth contract accepted; implementation not authorized while DB-002 remains blocked |
+| Repositories | `BLOCKED` | Auth contract accepted; API/Integration-owned query fields and DB-002 readiness remain provisional |
 | Run requests | `BLOCKED` | Missing; awaits direct Workflow draft; API/Queue/Security-owned fields remain provisional |
 | Runs | `BLOCKED` | Missing; awaits CONTRACT-WORKFLOW-001 |
 | Workflow steps/events | `BLOCKED` | Missing; awaits CONTRACT-WORKFLOW-001 and CONTRACT-QUEUE-001 |
@@ -142,7 +159,7 @@ absent.
 | Execution attempts | `BLOCKED` | Missing; awaits Workflow and Evidence contracts |
 | Artefact metadata | `BLOCKED` | Missing; awaits Evidence, Security, and Deployment contracts |
 | Publications | `BLOCKED` | Missing; awaits API, Evidence, and Integration contracts |
-| Human decisions | `BLOCKED` | Missing; awaits Auth, API, and Evidence contracts |
+| Human decisions | `BLOCKED` | Accepted Auth semantics apply; awaits API and Evidence contracts |
 | Benchmark cases | `BLOCKED` | Missing; awaits CONTRACT-EVAL-001 |
 | Evaluation results | `BLOCKED` | Missing; awaits CONTRACT-EVAL-001 |
 | Audit/security events | `BLOCKED` | Missing; awaits CONTRACT-SEC-001 |
@@ -158,8 +175,9 @@ absent.
 | Mandatory pgvector baseline | `DEPRECATED` | Superseded by deterministic retrieval first; optional feature flag only |
 
 Infrastructure is implemented; domain persistence remains intentionally absent.
-DB-002 remains blocked by pending Auth/Workflow contracts and final scaffold
-review/Integration validation.
+The accepted Auth prerequisite is merged. DB-002 remains blocked by a separate
+Workflow post-merge reconciliation and final scaffold/readiness verification;
+this task does not mark it ready.
 
 ## Generic schema keep/adapt/reject matrix
 
@@ -228,7 +246,7 @@ Fields owned by AUTH, BACKEND, RAG, AGENT-WORKFLOW, EVALUATION, SECURITY, DEPLOY
 - The generic architecture treats pgvector as an MVP default; the manager requires deterministic retrieval first and optional pgvector behind a feature flag. The manager wins.
 - The generic architecture/database report proposes organization tenancy, RLS, enterprise RBAC, and generic document ingestion. These are rejected for MVP by the PRD and manager.
 - The generic database report proposes Liquibase/Flyway. The Python baseline requires Alembic.
-- The generic database report includes database-held API keys and password hashes. Raw secrets are prohibited; local password hashes require an explicit AUTH contract.
+- The generic database report includes database-held API keys and password hashes. `CONTRACT-AUTH-001@1.0.0-draft.2` prohibits raw secrets, password hashes, and local credentials for DB-002.
 - The generic threat report assumes broad multi-tenancy and generic file ingestion. Its security controls are retained, but those product features remain out of scope.
 
 ## DB-001 acceptance evidence
