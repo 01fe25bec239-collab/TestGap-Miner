@@ -1,28 +1,37 @@
 # Database Component Status
 
-## Current state — DB-AUTH-CONTRACT-MERGE-001
+## Current state — DB-WORKFLOW-CONTRACT-MERGE-001
 
-- Date: 2026-07-31
-- Task: `DB-AUTH-CONTRACT-MERGE-001`
+- Date: 2026-08-01
+- Task: `DB-WORKFLOW-CONTRACT-MERGE-001`
 - Scope: `DOCUMENTATION_ONLY`
 - Prompt type: `POST_MERGE_CONTRACT_RECONCILIATION`
-- Starting commit: `739a331c9942ed64a1ad8276d611889bbee53a27`
-- Synchronized commit: `f54f8755c0589db704bd0f94c891da11c42398a6`
+- Starting commit: `6cf88f135215984424bec00994a05a1de1dd011e`
+- Synchronized commit: `6cf88f135215984424bec00994a05a1de1dd011e`
 - Branch: `agent2/database`
-- Synchronization: fast-forwarded to `origin/main`, which contains Auth PR #7
-  merge commit `f54f8755c0589db704bd0f94c891da11c42398a6`.
+- Synchronization: already equal to fetched `origin/main`, including Workflow
+  PR #8 merge commit `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`
+  and latest required PR #9 merge commit
+  `6cf88f135215984424bec00994a05a1de1dd011e`.
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`.
-- Auth producer result: `PASS — A2_AUTH_ACCEPTED`.
-- Database consumer result: `ACKNOWLEDGED`.
 - `DB-DEP-001`: `ACCEPTED`.
+- `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
+  `ACKNOWLEDGED_AND_MERGED`.
+- Workflow semantic commit: `a7c83f422bb51deefd233229c7573fda64b097b6`.
+- Database acknowledgement commit:
+  `5eb2e98d5a8189b5a4da3f3f5d0dc0013dca3dc0`.
+- Database consumer decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`.
+- `DB-DEP-004`: `ACCEPTED`.
 - Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- Workflow runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
 - Database domain schema: `NOT_STARTED`.
-- Result: `DB-AUTH-CONTRACT-MERGE-001` `PASS`.
+- Result: `DB-WORKFLOW-CONTRACT-MERGE-001` `PASS`.
 - `DB-001`: `PASS`, reviewed, and merged in PR #1; PR head commit `ea5f1f0`; merged through merge commit `dd3330ba31ea3dcb350f818f17fa6a816e1c3a86`.
 - `DB-001-C1`: historical completed continuation.
 - `DB-DEP011-DATABASE-SCAFFOLD-001`: historical `DEPENDENCY_BLOCKED` attempt.
-- C1/C2 result: `IMPLEMENTED` and tested at the Database boundary, pending
-  A2-DATABASE review and A2-INTEGRATION PostgreSQL 16 validation.
+- C1/C2 result: `IMPLEMENTED`, reviewed, and merged through Database PR #6 and
+  merge commit `739a331c9942ed64a1ad8276d611889bbee53a27`.
+  A2-INTEGRATION PostgreSQL 16 validation remains pending.
 - Implemented: synchronous SQLAlchemy/psycopg 3 engine, session factory,
   request-session dependency, safe runtime/migration URL resolution,
   reusable test-database safety validation, connectivity helper, empty-metadata
@@ -36,12 +45,10 @@
   the approved PostgreSQL 16 Compose service.
 - Scope: DB-002 has not begun. No model, domain table, Auth/Workflow field, or
   Alembic revision was created.
-- No Auth or Database runtime implementation was performed. No domain model,
+- No Workflow or Database runtime implementation was performed. No domain model,
   table, enum, constraint, index, migration, fixture, or test was created.
-- Current blockers: DB-002 remains `BLOCKED`; Workflow requires its separate
-  verified Database post-merge reconciliation; final Database scaffold/readiness
-  verification remains required; and the implementation worktree must be clean,
-  synchronized, and free of unresolved contract conflicts before authorization.
+- Current blocker: DB-002 remains `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`;
+  the accepted Auth and Workflow dependencies do not authorize implementation.
 - A3-DATABASE has no DB-002 implementation authorization.
 
 ## Historical completed DB-001/DB-001-C1 reconciliation
@@ -131,11 +138,12 @@ absent.
 ## DB-002 prerequisite boundary
 
 - Direct task prerequisites from the authoritative manager: completed DB-001,
-  accepted Auth and Workflow contracts. The Auth prerequisite is satisfied by
-  `CONTRACT-AUTH-001@1.0.0-draft.2`; Workflow requires a separate verified
-  Database post-merge reconciliation and is not accepted by this task.
-- Shared scaffold status: implemented at the Database boundary; final
-  DB-DEP-011 closure awaits A2 review and Integration PostgreSQL 16 validation.
+  accepted Auth and Workflow contracts. Auth is satisfied by
+  `CONTRACT-AUTH-001@1.0.0-draft.2`; Workflow is satisfied by
+  `CONTRACT-WORKFLOW-001@1.0.0-draft.1` and accepted `DB-DEP-004`.
+- Shared scaffold status: implemented at the Database boundary. DB-DEP-011
+  Database implementation review is complete; final closure awaits only
+  A2-INTEGRATION clean-checkout PostgreSQL 16 validation.
 - API, Queue, Security, Deployment, and Integration inputs remain scoped constraints where their owned fields or protected files are touched; they are not universal direct contract prerequisites for DB-002.
 - No upstream-owned field is frozen.
 
@@ -151,19 +159,19 @@ absent.
 | GitHub installation persistence | `BLOCKED` | Auth contract accepted; Integration details and DB-002 readiness remain unresolved |
 | Repository access | `BLOCKED` | Auth contract accepted; implementation not authorized while DB-002 remains blocked |
 | Repositories | `BLOCKED` | Auth contract accepted; API/Integration-owned query fields and DB-002 readiness remain provisional |
-| Run requests | `BLOCKED` | Missing; awaits direct Workflow draft; API/Queue/Security-owned fields remain provisional |
-| Runs | `BLOCKED` | Missing; awaits CONTRACT-WORKFLOW-001 |
-| Workflow steps/events | `BLOCKED` | Missing; awaits CONTRACT-WORKFLOW-001 and CONTRACT-QUEUE-001 |
+| Run requests | `BLOCKED` | Missing; accepted Workflow semantics apply, while API/Queue/Security-owned fields remain provisional; DB-002 awaits final readiness assessment |
+| Runs | `BLOCKED` | Missing; accepted Workflow semantics apply; DB-002 awaits final readiness assessment |
+| Workflow steps/events | `BLOCKED` | Missing; DB-003 owns these records and still has scoped Queue dependencies |
 | Context selections | `BLOCKED` | Missing; awaits CONTRACT-RAG-001 |
 | Candidate patches | `BLOCKED` | Missing; awaits CONTRACT-EVIDENCE-001 |
-| Execution attempts | `BLOCKED` | Missing; awaits Workflow and Evidence contracts |
+| Execution attempts | `BLOCKED` | Missing; accepted Workflow semantics apply; awaits Evidence contract |
 | Artefact metadata | `BLOCKED` | Missing; awaits Evidence, Security, and Deployment contracts |
 | Publications | `BLOCKED` | Missing; awaits API, Evidence, and Integration contracts |
 | Human decisions | `BLOCKED` | Accepted Auth semantics apply; awaits API and Evidence contracts |
 | Benchmark cases | `BLOCKED` | Missing; awaits CONTRACT-EVAL-001 |
 | Evaluation results | `BLOCKED` | Missing; awaits CONTRACT-EVAL-001 |
 | Audit/security events | `BLOCKED` | Missing; awaits CONTRACT-SEC-001 |
-| Model and cost telemetry | `BLOCKED` | Missing; awaits Workflow, Evaluation, and Security contracts; billing is out of scope |
+| Model and cost telemetry | `BLOCKED` | Missing; accepted Workflow semantics apply; awaits Evaluation and Security contracts; billing is out of scope |
 | Database unit/bootstrap tests | `PASS` | Safety, configuration, engine, session, dependency, connectivity-helper, and zero-head checks pass |
 | Authenticated PostgreSQL checks | `PASS` | Temporary PostgreSQL 17.10 checks passed |
 | Approved Compose PostgreSQL 16 validation | `NOT_TESTED` | Docker unavailable; A2-INTEGRATION must run clean-checkout validation |
@@ -175,9 +183,9 @@ absent.
 | Mandatory pgvector baseline | `DEPRECATED` | Superseded by deterministic retrieval first; optional feature flag only |
 
 Infrastructure is implemented; domain persistence remains intentionally absent.
-The accepted Auth prerequisite is merged. DB-002 remains blocked by a separate
-Workflow post-merge reconciliation and final scaffold/readiness verification;
-this task does not mark it ready.
+The accepted Auth and Workflow prerequisites are merged. DB-002 remains
+blocked pending the separate final Database readiness assessment; this task
+does not mark it ready.
 
 ## Generic schema keep/adapt/reject matrix
 

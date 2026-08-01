@@ -1,8 +1,8 @@
 # Database Decision Log
 
-- Date reconciled: 2026-07-31
+- Date reconciled: 2026-08-01
 - Branch: `agent2/database`
-- Synchronized baseline: `f54f8755c0589db704bd0f94c891da11c42398a6`
+- Synchronized baseline: `6cf88f135215984424bec00994a05a1de1dd011e`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -11,7 +11,8 @@
 - Migration chain: bootstrap exists with zero heads and no revisions
 - Domain schema: `NOT_STARTED`; DB-002: `BLOCKED`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
-- Workflow: separate verified Database post-merge reconciliation required
+- `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
+  `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
 
 ## `DB-DEC-001` — Persistence baseline
 
@@ -62,10 +63,10 @@
 
 - Status: `VERIFIED_COMPLETE`.
 - Decision: DB-001 may document provisional domains, but it does not freeze fields owned by AUTH, BACKEND, RAG, AGENT-WORKFLOW, EVALUATION, SECURITY, DEPLOYMENT, or INTEGRATION.
-- DB-002 boundary: the Auth prerequisite is satisfied. Workflow requires its
-  separate verified Database post-merge reconciliation. API, Queue, Security,
-  Deployment, and Integration are scoped constraints where applicable, not
-  universal prerequisites.
+- DB-002 boundary: the Auth and Workflow direct contract prerequisites are
+  satisfied and merged. API, Queue, Security, Deployment, and Integration
+  remain scoped constraints where applicable, not universal DB-002
+  prerequisites.
 
 ## `DB-DEC-010` — Shared scaffold ownership
 
@@ -77,9 +78,9 @@
 ## `DB-DEC-011` — Minimal synchronous Database scaffold
 
 - Date: 2026-07-30
-- Status: `IMPLEMENTED` by
-  `DB-DEP011-DATABASE-SCAFFOLD-001-C1/C2`, pending A2-DATABASE review and
-  Integration PostgreSQL 16 validation.
+- Status: `IMPLEMENTED`, reviewed, and merged through Database PR #6 and merge
+  commit `739a331c9942ed64a1ad8276d611889bbee53a27`. Final DB-DEP-011 closure
+  remains pending only A2-INTEGRATION PostgreSQL 16 validation.
 - Decision: runtime engines are explicit synchronous SQLAlchemy factories using
   psycopg 3 and `pool_pre_ping=True`; sessions use `autoflush=False` and
   `expire_on_commit=False`; request dependencies roll back escaping exceptions,
@@ -126,3 +127,33 @@
   affected-consumer acknowledgement, and Integration coordination.
 - Runtime boundary: no Auth or Database implementation was performed; DB-002
   remains `BLOCKED`.
+
+## `DB-DEC-013` — Workflow contract acceptance
+
+- Date: 2026-08-01
+- Status: `ACCEPTED`; `CONTRACT-WORKFLOW-001@1.0.0-draft.1` is
+  `ACKNOWLEDGED_AND_MERGED` through PR #8 and merge commit
+  `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`.
+- State decision: persist the exact canonical `RunState` text with
+  Database-owned check constraints for allowed values and transitions. Run
+  projection mutations compare expected state and `version` for optimistic
+  concurrency; terminal projections are immutable after commit.
+- Counter decision: `repair_attempts_used` is constrained to `0..1`; repair
+  and retry remain separate, and a repaired candidate repeats buggy then fixed
+  execution.
+- Identity decision: internal UUIDs remain separate from external identifiers.
+  Request identity uses versioned canonical idempotency-key composition, a
+  persisted key version, bounded digest, and request fingerprint for conflict
+  detection.
+- Ownership decision: DB-002 owns only `run_requests` and current `runs`
+  projections. DB-003 owns steps, attempts, append-only events, event ordering,
+  producer-event idempotency, and transition history.
+- Payload decision: lifecycle payloads contain bounded redacted metadata or
+  opaque references only; raw prompts, repository bytes, patch bytes, logs,
+  and secrets are prohibited. Queue, Evidence, and Security payload fields are
+  deferred to their versioned owner contracts.
+- Compatibility: any future incompatible Workflow change requires a versioned
+  Workflow contract, Database consumer review, migration-impact analysis,
+  affected-consumer acknowledgement, and Integration coordination.
+- Runtime boundary: no Workflow or Database implementation was performed;
+  DB-002 remains `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`.
