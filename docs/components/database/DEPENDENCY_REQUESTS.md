@@ -3,7 +3,7 @@
 - Date prepared: 2026-08-02
 - Branch: `agent2/database`
 - Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
-- Synchronized commit: `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
+- Synchronized commit: `1511f474ee301651b631c8adfe406aeb775327aa`
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -13,9 +13,13 @@
 - Domain schema: `IMPLEMENTED` for DB-002; DB-002:
   `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1: `PASS`; DB-002-C2: `PASS`;
   DB-002-MERGE-001: `PASS`
-- DB-002 merge evidence: pull request #12; implementation commit
-  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; merge commit
+- DB-002 implementation evidence: pull request #12; implementation commit
+  `5506ab59211fbaba79f77d4fb5899a587c0e0236`; implementation merge commit
   `3701520e6d61e2bb80391e7af888d0d530bdb6c4`
+- DB-002 durable-record reconciliation evidence: documentation pull request
+  #13 (`docs(database): close merged DB-002`); head commit
+  `861781b1c91cc5eed870653bc35b2d39fc9c1021`; reconciliation merge commit
+  `1511f474ee301651b631c8adfe406aeb775327aa`
 - DB-003: `NOT_STARTED` / `NOT_AUTHORIZED`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
