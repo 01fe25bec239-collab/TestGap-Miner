@@ -24,8 +24,15 @@ def test_import_does_not_create_an_engine(monkeypatch: pytest.MonkeyPatch) -> No
     create_engine_mock = Mock()
     monkeypatch.setattr(sqlalchemy, "create_engine", create_engine_mock)
     sys.modules.pop("app.db.engine", None)
-    importlib.import_module("app.db.engine")
-    create_engine_mock.assert_not_called()
+    try:
+        importlib.import_module("app.db.engine")
+        create_engine_mock.assert_not_called()
+    finally:
+        # The probe import bound the mock into the module; reimport it cleanly
+        # so later tests and Alembic get the real create_engine.
+        monkeypatch.undo()
+        sys.modules.pop("app.db.engine", None)
+        importlib.import_module("app.db.engine")
 
 
 def test_engine_and_session_factory_are_synchronous() -> None:
