@@ -1,6 +1,65 @@
 # Latest A3-DATABASE Handoff
 
-## DB-002-PREREQUISITE-RECONCILIATION-001-C1 durable-record correction result
+## DB-002 Workflow-owner reconciliation acknowledgement
+
+- Date: 2026-08-02
+- Task: `DB-002-WORKFLOW-OWNER-ACK-001`
+- Parent Workflow task: `WORKFLOW-DB002-OWNER-RECONCILIATION-001`
+- Execution task: `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`
+- A3 task result: `PASS`
+- A2 review: `PASS`
+- A2 accepted patch SHA-256:
+  `8b36119b3c4155390482cc0db6c2db22fd4c721688d3012290373840a53ade19`
+- Database task merge status: `PENDING`
+- Workflow dependency: `SATISFIED / VERIFIED_COMPLETE / CLOSED`
+- Workflow execution task: `PASS / VERIFIED_COMPLETE / MERGED`
+- Branch: `agent2/database`
+- DB-002 implementation baseline:
+  `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Current reconciliation baseline:
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43`
+- Workflow evidence: PR #16
+  (`docs(agent-workflow): reconcile merged DB-002 owner decisions`),
+  documentation commit `4db0911d5600f852f43edc9e132a48bd817577b3`,
+  merge commit `110a90ca53058372677d53868977f74520bd3f80`
+- Database dependency: `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` /
+  `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`
+- Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` remains authoritative and
+  `ACKNOWLEDGED_AND_MERGED`; `SEMANTIC_INTEGRITY_PRESERVED /
+  NO_SEMANTIC_CHANGE_REQUIRED`
+- DB-ISSUE-011: `ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`; preserve
+  `runs.run_request_id UNIQUE`, one current run projection per durable request,
+  new request/run on regeneration, and DB-003 history outside duplicate current
+  run rows
+- DB-ISSUE-012: `ACCEPTED_AS_COMPATIBLE`; preserve anchored uppercase additive
+  failure-code family patterns, not a frozen enumeration
+- DB-ISSUE-013: `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT`; remains
+  `OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`; bounded opaque
+  `terminal_actor_id` is accepted for DB-002, no Auth foreign key is frozen,
+  Auth and Workflow jointly own the typed machine/publication actor
+  relationship, and an additive future contract and migration may resolve it
+- Database corrections: model correction `NONE`; migration correction `NONE`;
+  constraint correction `NONE`; test correction `NONE`
+- `DB-002`: `PASS / VERIFIED_COMPLETE / MERGED`; `DB-DEP-011`:
+  `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
+- `DB-003`: `NOT_STARTED / NOT_AUTHORIZED`; this acknowledgement does not begin
+  or authorize DB-003, create steps, attempts, run events, ordering, transition
+  history, Queue persistence, Evidence persistence, or runtime behavior, or
+  authorize an A3-DATABASE DB-003 implementation prompt
+- Runtime boundary: Auth runtime `NOT_STARTED / NOT_TESTED`; Workflow runtime
+  `NOT_IMPLEMENTED / NOT_TESTED`; `CONTRACT-QUEUE-001`: `NOT_CREATED`;
+  `CONTRACT-EVIDENCE-001`: `NOT_CREATED`
+- PR #17 (`docs(auth): complete AUTH-001 trust-boundary audit`) is separately
+  the Auth trust-boundary audit and current repository baseline. It is not an
+  Auth runtime implementation, does not resolve the typed actor relationship,
+  and requires no separate Database correction.
+
+Exactly the six Database durable records were modified. No application code,
+ORM model, migration, test, schema documentation, or Auth-, Workflow-,
+Integration-, or other owner file was changed. No runtime test was run or
+claimed. No commit, push, merge, rebase, reset, or pull request was performed.
+
+## Historical DB-002-PREREQUISITE-RECONCILIATION-001-C1 durable-record correction result
 
 - Date: 2026-08-02
 - Task: `DB-002-PREREQUISITE-RECONCILIATION-001-C1`

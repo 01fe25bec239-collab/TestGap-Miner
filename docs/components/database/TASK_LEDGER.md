@@ -2,8 +2,12 @@
 
 - Date: 2026-08-02
 - Branch: `agent2/database`
-- Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
-- Synchronized commit: `1511f474ee301651b631c8adfe406aeb775327aa`
+- DB-002 implementation baseline:
+  `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43`
+- Historical DB-002 reconciliation merge commit:
+  `1511f474ee301651b631c8adfe406aeb775327aa` (PR #13)
 - Database scaffold: `IMPLEMENTED`; historical validation evidence is preserved.
 - Domain schema: `IMPLEMENTED` for DB-002; exactly one Alembic head
   `ad3f80907336`.
@@ -22,6 +26,10 @@
   `861781b1c91cc5eed870653bc35b2d39fc9c1021`; reconciliation merge commit
   `1511f474ee301651b631c8adfe406aeb775327aa`.
 - `DB-003`: `NOT_STARTED` / `NOT_AUTHORIZED`; not authorized by this task.
+- `WORKFLOW-DB002-OWNER-RECONCILIATION-001`:
+  `SATISFIED / VERIFIED_COMPLETE / CLOSED`; Database dependency:
+  `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` /
+  `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`.
 
 | Task | Status | Evidence | Blocker / next action |
 |---|---|---|---|
@@ -37,6 +45,8 @@
 | DB-002-C1 — Failure-code and durable-record correction | `PASS` | Anchored uppercase family patterns accept published and additive codes, reject malformed/cross-family/non-failure codes on PostgreSQL, and durable records state the runtime boundary accurately. | None; closed by PR #12. |
 | DB-002-C2 — Durable-record documentation correction | `PASS` | Documentation-only correction of the Database durable records; no ORM, migration, schema, or test change. | None; closed by PR #12. |
 | DB-002-MERGE-001 — Post-merge task reconciliation | `PASS` | Documentation-only closure of DB-002 after its PR #12 implementation merge; the reconciliation changes were merged through documentation PR #13 at `1511f474ee301651b631c8adfe406aeb775327aa`; the six Database management records state `PASS / VERIFIED_COMPLETE / MERGED`, both PR #12 implementation commits, and Alembic head `ad3f80907336`. | None. |
+| DB-002-WORKFLOW-OWNER-ACK-001 | `PASS / A2_ACCEPTED / PENDING_MERGE` | Exactly six Database records modified; Workflow PR #16 evidence and Workflow-owner decisions recorded; documentation validation passed; no implementation or runtime files changed. | A2-DATABASE commits and pushes the six Database records, opens the documentation-only pull request, and verifies the merge. Database task merge status: `PENDING`. |
+| WORKFLOW-DB002-OWNER-RECONCILIATION-001 | `SATISFIED / VERIFIED_COMPLETE / CLOSED` | Execution task `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`: `PASS / VERIFIED_COMPLETE / MERGED`; Workflow PR #16, documentation commit `4db0911d5600f852f43edc9e132a48bd817577b3`, merge commit `110a90ca53058372677d53868977f74520bd3f80`; `CONTRACT-WORKFLOW-001@1.0.0-draft.1` is `ACKNOWLEDGED_AND_MERGED` with `SEMANTIC_INTEGRITY_PRESERVED / NO_SEMANTIC_CHANGE_REQUIRED`. | None; `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` / `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`. No model, migration, constraint, or test correction is required. |
 | DB-003 — Workflow persistence and event history | `NOT_STARTED` / `NOT_AUTHORIZED` | No implementation exists; accepted Workflow ownership assigns steps, attempts, events, and ordering to DB-003, and DB-002 deliberately created none of them. DB-002-MERGE-001 did not begin, authorize, or assess DB-003. | Separate future authorization and a separate DB-003 readiness assessment; Queue semantics remain a scoped dependency. |
 | DB-004 — Context, patch, execution, and artefact metadata | `BLOCKED` | No implementation exists. | Requires CONTRACT-RAG-001 and CONTRACT-EVIDENCE-001, plus Security/Deployment data-handling constraints. |
 | DB-005 — GitHub publication and human decisions | `BLOCKED` | No implementation exists. | Requires API, Evidence, and Integration contracts; accepted Auth semantics remain binding. |
@@ -44,5 +54,13 @@
 | DB-007 — Indexes, retention, migrations, and recovery | `BLOCKED` | Only high-level documentation exists. | Requires DB-002 through DB-006 and CONTRACT-DEPLOY-001/CONTRACT-SEC-001. |
 | DB-008 — Database final acceptance | `BLOCKED` | The DB-002 domain slice exists; DB-003 through DB-007 and their consumer handoffs remain incomplete. | Requires all prior DB tasks and CONTRACT-INTEGRATION-001. |
 
-DB-002 is implemented and merged. No DB-003 through DB-008 implementation was
-attempted.
+DB-002 is implemented and merged. This reconciliation creates no steps,
+attempts, run events, ordering, transition history, Queue persistence, Evidence
+persistence, or runtime behavior. It does not begin or authorize DB-003 or an
+A3-DATABASE DB-003 implementation prompt. Auth runtime is
+`NOT_STARTED / NOT_TESTED`; Workflow runtime is
+`NOT_IMPLEMENTED / NOT_TESTED`. PR #17
+(`docs(auth): complete AUTH-001 trust-boundary audit`) is the Auth
+trust-boundary audit and current baseline only; it neither implements Auth
+runtime nor resolves the typed machine/publication actor relationship. No DB-003
+through DB-008 implementation was attempted.

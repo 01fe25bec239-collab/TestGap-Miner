@@ -2,8 +2,12 @@
 
 - Date prepared: 2026-08-02
 - Branch: `agent2/database`
-- Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
-- Synchronized commit: `1511f474ee301651b631c8adfe406aeb775327aa`
+- DB-002 implementation baseline:
+  `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43`
+- Historical DB-002 reconciliation merge commit:
+  `1511f474ee301651b631c8adfe406aeb775327aa` (PR #13)
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -24,6 +28,9 @@
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
   `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
+- Workflow-owner reconciliation dependency:
+  `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` /
+  `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`.
 
 ## `DB-DEP-001` — Auth context
 
@@ -103,6 +110,21 @@
 - Proposed acceptance test: Contract fixtures cover the successful path, one bounded repair, abstention, cancellation, invalid transitions, ordered append-only events, and rejection of more than one automated repair.
 - Approval status: `ACCEPTED`
 - Consumer decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`
+- Owner reconciliation: `WORKFLOW-DB002-OWNER-RECONCILIATION-001` is
+  `SATISFIED / VERIFIED_COMPLETE / CLOSED`; execution task
+  `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1` is
+  `PASS / VERIFIED_COMPLETE / MERGED` through PR #16, documentation commit
+  `4db0911d5600f852f43edc9e132a48bd817577b3`, and merge commit
+  `110a90ca53058372677d53868977f74520bd3f80`.
+- Reconciliation result: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` remains
+  `ACKNOWLEDGED_AND_MERGED`; `SEMANTIC_INTEGRITY_PRESERVED /
+  NO_SEMANTIC_CHANGE_REQUIRED`. DB-ISSUE-011 is
+  `ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`; DB-ISSUE-012 is
+  `ACCEPTED_AS_COMPATIBLE`; DB-ISSUE-013 is
+  `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT` and remains
+  `OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`.
+- Database correction requirement: model correction `NONE`; migration
+  correction `NONE`; constraint correction `NONE`; test correction `NONE`.
 - Completion evidence:
   - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`.
   - Path: `docs/components/agent-workflow/CONTRACT-WORKFLOW-001.md`.
@@ -135,6 +157,16 @@
     execution, compare/update concurrency, event/projection atomicity, terminal
     update rejection, transition history, regeneration decision events, and
     Workflow orchestration remain `NOT_IMPLEMENTED` / `NOT_TESTED`.
+  - This reconciliation does not begin or authorize DB-003, persist steps,
+    attempts, run events, ordering, transition history, Queue data, or Evidence
+    data, implement runtime behavior, or authorize an A3-DATABASE DB-003
+    implementation prompt. `CONTRACT-QUEUE-001`: `NOT_CREATED`;
+    `CONTRACT-EVIDENCE-001`: `NOT_CREATED`.
+  - Auth runtime is `NOT_STARTED / NOT_TESTED`; Workflow runtime is
+    `NOT_IMPLEMENTED / NOT_TESTED`. PR #17
+    (`docs(auth): complete AUTH-001 trust-boundary audit`) is only the Auth
+    trust-boundary audit and current baseline; it does not resolve DB-ISSUE-013
+    or the typed machine/publication actor relationship.
 
 ## `DB-DEP-005` — Evidence contract
 
