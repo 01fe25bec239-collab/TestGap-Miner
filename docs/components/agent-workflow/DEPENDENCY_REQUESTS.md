@@ -1,11 +1,14 @@
 # Agent Workflow Dependency Requests
 
-- Date: 2026-07-31
-- Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
-- Current task: `AGW-DB002-CONTRACT-001-C3-C1` (`BUG_FIX`)
-- Starting-state evidence: the original task began clean with no Agent Workflow
-  directory; C1 and C2 began with exactly seven permitted untracked Markdown
-  files and no other changed path.
+- Date: 2026-08-02
+- Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` (`ACKNOWLEDGED_AND_MERGED`)
+- Current task: `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`
+  (`DOCUMENTATION_RECONCILIATION_ONLY`)
+- Evidence baseline: `d13e28117ca6266c3ab3ffa7775f63185ab74b3e`
+- Historical starting-state evidence (superseded, retained as evidence): the
+  original task began clean with no Agent Workflow directory; C1 and C2 began
+  with exactly seven permitted untracked Markdown files and no other changed
+  path.
 
 ## `AGW-DEP-001` / `DB-DEP-004` — A2-DATABASE contract acknowledgement
 
@@ -29,15 +32,44 @@
 - Approval status: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`
 - Producer status: `PRODUCER_COMPLETE`
 - Consumer status: `CONSUMER_ACCEPTED`
-- Merge status: `PENDING_MERGE`
+- Merge status: `MERGED`
+- Request status: `CLOSED`
 - Consumer decision: `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS`
 - Semantic commit: `a7c83f4`
 - Contract version: `1.0.0-draft.1`
 - Completion evidence: `DB-WORKFLOW-CONTRACT-ACK-001`, dated 2026-07-31,
   accepts `CONTRACT-WORKFLOW-001@1.0.0-draft.1` at semantic commit `a7c83f4`.
-- Next action: merge the accepted seven-file documentation set and provide
-  downstream merge evidence to A2-DATABASE. DB-002 remains independently
-  blocked by `CONTRACT-AUTH-001` and final merge/state synchronization.
+- Merge evidence: Workflow PR #8, merge commit
+  `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`, 2026-07-31; Database
+  Workflow-reconciliation PR #10, merge commit
+  `99c8022c9f44e6a54bed624aa0153be7e32f234b`, 2026-08-01.
+- Downstream consumption: DB-002 merged via PR #12, merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`, 2026-08-02. `DB-DEP-011` is
+  `ACCEPTED` / `VERIFIED_COMPLETE` / `CLOSED`.
+- Next action: none. This dependency is complete.
+
+## `AGW-DEP-004` — Typed terminal actor relationship (open)
+
+- Request ID: `AGW-DEP-004`
+- Requesting Agent 2: `A2-AGENT-WORKFLOW`
+- Owning Agent 2: `A2-AUTH` and `A2-AGENT-WORKFLOW` jointly
+- Related issues: `AGW-ISSUE-011`, `DB-ISSUE-013`
+- Required change and reason: define a typed actor relationship for terminal
+  attribution so `terminal_actor_id` need not remain bounded opaque text.
+- Contract affected: a future joint Auth/Workflow revision.
+- Workflow decision recorded for DB-002:
+  `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT`.
+- Exact blocking task: none. This is deferred and nonblocking; DB-002 merged
+  without it and no Auth foreign key is frozen.
+- Backward-compatibility impact: low; a typed relationship is expected to be an
+  additive migration.
+- Urgency: `LOW`
+- Proposed acceptance test: terminal attribution resolves to a typed actor
+  without overloading internal UUIDs or storing secrets.
+- Approval status: `OPEN` / `DEFERRED_NON_BLOCKING`
+- Completion evidence: none.
+- Next action: none required. Revisit only under a future jointly authorized
+  Auth/Workflow task. Not authorized here.
 
 ## `AGW-DEP-002` — Auth identity contract
 
@@ -54,9 +86,15 @@
 - Urgency: `HIGH`
 - Proposed acceptance test: fixtures attribute a request, cancellation, and
   human decision without storing secrets or overloading UUIDs.
-- Approval status: `PENDING`
-- Completion evidence: none.
-- Next action: A2-AUTH publishes the versioned contract.
+- Approval status: `SATISFIED_FOR_DB002`
+- Completion evidence: `CONTRACT-AUTH-001` was published and accepted, and
+  DB-002 was implemented and merged against it via PR #12, merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`, 2026-08-02. The Auth prerequisite
+  no longer blocks DB-002.
+- Remaining open scope: the typed terminal actor relationship only, tracked
+  separately as `AGW-DEP-004` / `AGW-ISSUE-011`, deferred and nonblocking.
+- Next action: none for DB-002. Future human-review records are covered by
+  `AGW-DEP-004`.
 
 ## `AGW-DEP-003` — Queue transport contract
 
@@ -72,8 +110,9 @@
 - Urgency: `MEDIUM`
 - Proposed acceptance test: at-least-once duplicate delivery produces one
   semantic effect, bounded attempts, and attributable dead-letter outcome.
-- Approval status: `PENDING`
+- Approval status: `PENDING` / `NOT_AUTHORIZED`
 - Completion evidence: none; intentionally not implemented in this task.
+  `CONTRACT-QUEUE-001` was not created.
 - Next action: issue a separate scoped contract prompt.
 
 ## Ownership boundaries
@@ -83,15 +122,17 @@
 - `CONTRACT-EVIDENCE-001`: owned by `A2-AGENT-WORKFLOW` under a separate task.
 - `CONTRACT-SEC-001`: owned by `A2-SECURITY`.
 
-These contracts remain independent and were not implemented or re-owned by
-this acknowledgement reconciliation.
+These contracts remain independent and were not implemented, created, or
+re-owned by this post-merge reconciliation.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: dependency request record.
-- `TESTED`: ownership and blocking-task references reconciled.
+- `IMPLEMENTED`: dependency request records reconciled to merged state.
+- `TESTED`: ownership, merge evidence, and blocking-task references reconciled.
 - `NOT_TESTED`: consumer/runtime behavior.
-- `BLOCKED`: Auth and Queue requests plus merge evidence remain pending;
-  Database acknowledgement is accepted.
+- `BLOCKED`: nothing. `AGW-DEP-001` is complete and closed; `AGW-DEP-002` is
+  satisfied for DB-002; `AGW-DEP-003` and `AGW-DEP-004` are `NOT_AUTHORIZED`
+  and deferred nonblocking respectively.
 - `ASSUMED`: A2-AGENT-WORKFLOW retains Queue ownership per the shared registry,
-  but a separate task is required.
+  but a separate task is required; merge evidence read from local `origin/main`
+  history rather than from the GitHub API.

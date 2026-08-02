@@ -1,8 +1,10 @@
 # Agent Workflow Decision Log
 
-- Date: 2026-07-31
-- Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
-- Current task: `AGW-DB002-CONTRACT-001-C3-C1` (`BUG_FIX`)
+- Date: 2026-08-02
+- Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` (`ACKNOWLEDGED_AND_MERGED`)
+- Current task: `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`
+  (`DOCUMENTATION_RECONCILIATION_ONLY`)
+- Evidence baseline: `d13e28117ca6266c3ab3ffa7775f63185ab74b3e`
 
 ## `AGW-DEC-001` — Canonical lifecycle is closed and explicit
 
@@ -108,21 +110,100 @@
   preserve the Workflow contract.
 - Evidence: the acknowledgement section in the contract and the C3 handoff.
 - Compatibility impact: none; no Workflow-owned semantic changed.
-- Documentation state: `VERIFIED_COMPLETE_PENDING_MERGE`.
+- Documentation state: `VERIFIED_COMPLETE` / `MERGED` via PR #8, merge commit
+  `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`, 2026-07-31. The historical
+  pre-merge documentation state recorded at the time of this decision is
+  superseded by that merge.
 - Semantic freeze: semantic commit `a7c83f4` is frozen; any semantic change
   invalidates the Database acknowledgement.
-- Closure requirement: merge evidence is still required before downstream
-  closure.
-- Blocker: Auth, Queue, Evidence, and Security fields remain deferred to their
-  owner contracts; runtime implementation is `NOT_TESTED`.
-- Next action: A2-AGENT-WORKFLOW merges the verified seven-file documentation
-  set and sends merge evidence to A2-DATABASE; keep DB-002/DB-003
-  implementation outside this task.
+- Closure requirement: satisfied. Merge evidence was delivered and the Database
+  reconciliation merged via PR #10, merge commit
+  `99c8022c9f44e6a54bed624aa0153be7e32f234b`, 2026-08-01.
+- Deferred: Queue, Evidence, and Security fields remain owned by their
+  contracts; runtime implementation remains `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- Next action: none. Superseded by `AGW-DEC-011` through `AGW-DEC-015`.
+
+## `AGW-DEC-011` — Semantic integrity preserved after DB-002 merge
+
+- Status: `IMPLEMENTED`
+- Decision: `SEMANTIC_INTEGRITY_PRESERVED` / `NO_SEMANTIC_CHANGE_REQUIRED`. The
+  merged DB-002 implementation introduced no conflict with the normative
+  Workflow body.
+- Evidence: the normative semantic-section SHA-256 is
+  `6aefc5730cfb9c6138231811e63570854b469813011f47765f98af0bc3fdfe37`, verified
+  identical before and after this reconciliation.
+- Version impact: none. The contract remains `1.0.0-draft.1`. No semantic
+  version change and no semantic-body change is required.
+- Next action: preserve the frozen semantic body in authorized downstream work.
+
+## `AGW-DEC-012` — One current run projection per durable request
+
+- Status: `IMPLEMENTED`
+- Database issue: `DB-ISSUE-011`
+- Decision: `ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`. The Database
+  `runs.run_request_id` `UNIQUE` constraint is accepted. Exactly one current run
+  projection exists per durable request. Regeneration creates a new request and
+  a new run. DB-003 event history is not represented by duplicate runs.
+- Evidence: contract `RECEIVED` definition, regeneration rules, and the merged
+  DB-002 schema.
+- Compatibility impact: none; this is physical enforcement of an existing
+  contract meaning.
+- Next action: changing this cardinality later requires Workflow consumer review
+  and Database migration review.
+
+## `AGW-DEC-013` — Failure codes remain family-checked, not frozen
+
+- Status: `IMPLEMENTED`
+- Database issue: `DB-ISSUE-012`
+- Decision: `ACCEPTED_AS_COMPATIBLE`. Anchored uppercase failure-family patterns
+  preserve additive-compatible failure codes, and the terminal state remains the
+  compatibility boundary.
+- Constraint: this MUST NOT be replaced with a frozen failure-code enumeration.
+  A frozen list would make a run in a valid terminal state unstorable after a
+  minor additive contract revision.
+- Evidence: the failure-code taxonomy section and the merged DB-002 check
+  constraint.
+- Compatibility impact: none.
+- Next action: preserve family-pattern enforcement in authorized downstream work.
+
+## `AGW-DEC-014` — Terminal actor identity deferred to a typed contract
+
+- Status: `IMPLEMENTED` for DB-002; `DEFERRED_NON_BLOCKING` thereafter
+- Database issue: `DB-ISSUE-013`
+- Workflow issue: `AGW-ISSUE-011`
+- Decision: `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT`. The DB-002 bounded
+  opaque `terminal_actor_id` storage is accepted. No Auth foreign key is frozen.
+- Ownership: the future typed actor relationship remains open, deferred,
+  nonblocking, and jointly owned by `A2-AUTH` and `A2-AGENT-WORKFLOW`.
+- Evidence: the contract marks the Auth-owned human identity shape provisional;
+  merged DB-002 stores bounded opaque text with a checked actor-type vocabulary.
+- Compatibility impact: none. A future typed relationship is an additive
+  migration.
+- Next action: none required. Revisit only under a future jointly authorized
+  Auth/Workflow task.
+
+## `AGW-DEC-015` — DB-002 boundary accepted; DB-003 remains unauthorized
+
+- Status: `IMPLEMENTED`
+- Decision: `DB002_BOUNDARY_ACCEPTED`. DB-002 owns only the durable run request
+  and the current run projection, as merged. DB-003 owns workflow steps,
+  attempts, ordered events, and transition history.
+- DB-003 state: `NOT_STARTED` / `NOT_AUTHORIZED`. This decision does not start,
+  approve readiness for, or authorize DB-003.
+- Runtime state: Workflow runtime remains `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- Contracts not created: `CONTRACT-QUEUE-001` and `CONTRACT-EVIDENCE-001`.
+- Evidence: DB-002 merged via PR #12, merge commit
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`, 2026-08-02.
+- Next action: a separate owner-authorized DB-003 readiness assessment.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: decisions encoded in the draft contract.
-- `TESTED`: internal references and invariants documentation-validated.
+- `IMPLEMENTED`: decisions encoded in the draft contract, plus the post-merge
+  owner decisions `AGW-DEC-011` through `AGW-DEC-015`.
+- `TESTED`: internal references, invariants, and the frozen semantic-section
+  hash documentation-validated.
 - `NOT_TESTED`: runtime enforcement.
-- `BLOCKED`: Auth/Queue dependencies and downstream implementation.
-- `ASSUMED`: initial baseline reconciliation in `AGW-DEC-007`.
+- `BLOCKED`: nothing. DB-003, runtime, Queue, and Evidence work are
+  `NOT_AUTHORIZED`; `AGW-DEC-014` is deferred and nonblocking.
+- `ASSUMED`: initial baseline reconciliation in `AGW-DEC-007`; merge evidence
+  read from local `origin/main` history rather than from the GitHub API.
