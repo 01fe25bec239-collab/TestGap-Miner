@@ -7,9 +7,13 @@
   persistence`
 - Scope: `IMPLEMENTATION`
 - Branch: `agent2/database`
-- Baseline commit: `8884b5d540351c735b6cddc01314a7dd9e25af05`
-- Verified repository baseline:
-  `1511f474ee301651b631c8adfe406aeb775327aa`.
+- DB-002 implementation baseline:
+  `8884b5d540351c735b6cddc01314a7dd9e25af05`.
+- Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43` (PR #17,
+  `docs(auth): complete AUTH-001 trust-boundary audit`; baseline context only).
+- Historical DB-002 reconciliation merge commit:
+  `1511f474ee301651b631c8adfe406aeb775327aa` (PR #13).
 - Result: `DB-002` `PASS / VERIFIED_COMPLETE / MERGED`; `DB-002-C1` `PASS`;
   `DB-002-C2` `PASS`; `DB-002-MERGE-001` `PASS`.
 - DB-002 implementation evidence: pull request #12; implementation commit
@@ -20,18 +24,36 @@
   #13 (`docs(database): close merged DB-002`); head commit
   `861781b1c91cc5eed870653bc35b2d39fc9c1021`; reconciliation merge commit
   `1511f474ee301651b631c8adfe406aeb775327aa`.
+- Workflow-owner reconciliation:
+  `WORKFLOW-DB002-OWNER-RECONCILIATION-001` is
+  `SATISFIED / VERIFIED_COMPLETE / CLOSED`; execution task
+  `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1` is
+  `PASS / VERIFIED_COMPLETE / MERGED`. PR #16
+  (`docs(agent-workflow): reconcile merged DB-002 owner decisions`) records
+  Workflow documentation commit `4db0911d5600f852f43edc9e132a48bd817577b3`
+  and merge commit `110a90ca53058372677d53868977f74520bd3f80`.
+- Database-side dependency state: `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` /
+  `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`.
 - Accepted contracts implemented against: `CONTRACT-AUTH-001@1.0.0-draft.2`
   (`ACKNOWLEDGED_AND_MERGED`) and `CONTRACT-WORKFLOW-001@1.0.0-draft.1`
-  (`ACKNOWLEDGED_AND_MERGED`).
+  (`ACKNOWLEDGED_AND_MERGED`). The Workflow semantic body is
+  `SEMANTIC_INTEGRITY_PRESERVED / NO_SEMANTIC_CHANGE_REQUIRED`.
 - `DB-DEP-001`: `ACCEPTED`. `DB-DEP-004`: `ACCEPTED`.
 - `DB-DEP-011`: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`.
 - Database domain schema: `IMPLEMENTED` — seven DB-002 tables.
 - Alembic state: exactly one head, `ad3f80907336`
   (`create DB-002 core entities`), down revision `None`.
-- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
+- Auth runtime: `NOT_STARTED` / `NOT_TESTED`; PR #17 is an Auth
+  trust-boundary audit, not an Auth runtime implementation.
 - Workflow runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`.
 - `DB-003`: `NOT_STARTED` / `NOT_AUTHORIZED`; no step, attempt, event, ordering,
-  or transition record was created, and no task authorizes one.
+  transition-history, Queue-persistence, Evidence-persistence, or runtime record
+  was created, and no task authorizes one. This reconciliation does not begin or
+  authorize DB-003 and does not authorize an A3-DATABASE DB-003 implementation
+  prompt. `CONTRACT-QUEUE-001`: `NOT_CREATED`; `CONTRACT-EVIDENCE-001`:
+  `NOT_CREATED`.
+- Database correction requirement: model correction `NONE`; migration
+  correction `NONE`; constraint correction `NONE`; test correction `NONE`.
 
 ### Implemented DB-002 entities
 

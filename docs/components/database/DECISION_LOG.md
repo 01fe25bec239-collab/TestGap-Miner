@@ -2,8 +2,12 @@
 
 - Date reconciled: 2026-08-02
 - Branch: `agent2/database`
-- Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
-- Synchronized commit: `1511f474ee301651b631c8adfe406aeb775327aa`
+- DB-002 implementation baseline:
+  `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43`
+- Historical DB-002 reconciliation merge commit:
+  `1511f474ee301651b631c8adfe406aeb775327aa` (PR #13)
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -25,6 +29,48 @@
 - `DB-DEP-001`: `ACCEPTED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
   `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
+
+## `DB-DEC-015` — Workflow-owner DB-002 reconciliation closure
+
+- Status: `WORKFLOW-DB002-OWNER-RECONCILIATION-001` is
+  `SATISFIED / VERIFIED_COMPLETE / CLOSED`; execution task
+  `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1` is
+  `PASS / VERIFIED_COMPLETE / MERGED`.
+- Evidence: Workflow PR #16, documentation commit
+  `4db0911d5600f852f43edc9e132a48bd817577b3`, and merge commit
+  `110a90ca53058372677d53868977f74520bd3f80`. PR #17
+  (`docs(auth): complete AUTH-001 trust-boundary audit`) is separately the Auth
+  trust-boundary audit and current baseline
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43`; it is not Auth runtime and does
+  not resolve the typed machine/publication actor relationship.
+- Contract decision: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` remains
+  authoritative and `ACKNOWLEDGED_AND_MERGED`; its semantic body is
+  `SEMANTIC_INTEGRITY_PRESERVED / NO_SEMANTIC_CHANGE_REQUIRED`.
+- Owner dispositions: DB-ISSUE-011 is
+  `ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`; DB-ISSUE-012 is
+  `ACCEPTED_AS_COMPATIBLE`; DB-ISSUE-013 is
+  `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT` and remains
+  `OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`.
+- Physical decisions preserved: `runs.run_request_id UNIQUE` represents one
+  current run projection per durable request; regeneration creates a new
+  request and run, while DB-003 history is not duplicate current-run rows.
+  Failure codes retain anchored uppercase additive family patterns rather than
+  a frozen enumeration. `terminal_actor_id` remains bounded opaque storage with
+  no Auth foreign key; Auth and Workflow jointly own a future typed relationship
+  that may be added by a future contract and migration.
+- Correction decision: model correction `NONE`; migration correction `NONE`;
+  constraint correction `NONE`; test correction `NONE`.
+- Boundary: DB-002 remains `PASS / VERIFIED_COMPLETE / MERGED`; DB-DEP-011
+  remains `ACCEPTED / VERIFIED_COMPLETE / CLOSED`; DB-003 remains
+  `NOT_STARTED / NOT_AUTHORIZED`. This decision does not begin or authorize
+  DB-003, create steps, attempts, run events, ordering, transition history,
+  Queue persistence, Evidence persistence, or runtime behavior, or authorize an
+  A3-DATABASE DB-003 implementation prompt. Auth runtime is
+  `NOT_STARTED / NOT_TESTED`; Workflow runtime is
+  `NOT_IMPLEMENTED / NOT_TESTED`; `CONTRACT-QUEUE-001`: `NOT_CREATED`;
+  `CONTRACT-EVIDENCE-001`: `NOT_CREATED`.
+- Dependency result: `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` /
+  `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`.
 
 ## `DB-DEC-001` — Persistence baseline
 
@@ -143,7 +189,7 @@
   affected-consumer acknowledgement, and Integration coordination.
 - Historical runtime boundary at the time of DB-DEC-012: no Auth or Database
   implementation had been performed and DB-002 was `BLOCKED`. The DB-002 schema
-  has since been implemented; Auth runtime remains unimplemented.
+  has since been implemented; Auth runtime is `NOT_STARTED / NOT_TESTED`.
 
 ## `DB-DEC-013` — Workflow contract acceptance
 
@@ -222,13 +268,14 @@
   places that authorization boundary at read time, before delayed status
   reconciliation.
 - Run-projection decision: `runs.run_request_id` remains unique under closed
-  `DB-ISSUE-011` (`ACCEPTED_DATABASE_PHYSICAL_DECISION`); changing that
+  `DB-ISSUE-011` (`ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`); changing that
   cardinality requires Workflow consumer and migration review. Failure codes use
   the anchored uppercase family patterns under closed `DB-ISSUE-012`
-  (`ACCEPTED_WITH_PATTERN_ENFORCEMENT`); unknown additive codes remain storable
+  (`ACCEPTED_AS_COMPATIBLE`); unknown additive codes remain storable
   and terminal state stays the compatibility boundary. Terminal attribution is
   bounded opaque text with no foreign key under `DB-ISSUE-013`
-  (`OPEN_NON_BLOCKING / DEFERRED_CONTRACT_SHAPE`).
+  (`OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`;
+  `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT`).
 - Index decision: only justified DB-002 lookup paths are indexed — the partial
   active-access index, the foreign-key reverse-lookup indexes PostgreSQL does not
   create automatically, and the contract-required unique indexes. No state

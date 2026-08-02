@@ -2,8 +2,12 @@
 
 - Date: 2026-08-02
 - Branch: `agent2/database`
-- Baseline: `8884b5d540351c735b6cddc01314a7dd9e25af05`
-- Synchronized commit: `1511f474ee301651b631c8adfe406aeb775327aa`
+- DB-002 implementation baseline:
+  `8884b5d540351c735b6cddc01314a7dd9e25af05`
+- Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43`
+- Historical DB-002 reconciliation merge commit:
+  `1511f474ee301651b631c8adfe406aeb775327aa` (PR #13)
 - DB-001/DB-001-C1: `PASS`, reviewed, and merged
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
@@ -25,6 +29,16 @@
 - `DB-DEP-004`: `ACCEPTED`
 - DB-DEP-011: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
 - DB-003: `NOT_STARTED` / `NOT_AUTHORIZED`
+- `WORKFLOW-DB002-OWNER-RECONCILIATION-001`:
+  `SATISFIED / VERIFIED_COMPLETE / CLOSED` through Workflow PR #16,
+  documentation commit `4db0911d5600f852f43edc9e132a48bd817577b3`,
+  and merge commit `110a90ca53058372677d53868977f74520bd3f80`.
+- Database dependency: `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` /
+  `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`.
+- PR #17 (`docs(auth): complete AUTH-001 trust-boundary audit`) is separately
+  the Auth trust-boundary audit and current baseline
+  `c0c3c1d5d25c671553058fec786cf7bbd99baf43`; it is not Auth runtime and does
+  not resolve DB-ISSUE-013 or the typed machine/publication actor relationship.
 
 ## `DB-ISSUE-001` — Specification filename mismatch
 
@@ -118,7 +132,7 @@
 - Historical state at the time of the contract reconciliation: closure recorded
   contract evidence only; Auth runtime was `NOT_IMPLEMENTED` / `NOT_TESTED`, the
   Database domain schema was `NOT_STARTED`, and DB-002 was `BLOCKED`.
-- Current state: Auth runtime remains `NOT_IMPLEMENTED` / `NOT_TESTED`; the
+- Current state: Auth runtime remains `NOT_STARTED` / `NOT_TESTED`; the
   seven-table DB-002 Database domain schema is implemented.
 
 ## `DB-ISSUE-010` — Workflow contract availability and lifecycle ambiguities
@@ -147,7 +161,7 @@
 
 ## `DB-ISSUE-011` — One run per run request is a Database-owned strengthening
 
-- Classification: `CLOSED / ACCEPTED_DATABASE_PHYSICAL_DECISION`
+- Classification: `CLOSED / ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`
 - Owner: `A2-AGENT-WORKFLOW`
 - Evidence: `CONTRACT-WORKFLOW-001` states that `RECEIVED` means "a durable run
   request and initial run projection exist", and that a human regeneration
@@ -159,12 +173,13 @@
 - Accepted disposition: this is the Database physical enforcement for one
   current projection per durable request. Regeneration creates a new request and
   run; DB-003 owns historical events rather than duplicate current projections.
+- Final Workflow-owner disposition: `ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`.
 - Compatibility: changing this cardinality later requires Workflow consumer
   review and Database migration review.
 
 ## `DB-ISSUE-012` — Failure codes are checked by family, not by frozen list
 
-- Classification: `CLOSED / ACCEPTED_WITH_PATTERN_ENFORCEMENT`
+- Classification: `CLOSED / ACCEPTED_AS_COMPATIBLE`
 - Owner: `A2-AGENT-WORKFLOW`
 - Evidence: the contract publishes an exact failure-code table but also states a
   consumer MAY preserve an unknown additive code while MUST using the terminal
@@ -177,10 +192,13 @@
   Bare prefixes, lowercase values, whitespace, invalid punctuation, and
   cross-family codes are rejected. Abstention and cancellation codes remain
   frozen lists because their contract vocabularies are closed.
+- Final Workflow-owner disposition: `ACCEPTED_AS_COMPATIBLE`; the Database
+  physical decision remains anchored uppercase additive failure-code family
+  patterns, not a frozen failure-code enumeration.
 
 ## `DB-ISSUE-013` — Terminal actor identity shape remains provisional
 
-- Classification: `OPEN_NON_BLOCKING / DEFERRED_CONTRACT_SHAPE`
+- Classification: `OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`
 - Owners: `A2-AGENT-WORKFLOW` and `A2-AUTH`
 - Evidence: `CONTRACT-WORKFLOW-001` marks the Auth-owned human identity shape for
   terminal attribution as provisional.
@@ -191,6 +209,12 @@
   DB-002 acceptance or merge. No foreign key is frozen. A future Auth/Workflow
   contract may add a typed relationship through an additive migration. This item
   remains open, deferred, and nonblocking after the DB-002 merge.
+- Final Workflow-owner disposition:
+  `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT`. Bounded opaque
+  `terminal_actor_id` storage is accepted for DB-002; the typed relationship
+  remains jointly owned by Auth and Workflow. PR #17 is baseline context only
+  and does not resolve this item or require a separate Database correction. An
+  additive future contract and migration may resolve it.
 
 ## `DB-ISSUE-014` — Repository display metadata is deferred
 
