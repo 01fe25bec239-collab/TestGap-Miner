@@ -15,7 +15,7 @@
 | Worktree | `/Users/omkar/Documents/TestGap-Miner-wt-auth-001` |
 | Branch | `agent2/auth-001-audit` |
 | Starting commit | `1511f474ee301651b631c8adfe406aeb775327aa` |
-| Current relation to `origin/main` | `HEAD` is behind by four non-Auth documentation commits; see §1.1 |
+| `origin/main` evidence | At audit finalization, the baseline was behind by four unrelated Database/Integration documentation commits. At PR precheck, Auth `HEAD` is 1 ahead / 6 behind `origin/main@110a90ca53058372677d53868977f74520bd3f80`; see §1.1. |
 | Contract audited against | `CONTRACT-AUTH-001@1.0.0-draft.2` |
 | Result | `PASS / VERIFIED_COMPLETE / A2_AUTH_ACCEPTED` |
 
@@ -75,6 +75,15 @@ PR #14 reconciles Database's DB-002 durable records and PR #15 reconciles the
 corresponding Integration records. The twelve changed files are confined to
 `docs/components/database/**` and `docs/components/integration/**`; every
 DB-002 and contract fact cited here remains correct.
+
+At `AUTH-001-PR-PRECHECK-C1`, `origin/main` is
+`110a90ca53058372677d53868977f74520bd3f80` and
+`git rev-list --left-right --count HEAD...origin/main` returns `1 6`.
+Current main includes PR #16, `docs(agent-workflow): reconcile merged DB-002
+owner decisions`. The upstream-only comparison from the audit merge base
+`1511f474ee301651b631c8adfe406aeb775327aa` to current `origin/main` contains
+no Auth-owned file. The audit remains based on that original commit; it was
+not rerun against or rebased onto current main.
 
 This audit was **not** rebased or merged onto the new tip, because `AUTH-001`
 requires the baseline to stay exactly
@@ -578,10 +587,14 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
    terminal actor vocabulary (owner: A2-AUTH + A2-AGENT-WORKFLOW).
 4. `AUTH-RISK-014` — `HUMAN_USER` keyed by `user_id` vs. subject-keyed request
    attribution (owner: A2-AUTH).
-5. Cross-component observation, **not** an Auth defect:
-   `CONTRACT-WORKFLOW-001` metadata still reads
-   `ACCEPTED_BY_A2_DATABASE_PENDING_MERGE` although it is merged. Owner:
-   A2-AGENT-WORKFLOW. Recorded for visibility only; not actioned here.
+5. Historical cross-component observation, **not** an Auth defect: at the
+   `AUTH-001` audit baseline, `CONTRACT-WORKFLOW-001` metadata still recorded
+   `ACCEPTED_BY_A2_DATABASE_PENDING_MERGE`. PR #16 subsequently reconciled the
+   Workflow-owned metadata to `ACKNOWLEDGED_AND_MERGED` without changing the
+   normative semantic body. Classification:
+   `HISTORICAL_OBSERVATION — RESOLVED_UPSTREAM_BY_PR_16`. This is not a
+   current contradiction, blocker, risk, or Auth dependency. The separate
+   typed machine-actor finding remains open.
 
 ### 10.2 What was explicitly **not** found
 

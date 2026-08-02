@@ -4,23 +4,28 @@
 
 - Agent 2: `A2-AUTH`
 - Agent 3: `A3-AUTH`
-- Task: `AUTH-001-FINAL`
-- Parent: `AUTH-001`
-- Previous continuations: `AUTH-001-C1` and `AUTH-001-C2`
-- Prompt type: `FINALIZATION_COMMIT_AND_PUSH_AUTHORIZATION`
-- Scope: `DOCUMENTATION_ONLY_FINALIZATION`
+- Task: `AUTH-001-PR-PRECHECK-C1`
+- Parent: `AUTH-001-FINAL`
+- Previous continuations: `AUTH-001-C1`, `AUTH-001-C2`, and `AUTH-001-FINAL`
+- Prompt type: `POST_PUSH_CURRENT_MAIN_RECONCILIATION`
+- Scope: `DOCUMENTATION_ONLY_STALE_EVIDENCE_RECONCILIATION`
 - A2-AUTH final result: `PASS`
 - Result: `PASS / VERIFIED_COMPLETE / A2_AUTH_ACCEPTED`
 - Commit authorization: `APPROVED`
 - Push authorization: `APPROVED`
+- Normal commit and push: `AUTHORIZED`
 - Merge authorization: `NOT_GRANTED`
 - Date: 2026-08-02
 - Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-001`
 - Branch: `agent2/auth-001-audit`
 - Audit baseline: `1511f474ee301651b631c8adfe406aeb775327aa`
-- Current `origin/main` relation: audit baseline is behind by four unrelated
-  Database/Integration documentation commits; no Auth file differs between
-  the baseline and `origin/main`.
+- Starting commit: `e9baf8ce02c3df802149880b9ddc1cffc8f73dcc`
+- Current `origin/main`: `110a90ca53058372677d53868977f74520bd3f80`
+- Current relation: Auth `HEAD` is 1 commit ahead / 6 commits behind
+  `origin/main`. At `AUTH-001` audit finalization, the audit baseline was
+  behind by four unrelated Database/Integration documentation commits.
+- Upstream Auth scope: no Auth-owned file changed between the audit baseline
+  and current `origin/main`.
 
 ## Accepted audit findings and final transitions
 
@@ -49,23 +54,22 @@ required. The accepted substantive state is unchanged:
 
 No Auth implementation is authorized by this acceptance.
 
-## Exact files included in the commit
+PR #16 subsequently reconciled `CONTRACT-WORKFLOW-001` metadata from the
+audit-baseline pending-merge observation to `ACKNOWLEDGED_AND_MERGED` without
+changing its normative semantic body. The old observation is now
+`HISTORICAL_OBSERVATION — RESOLVED_UPSTREAM_BY_PR_16`; it is not a current
+contradiction, blocker, risk, or Auth dependency. The separate typed
+machine-actor finding remains open.
+
+## Exact files modified
 
 1. `docs/components/auth/AUTH-001_AUDIT.md`
-2. `docs/components/auth/COMPONENT_STATUS.md`
-3. `docs/components/auth/TASK_LEDGER.md`
-4. `docs/components/auth/OPEN_ISSUES.md`
-5. `docs/components/auth/DECISION_LOG.md`
-6. `docs/components/auth/DEPENDENCY_REQUESTS.md`
-7. `docs/components/auth/LATEST_AGENT3_HANDOFF.md`
+2. `docs/components/auth/LATEST_AGENT3_HANDOFF.md`
 
-Only `AUTH-001_AUDIT.md`, `COMPONENT_STATUS.md`, `TASK_LEDGER.md`, and
-`LATEST_AGENT3_HANDOFF.md` received finalization edits. The other three
-accepted records are included unchanged from the reviewed package.
-`CONTRACT-AUTH-001.md` and every file outside the seven-file list remain
-unchanged.
+The other five accepted Auth audit records, `CONTRACT-AUTH-001.md`, and every
+file outside this two-file list remain unchanged.
 
-## Exact finalization commands and results
+## Exact PR-precheck commands and results
 
 Pre-flight:
 
@@ -77,38 +81,36 @@ git rev-parse --show-toplevel
 git branch --show-current
 → agent2/auth-001-audit
 git rev-parse HEAD
-→ 1511f474ee301651b631c8adfe406aeb775327aa
+→ e9baf8ce02c3df802149880b9ddc1cffc8f73dcc
 git status --short --branch
-→ behind origin/main by 4; exactly seven authorized Auth audit changes and
-  three expected untracked review ZIPs
+→ branch tracks origin/agent2/auth-001-audit; only three expected untracked
+  review ZIPs
 git status --short --untracked-files=no
-→ only the six tracked authorized Auth records; AUTH-001_AUDIT.md is the
-  seventh authorized file and is untracked before staging
+→ no output; tracked worktree clean
 git fetch origin
 → exit 0
+git rev-parse origin/main
+→ 110a90ca53058372677d53868977f74520bd3f80
+git rev-list --left-right --count HEAD...origin/main
+→ 1 6
+git merge-base HEAD origin/main
+→ 1511f474ee301651b631c8adfe406aeb775327aa
 git log --oneline --decorate HEAD..origin/main
-→ four unrelated Database/Integration documentation commits
+→ six commits, including PR #16 merge `110a90c` and reconciliation commit
+  `4db0911`
 git diff --name-only HEAD..origin/main -- docs/components/auth
-→ no output; no Auth-file change on origin/main
+→ the seven branch-only Auth package paths; endpoint comparison does not
+  identify which side changed them
+git diff --name-only 1511f474ee301651b631c8adfe406aeb775327aa..origin/main -- docs/components/auth
+→ no output; current main contains no Auth-owned change since the audit
+  baseline
+git log --oneline 1511f474ee301651b631c8adfe406aeb775327aa..origin/main -- docs/components/auth
+→ no output
 ```
 
-Preservation hashes recorded before editing:
-
-```text
-shasum -a 256 docs/components/auth/DECISION_LOG.md
-→ f1af7f2cae6db1f6605b1a421bc1695874c78b378c6807caeb4571d88ae15e81
-shasum -a 256 docs/components/auth/DEPENDENCY_REQUESTS.md
-→ af4d4dd5ca065e08359c5dde1b9557ea41d0d9e6c6a022b1c65acfac9e5abbf6
-shasum -a 256 docs/components/auth/OPEN_ISSUES.md
-→ 252dbbb6ac0e2f19d234b3f0dbd74deca82ae782126ba43aa0eca1b08ea83754
-shasum -a 256 docs/components/auth/CONTRACT-AUTH-001.md
-→ 4d05292a8ff49b1918c30ee2b158922aa933b443973060beaed65113fcda5cf8
-```
-
-The mandatory diff, hash, staging, commit, post-commit, and push validation
-commands are executed as part of this finalization. Their exact results,
-including the exact final commit hash and push result, are returned in the
-A3-AUTH final response.
+The literal endpoint diff lists the branch-only Auth package because it is not
+yet on main. The upstream-only merge-base comparison proves that main changed
+no Auth-owned file, so no `SPECIFICATION_CONFLICT` applies.
 
 ## Scope confirmation
 
@@ -117,6 +119,8 @@ A3-AUTH final response.
 - No accepted audit finding, dependency relationship, risk, classification,
   evidence count, trust boundary, Auth path, test result, or contract
   interpretation changed.
+- PR #16 changed only stale Workflow-owned metadata; the normative Workflow
+  semantic body and the open typed machine-actor gap remain unchanged.
 - No forbidden file changed.
 - `auth-001-audit-review.zip`, `auth-001-c1-review.zip`, and
   `auth-001-c2-review.zip` are
@@ -125,9 +129,11 @@ A3-AUTH final response.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: `AUTH-001-FINAL` documentation-only acceptance transition.
-- `TESTED`: documentation diff, preservation-hash, staged-content, and
-  post-commit validation; accepted schema/settings test evidence is unchanged.
+- `IMPLEMENTED`: `AUTH-001-PR-PRECHECK-C1` documentation-only stale-evidence
+  reconciliation.
+- `TESTED`: current-main provenance, upstream Auth-scope, documentation diff,
+  staged-content, and post-commit validation; accepted schema/settings test
+  evidence is unchanged.
 - `NOT_TESTED`: all Auth runtime behavior, Auth-specific tests, and actual
   public/production exposure remain `NOT_STARTED / NOT_TESTED`.
 - `BLOCKED`: `AUTH-002` remains `NOT_READY / BLOCKED` by `AUTH-DEP-004`;
