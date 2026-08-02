@@ -6,13 +6,17 @@
 |---|---|
 | Contract ID | `CONTRACT-WORKFLOW-001` |
 | Version | `1.0.0-draft.1` |
-| Status | `ACCEPTED_BY_A2_DATABASE_PENDING_MERGE` |
+| Status | `ACKNOWLEDGED_AND_MERGED` |
 | Semantic commit | `a7c83f422bb51deefd233229c7573fda64b097b6` |
+| Semantic integrity | `SEMANTIC_INTEGRITY_PRESERVED` / `NO_SEMANTIC_CHANGE_REQUIRED` |
 | Owner | `A2-AGENT-WORKFLOW` |
 | Required consumers | Backend, UI, Database, Evaluation, Integration |
 | Database request | `DB-DEP-004` |
 | Database task | `DB-WORKFLOW-CONTRACT-ACK-001` |
 | Database decision | `ACCEPTED_WITH_NONBREAKING_CLARIFICATIONS` |
+| Workflow merge evidence | PR #8, merge commit `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`, 2026-07-31 |
+| Database reconciliation merge evidence | PR #10, merge commit `99c8022c9f44e6a54bed624aa0153be7e32f234b`, 2026-08-01 |
+| Consumed by | DB-002, merged via PR #12, merge commit `3701520e6d61e2bb80391e7af888d0d530bdb6c4`, 2026-08-02 |
 | Scope | Run lifecycle, workflow steps, ordered events, bounded retry/repair, failure, abstention, cancellation, checkpoint/resume, and human review |
 | Out of scope | Workflow-engine implementation, queue envelope, evidence schema, runtime tests, and DB-002/DB-003 implementation |
 
@@ -483,6 +487,59 @@ do not alter, this contract:
 10. Evidence and Security payload fields remain deferred to
     `CONTRACT-EVIDENCE-001` and `CONTRACT-SEC-001`.
 
-The Database consumer acknowledgement is complete and merge evidence remains
-pending. DB-002 remains blocked independently by `CONTRACT-AUTH-001` and final
-merge/state synchronization; no runtime readiness is claimed.
+The Database consumer acknowledgement is complete and merged. `CONTRACT-AUTH-001`
+and the merge/state synchronization that previously gated DB-002 are both
+satisfied; DB-002 is `PASS` / `VERIFIED_COMPLETE` / `MERGED`. No runtime
+readiness is claimed by this contract.
+
+## Post-merge owner reconciliation (non-normative)
+
+This section is non-normative acknowledgement and reconciliation material. It
+records owner decisions made after the merge of this contract. It does not
+change, qualify, or reinterpret the normative semantic body above.
+
+- Task: `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`
+- Prompt type: `DOCUMENTATION_RECONCILIATION_ONLY`
+- Date: 2026-08-02
+- Baseline: `d13e28117ca6266c3ab3ffa7775f63185ab74b3e`
+- Normative semantic-section SHA-256, unchanged before and after:
+  `6aefc5730cfb9c6138231811e63570854b469813011f47765f98af0bc3fdfe37`
+
+### Merge state
+
+| Item | State |
+|---|---|
+| `CONTRACT-WORKFLOW-001@1.0.0-draft.1` | `ACKNOWLEDGED_AND_MERGED` |
+| Workflow PR #8 | Merged, `7da1132b9e30b51a212aa6574c23e2a832d9a6fd`, 2026-07-31 |
+| Database Workflow-reconciliation PR #10 | Merged, `99c8022c9f44e6a54bed624aa0153be7e32f234b`, 2026-08-01 |
+| `DB-DEP-011` | `ACCEPTED` / `VERIFIED_COMPLETE` / `CLOSED` |
+| DB-002 | `PASS` / `VERIFIED_COMPLETE` / `MERGED` |
+| DB-003 | `NOT_STARTED` / `NOT_AUTHORIZED` |
+| Workflow runtime | `NOT_IMPLEMENTED` / `NOT_TESTED` |
+
+### Final owner decisions
+
+1. **Semantic integrity** — `SEMANTIC_INTEGRITY_PRESERVED` /
+   `NO_SEMANTIC_CHANGE_REQUIRED`. The merged DB-002 implementation introduced
+   no conflict with the normative Workflow body. Version remains
+   `1.0.0-draft.1`.
+
+2. **`DB-ISSUE-011`** — `ACCEPTED_WITH_DOCUMENTATION_CLARIFICATION`. The
+   Database `runs.run_request_id` `UNIQUE` constraint is accepted. One current
+   run projection exists per durable request. Regeneration creates a new
+   request and a new run. DB-003 event history is not represented by duplicate
+   runs.
+
+3. **`DB-ISSUE-012`** — `ACCEPTED_AS_COMPATIBLE`. Anchored uppercase
+   failure-family patterns preserve additive-compatible failure codes. The
+   terminal state remains the compatibility boundary. This MUST NOT be replaced
+   with a frozen failure-code enumeration.
+
+4. **`DB-ISSUE-013`** — `ACCEPTED_FOR_DB002_DEFERRED_FOR_TYPED_CONTRACT`. The
+   DB-002 bounded opaque `terminal_actor_id` storage is accepted. No Auth
+   foreign key is frozen. The future typed actor relationship remains open,
+   deferred, nonblocking, and jointly owned by Auth and Workflow.
+
+5. **DB-002 versus DB-003 boundary** — `DB002_BOUNDARY_ACCEPTED`. DB-002 owns
+   the durable request and current run projection only. DB-003 remains
+   `NOT_STARTED` / `NOT_AUTHORIZED`.
