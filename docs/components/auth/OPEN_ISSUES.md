@@ -1,11 +1,11 @@
 # Auth Open Issues
 
-- Date: 2026-08-02
-- Current task: `AUTH-001-C2` — Auth task-graph reconciliation
+- Date: 2026-08-03
+- Current task: `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
 - Parent task: `AUTH-001`
-- Prompt type: `CONTINUATION`
-- Scope: `DOCUMENTATION_ONLY_TASK_GRAPH_RECONCILIATION`
-- Base commit: `1511f474ee301651b631c8adfe406aeb775327aa`
+- Prompt type: `POST_DEPENDENCY_MERGE_DURABLE_RECONCILIATION`
+- Scope: `AUTH_DOCUMENTATION_RECONCILIATION_ONLY`
+- Base commit: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
 - Evidence: `docs/components/auth/AUTH-001_AUDIT.md`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
 - Auth runtime: `NOT_STARTED` / `NOT_TESTED`
@@ -69,20 +69,30 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 - Blocking task: none.
 - Resolution path: `AUTH-DEP-003`.
 
-### `AUTH-ISSUE-004` — Identity-provider runtime metadata is not frozen
+### `AUTH-ISSUE-004` — Identity-provider design metadata is not frozen
 
-- Classification: `OPEN`
-- Severity: `MEDIUM`
-- Evidence: `docs/components/deployment/ENVIRONMENT_VARIABLES.md` registers
-  eleven variables, all database-scoped. `CONTRACT-DEPLOY-001` is 23 lines and
-  contains no Auth-relevant term. No approved IdP/equivalent, issuer,
-  audience, JWKS/key source, authorization endpoint, token endpoint, dashboard
-  domain, human OAuth callback allowlist, TLS fact, client variable name, or
-  secret-injection owner exists anywhere in the repository.
-- Impact: Blocks `AUTH-002`, `AUTH-003`, `AUTH-007`.
-- Owning component: A2-DEPLOYMENT.
-- Blocking task: `AUTH-002`.
-- Resolution path: `AUTH-DEP-004`.
+- Classification: `RESOLVED_FOR_CONTRACT_AND_DESIGN`
+- Severity: `MEDIUM` at the original baseline; no longer blocking `AUTH-002`
+  contract and design
+- Original evidence (historical): at the `AUTH-001` baseline,
+  `docs/components/deployment/ENVIRONMENT_VARIABLES.md` registered eleven
+  variables, all database-scoped, and no approved IdP, issuer, audience,
+  JWKS/key source, dashboard domain, callback allowlist, TLS fact, client
+  variable name, or secret-injection owner existed anywhere in the repository.
+- Resolution evidence: `AUTH-DEP-004` is `ACCEPTED_WITH_CONSTRAINTS /
+  ACKNOWLEDGED_BY_A2_AUTH / MERGED_VIA_PR_20` (merge commit `fc549fa`).
+  A2-DEPLOYMENT recorded the approved provider
+  (`SUPABASE_AUTH_WITH_GITHUB_OAUTH`), canonical issuer, audience, JWKS
+  source, callback set, redirect policy, TLS and secret-injection ownership,
+  and the Auth-scoped variable names.
+- Resolution: The **design** metadata gap is closed. `AUTH-002` contract and
+  design are no longer blocked by this issue.
+- Residual — not resolved by this reconciliation: the accepted values are
+  design values only. Actual Supabase project provisioning, GitHub OAuth
+  provider configuration, Vercel project, production Dashboard hostname, TLS
+  verification, production callback registration and secret injection remain
+  `NOT_PROVISIONED / NOT_TESTED` and are owned by A2-DEPLOYMENT. The residual
+  blocks Auth runtime, not Auth contract and design.
 
 ### `AUTH-ISSUE-005` — Workflow actor integration
 
@@ -212,22 +222,25 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 - Resolution path: A2-AUTH records the resolution rule in `AUTH-006`. No schema
   change is requested.
 
-### `AUTH-ISSUE-015` — No Auth environment variable is registered
+### `AUTH-ISSUE-015` — Auth environment variable registration
 
-- Classification: `DEPENDENCY_GAP`
+- Classification: `PARTIALLY_RESOLVED`
 - Severity: `MEDIUM`
-- Evidence: Neither `.env.example`, `ENVIRONMENT_VARIABLES.md`, `compose.yml`,
-  `Dockerfile`, nor `.github/workflows/deployment.yml` defines any Auth
-  variable. Human IdP client variables and GitHub App ID, private-key, and
-  webhook-secret variable names are all absent.
-- Impact: Human IdP variables are needed by `AUTH-002`/`AUTH-003`; GitHub
-  App/webhook variables are needed by `AUTH-004`/`AUTH-005`.
+- Original evidence (historical): at the `AUTH-001` baseline, neither
+  `.env.example`, `ENVIRONMENT_VARIABLES.md`, `compose.yml`, `Dockerfile`, nor
+  `.github/workflows/deployment.yml` defined any Auth variable.
+- Resolved part: `AUTH-DEP-004` (PR #20) registered the human IdP and callback
+  variable **names** in `docs/components/deployment/ENVIRONMENT_VARIABLES.md`.
+  Name registration is not provisioning: no value is injected and no deployed
+  environment is proven.
+- Remaining part: the GitHub App ID, GitHub App private-key and
+  webhook-secret variable names remain absent, needed by `AUTH-004` and
+  `AUTH-005`.
 - Owning component: A2-DEPLOYMENT.
-- Blocking task: `AUTH-002` and `AUTH-003` through `AUTH-DEP-004`; `AUTH-004`
-  and `AUTH-005` through `AUTH-DEP-009`.
-- Resolution path: `AUTH-DEP-004` registers human IdP/callback variables and
-  ownership; `AUTH-DEP-009` separately registers GitHub App/webhook variables
-  and runtime metadata.
+- Blocking task: `AUTH-004` and `AUTH-005` through `AUTH-DEP-009`. No longer
+  blocks `AUTH-002` contract and design.
+- Resolution path: `AUTH-DEP-009` registers the remaining GitHub App/webhook
+  variable names and runtime metadata.
 
 ### `AUTH-ISSUE-016` — API is authenticate-by-exception rather than deny-by-default
 
@@ -251,19 +264,26 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
   before any protected route exists; `AUTH-007` decides the docs-surface
   policy per environment.
 
-### `AUTH-ISSUE-017` — No dashboard frontend exists or is owned
+### `AUTH-ISSUE-017` — Dashboard frontend ownership was unassigned
 
-- Classification: `DEPENDENCY_GAP`
-- Severity: `MEDIUM`
-- Evidence: `find . -type d -name web` returns nothing; `ls apps/` returns
-  exactly `api`; no frontend manifest or lockfile is tracked.
-- Impact: A3-AUTH and A3-UI cannot modify UI-owned paths or perform frontend
-  Auth integration tests until ownership is resolved. This does not block
-  `AUTH-002` contract/design work after `AUTH-DEP-004` is accepted.
-- Owning component: A2-UI.
-- Blocking task: `AUTH-002` frontend implementation and frontend Auth
-  integration tests; not contract/design readiness.
-- Resolution path: `AUTH-DEP-010`.
+- Classification: `RESOLVED_FOR_OWNERSHIP_AND_COORDINATION`
+- Severity: `MEDIUM` at the original baseline; ownership no longer unassigned
+- Original evidence (historical): `find . -type d -name web` returned nothing;
+  `ls apps/` returned exactly `api`; no frontend manifest or lockfile was
+  tracked, and no component owned trust boundaries B1–B3.
+- Resolution evidence: `AUTH-DEP-010` is `ACCEPTED_WITH_CONSTRAINTS /
+  ACKNOWLEDGED_BY_A2_AUTH / UI_OWNERSHIP_ESTABLISHED_VIA_PR_19`. A2-UI owns the
+  future Dashboard frontend, future `apps/web/**` after separate
+  authorization, and the user-facing `/auth/callback` route and its UX;
+  A2-AUTH retains callback, session, identity-resolution, token-custody, PKCE
+  and OAuth-state semantics. Records: `docs/specifications/A2_UI_MANAGER.md`
+  and `docs/components/ui/**`.
+- Resolution: The ownership and coordination gap is closed. See
+  `AUTH-DEP-010` in `DEPENDENCY_REQUESTS.md` for the full boundary.
+- Residual — not resolved by this reconciliation: no frontend exists, and
+  `AUTH-002` frontend implementation and frontend Auth integration tests
+  remain `NOT_AUTHORIZED` and `NOT_TESTED`. A3-AUTH may not modify UI-owned
+  paths without A2-UI coordination.
 
 ### `AUTH-ISSUE-018` — CI workflow contains literal placeholder passwords
 
@@ -301,9 +321,19 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 ## Summary
 
 `DB-002` is merged, `CONTRACT-AUTH-001@1.0.0-draft.2` is acknowledged and
-merged, and no Database rereview is outstanding. What remains open is Auth
-runtime absence, scoped unresolved external dependencies, one contradictory
-contract metadata block, the absent Auth test suite, and downstream durable
-webhook idempotency. No implementation defect is claimed in merged code:
-every gap above is either absence, an unresolved dependency, or a
-documentation contradiction.
+merged, and no Database rereview is outstanding.
+
+This reconciliation reclassified exactly the issues whose sole cause was
+missing `AUTH-DEP-004` design metadata or missing A2-UI ownership:
+`AUTH-ISSUE-004` is `RESOLVED_FOR_CONTRACT_AND_DESIGN`, `AUTH-ISSUE-017` is
+`RESOLVED_FOR_OWNERSHIP_AND_COORDINATION`, and `AUTH-ISSUE-015` is
+`PARTIALLY_RESOLVED` for its human-IdP half only. No runtime provisioning,
+implementation, Security, Backend, Workflow or testing issue was resolved.
+
+What remains open is Auth runtime absence, provider provisioning and every
+untested runtime behavior — callback runtime, JWT validation, cookies, CSRF,
+PKCE, OAuth state and frontend Auth integration — plus the remaining scoped
+external dependencies, one contradictory contract metadata block, the absent
+Auth test suite, and downstream durable webhook idempotency. No implementation
+defect is claimed in merged code: every gap above is either absence, an
+unresolved dependency, or a documentation contradiction.

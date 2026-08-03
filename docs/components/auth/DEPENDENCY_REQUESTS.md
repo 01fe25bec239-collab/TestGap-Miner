@@ -1,11 +1,11 @@
 # Auth Dependency Requests
 
-- Date: 2026-08-02
-- Current task: `AUTH-001-C2` — Auth task-graph reconciliation
+- Date: 2026-08-03
+- Current task: `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
 - Parent task: `AUTH-001`
-- Prompt type: `CONTINUATION`
-- Scope: `DOCUMENTATION_ONLY_TASK_GRAPH_RECONCILIATION`
-- Base commit: `1511f474ee301651b631c8adfe406aeb775327aa`
+- Prompt type: `POST_DEPENDENCY_MERGE_DURABLE_RECONCILIATION`
+- Scope: `AUTH_DOCUMENTATION_RECONCILIATION_ONLY`
+- Base commit: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
 - Auth runtime implementation: `NOT_STARTED`
 - Auth runtime: `NOT_TESTED`
@@ -146,8 +146,48 @@
   documented with an explicit owner; callback URLs are exact-match allowlisted;
   TLS termination and secret injection ownership are stated; no secret value
   is present.
-- Approval status: `PENDING`
-- Completion evidence: None.
+- Approval status: `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
+  MERGED_VIA_PR_20`
+- Completion evidence: A2-DEPLOYMENT issued `ACCEPTED_WITH_CONSTRAINTS`;
+  A2-AUTH acknowledged it. Durably merged through Deployment pull request #20,
+  merge commit `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`. Records:
+  `docs/components/deployment/DECISION_LOG.md` and
+  `docs/components/deployment/ENVIRONMENT_VARIABLES.md`, which registers the
+  Auth-scoped variable **names** without secret values.
+- The original request text above is preserved as historical context. The
+  request itself is no longer `PENDING`.
+
+### Accepted human identity architecture
+
+The Deployment-owned design accepted under this request is:
+
+- Provider: `SUPABASE_AUTH_WITH_GITHUB_OAUTH`
+- Architecture status: `APPROVED_FOR_AUTH_CONTRACT_AND_DESIGN`
+- Canonical issuer: `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1`
+- Audience: `authenticated`
+- JWKS:
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/.well-known/jwks.json`
+- Dashboard callback: `${DASHBOARD_ORIGIN}/auth/callback`
+- Local callback: `http://localhost:3000/auth/callback`
+- GitHub-registered Supabase callback:
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/callback`
+- OAuth termination: Supabase Auth
+- FastAPI boundary: FastAPI receives Supabase JWT access tokens only.
+- Refresh tokens: must never be forwarded to FastAPI.
+- Redirect policy: exact-match allowlist only.
+- Issuer comparison: exact and case-sensitive.
+- Independent issuer normalization: prohibited.
+
+These are **accepted design values, not proof of configured runtime**. No
+Supabase project, GitHub OAuth provider configuration, deployed callback
+registration, or injected secret is proven by this repository.
+`<SUPABASE_PROJECT_REF>` and `${DASHBOARD_ORIGIN}` remain unresolved
+placeholders; no real project reference or hostname is recorded.
+
+Dependency effect: `SATISFIED_FOR_CONTRACT_AND_DESIGN`. This satisfies
+`AUTH-002` contract and design only. It authorizes no `AUTH-002` runtime
+implementation, and it does not by itself unblock `AUTH-003` or `AUTH-007`,
+which retain their sequential and runtime prerequisites.
 
 ## `AUTH-DEP-005` — Security lifecycle and event guidance
 
@@ -297,8 +337,47 @@
 - Proposed acceptance test: A named component owns the browser session and the
   callback endpoint, and the cookie or token custody model is stated
   explicitly.
-- Approval status: `PENDING`
-- Completion evidence: None.
+- Approval status: `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
+  UI_OWNERSHIP_ESTABLISHED_VIA_PR_19`
+- Completion evidence: A2-UI issued `ACCEPTED_WITH_CONSTRAINTS`; A2-AUTH
+  acknowledged it. UI ownership was established through UI pull request #19.
+  Records: `docs/specifications/A2_UI_MANAGER.md` and the UI-owned durable
+  records under `docs/components/ui/`.
+- The original request text above is preserved as historical context. The
+  request itself is no longer `PENDING`.
+
+### Accepted ownership boundary
+
+A2-UI owns: future Dashboard frontend implementation; future `apps/web/**`
+implementation after separate authorization; the user-facing `/auth/callback`
+route; callback loading, error and redirect UX; UI accessibility; user-facing
+Auth states; and frontend consumption of Auth semantics.
+
+A2-AUTH owns: callback semantics; session semantics; identity resolution;
+token lifetime and refresh semantics; token custody semantics; PKCE semantics;
+OAuth-state semantics; and Auth security acceptance.
+
+A2-DEPLOYMENT owns: provider provisioning; deployed callback registration;
+domains; TLS; secret injection; and environment-variable registration.
+
+A2-SECURITY with A2-AUTH owns final cookie, CSRF and OAuth-state security
+acceptance.
+
+Preserved custody and enforcement constraints:
+
+- no access or refresh token in `localStorage`;
+- no access or refresh token in `sessionStorage`;
+- no duplicate custom token store;
+- refresh tokens are never forwarded to FastAPI;
+- access tokens are sent to FastAPI through `Authorization: Bearer`;
+- UI route protection is defense-in-depth only;
+- FastAPI authorization remains authoritative;
+- A3-AUTH may not modify UI-owned paths without A2-UI coordination.
+
+Dependency effect: `SATISFIED_FOR_OWNERSHIP_AND_COORDINATION`. Ownership and
+coordination are resolved. `AUTH-002` frontend implementation remains
+`NOT_AUTHORIZED`, and frontend Auth integration testing remains untested and
+unauthorized.
 
 ## Summary
 
@@ -306,9 +385,15 @@
 `CONTRACT-AUTH-001@1.0.0-draft.2` is `ACKNOWLEDGED_AND_MERGED`. No Database
 rereview is outstanding.
 
-Still `PENDING`: `AUTH-DEP-003` (registry correction), `AUTH-DEP-004` (IdP
-metadata), `AUTH-DEP-005` (Security guidance), and the five requests opened by
-`AUTH-001` — `AUTH-DEP-006` through `AUTH-DEP-010`. `AUTH-DEP-002` is
+`AUTH-DEP-004` is `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
+MERGED_VIA_PR_20` and `AUTH-DEP-010` is `ACCEPTED_WITH_CONSTRAINTS /
+ACKNOWLEDGED_BY_A2_AUTH / UI_OWNERSHIP_ESTABLISHED_VIA_PR_19`. Together they
+satisfy `AUTH-002` contract and design only.
+
+Still `PENDING`: `AUTH-DEP-003` (registry correction), `AUTH-DEP-005`
+(Security guidance), `AUTH-DEP-006` (Backend request surface), `AUTH-DEP-007`
+(installation reference), `AUTH-DEP-008` (machine publication actor), and
+`AUTH-DEP-009` (GitHub App/webhook runtime configuration). `AUTH-DEP-002` is
 `PARTIALLY_SATISFIED`, with its remainder tracked as `AUTH-DEP-008`.
 
 No dependency request authorizes A3-AUTH to modify another component's files,

@@ -1,11 +1,12 @@
 # Auth Decision Log
 
-- Date: 2026-08-02
-- Current task: `AUTH-001-C2` — Auth task-graph reconciliation
+- Date: 2026-08-03
+- Current task: `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
 - Parent task: `AUTH-001`
-- Prompt type: `CONTINUATION`
-- Scope: `DOCUMENTATION_ONLY_TASK_GRAPH_RECONCILIATION`
-- Evidence baseline: `1511f474ee301651b631c8adfe406aeb775327aa`
+- Prompt type: `POST_DEPENDENCY_MERGE_DURABLE_RECONCILIATION`
+- Scope: `AUTH_DOCUMENTATION_RECONCILIATION_ONLY`
+- Evidence baseline: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
+- Prior evidence baseline: `1511f474ee301651b631c8adfe406aeb775327aa`
 - Prior contract-task baseline: `739a331c9942ed64a1ad8276d611889bbee53a27`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
 - Auth runtime implementation: `NOT_STARTED`
@@ -15,6 +16,10 @@
 `AUTH-DB002-CONTRACT-001`. They remain in force unchanged. `AUTH-001` adds
 `AUTH-DEC-014` through `AUTH-DEC-020` as audit-level decisions only; none of
 them alters `CONTRACT-AUTH-001` semantics.
+`AUTH-DEPENDENCY-RECONCILIATION-001-A3` adds `AUTH-DEC-021` through
+`AUTH-DEC-025`, which record merged dependency acceptances and readiness only.
+None of them alters `CONTRACT-AUTH-001` semantics; `CONTRACT-AUTH-001.md` was
+not modified by this task.
 
 ## `AUTH-DEC-001` — Contract-first dependency bridge
 
@@ -150,6 +155,10 @@ names remain indicative and non-binding in `AUTH-001_AUDIT.md` §7.2.
 
 ## `AUTH-DEC-019` — `AUTH-002` readiness decision
 
+Status: `SUPERSEDED_BY_AUTH-DEC-024`. The reasoning below is preserved as the
+historical `AUTH-001` record; its blocking conclusion no longer holds because
+`AUTH-DEP-004` and `AUTH-DEP-010` are now accepted, acknowledged and merged.
+
 `AUTH-002` is `NOT_READY / BLOCKED`. Its direct remaining prerequisite is
 `AUTH-DEP-004`: A2-DEPLOYMENT-owned callback requirements and human IdP runtime
 metadata, including the approved IdP/equivalent, canonical issuer, audience,
@@ -192,6 +201,121 @@ dependency contract.
 
 Downstream integration requirements must not silently rewrite the
 authoritative prerequisites or ownership of an Auth task.
+
+## `AUTH-DEC-021` — A2-AUTH acknowledgement of `AUTH-DEP-004`
+
+A2-DEPLOYMENT issued `ACCEPTED_WITH_CONSTRAINTS` for `AUTH-DEP-004`, and
+A2-AUTH acknowledges that response. The decision is durably merged through
+Deployment pull request #20, merge commit
+`fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`, evidenced by
+`docs/components/deployment/DECISION_LOG.md` and
+`docs/components/deployment/ENVIRONMENT_VARIABLES.md`.
+
+The Auth-owned state of `AUTH-DEP-004` is therefore
+`ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH / MERGED_VIA_PR_20`.
+
+## `AUTH-DEC-022` — Accepted human identity architecture
+
+A2-AUTH records the Deployment-owned identity architecture accepted under
+`AUTH-DEP-004`:
+
+- Provider: `SUPABASE_AUTH_WITH_GITHUB_OAUTH`
+- Architecture status: `APPROVED_FOR_AUTH_CONTRACT_AND_DESIGN`
+- Canonical issuer: `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1`
+- Audience: `authenticated`
+- JWKS:
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/.well-known/jwks.json`
+- Dashboard callback: `${DASHBOARD_ORIGIN}/auth/callback`
+- Local callback: `http://localhost:3000/auth/callback`
+- GitHub-registered Supabase callback:
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/callback`
+- OAuth termination: Supabase Auth
+- FastAPI boundary: FastAPI receives Supabase JWT access tokens only.
+- Refresh tokens: never forwarded to FastAPI.
+- Redirect policy: exact-match allowlist only.
+- Issuer comparison: exact and case-sensitive, consistent with
+  `AUTH-DEC-011`.
+- Independent issuer normalization: prohibited.
+
+These are accepted **design** values and are not proof of a configured
+runtime. Consistent with `AUTH-DEC-015`, no record above is accepted as
+evidence that any Supabase project, provider configuration, callback
+registration, or key source exists or behaves as described.
+
+Any future change of provider, canonical issuer, audience, JWKS source, or
+callback set requires Auth contract review under `AUTH-DEC-010` before it is
+adopted, because those values feed normative `CONTRACT-AUTH-001` identity
+semantics.
+
+## `AUTH-DEC-023` — A2-AUTH acknowledgement of `AUTH-DEP-010` and the accepted ownership boundary
+
+A2-UI issued `ACCEPTED_WITH_CONSTRAINTS` for `AUTH-DEP-010`, and A2-AUTH
+acknowledges that response. UI ownership was established through UI pull
+request #19, evidenced by `docs/specifications/A2_UI_MANAGER.md` and the
+UI-owned durable records under `docs/components/ui/`. The Auth-owned state of
+`AUTH-DEP-010` is `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
+UI_OWNERSHIP_ESTABLISHED_VIA_PR_19`.
+
+Accepted boundary:
+
+- A2-UI owns the future Dashboard frontend, future `apps/web/**` after
+  separate authorization, the user-facing `/auth/callback` route, callback
+  loading/error/redirect UX, UI accessibility, user-facing Auth states, and
+  frontend consumption of Auth semantics.
+- A2-AUTH owns callback semantics, session semantics, identity resolution,
+  token lifetime and refresh semantics, token custody semantics, PKCE
+  semantics, OAuth-state semantics, and Auth security acceptance.
+- A2-DEPLOYMENT owns provider provisioning, deployed callback registration,
+  domains, TLS, secret injection, and environment-variable registration.
+- A2-SECURITY with A2-AUTH owns final cookie, CSRF and OAuth-state security
+  acceptance.
+
+Preserved constraints: no access or refresh token in `localStorage`; no access
+or refresh token in `sessionStorage`; no duplicate custom token store; refresh
+tokens are never forwarded to FastAPI; access tokens reach FastAPI through
+`Authorization: Bearer`; UI route protection is defense-in-depth only; FastAPI
+authorization remains authoritative; and A3-AUTH may not modify UI-owned paths
+without A2-UI coordination.
+
+Together with the accepted Deployment decisions in `AUTH-DEC-021` and
+`AUTH-DEC-022`, this ownership decision satisfies the remaining UI ownership
+and coordination prerequisite. `AUTH-DEC-024` is the authoritative decision
+that supersedes the historical `AUTH-DEC-019` readiness conclusion.
+
+## `AUTH-DEC-024` — `AUTH-002` contract and design readiness
+
+`AUTH-002` contract/design state is
+`READY_FOR_AUTH_002_CONTRACT_AND_DESIGN`. Direct dependency status:
+
+- `AUTH-DEP-004`: `SATISFIED_FOR_CONTRACT_AND_DESIGN`
+- `AUTH-DEP-010`: `SATISFIED_FOR_OWNERSHIP_AND_COORDINATION`
+
+`AUTH-002` contract and design work may begin only as a separate, newly
+authorized A2-AUTH task. This decision authorizes no work by itself.
+
+## `AUTH-DEC-025` — Implementation remains unauthorized
+
+Design acceptance is not implementation authorization:
+
+- `AUTH-002` runtime implementation: `NOT_AUTHORIZED`
+- `AUTH-002` frontend implementation: `NOT_AUTHORIZED`
+- `AUTH-002` provider runtime: `NOT_PROVISIONED / NOT_TESTED`
+- `AUTH-003`: `NOT_AUTHORIZED`, still requiring sequential `AUTH-002` design
+  work and Backend JWT/runtime coordination through `AUTH-DEP-006`
+
+Unresolved or untested and unchanged by the accepted design status: Supabase
+project provisioning; GitHub OAuth provider configuration; the Vercel project;
+the production Dashboard hostname; TLS verification; production callback
+registration; secret injection; callback runtime behavior; JWT validation;
+cookie, CSRF, PKCE and OAuth-state implementation; frontend Auth integration;
+and Auth-specific tests.
+
+No runtime task is marked ready merely because `AUTH-DEP-004` and
+`AUTH-DEP-010` were accepted. `AUTH-004` remains blocked by sequential
+`AUTH-003` and `AUTH-DEP-009`; `AUTH-005` by sequential `AUTH-004`,
+`AUTH-DEP-006` and `AUTH-DEP-009`; `AUTH-006` by `AUTH-DEP-007` and
+`AUTH-DEP-008`; and `AUTH-007` and `AUTH-008` by their existing Security,
+Workflow and runtime prerequisites.
 
 No decision in this log authorizes Auth code, tests, or configuration. The
 shared registry's missing Database consumer remains an owner correction. The
