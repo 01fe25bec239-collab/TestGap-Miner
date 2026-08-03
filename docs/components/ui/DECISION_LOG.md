@@ -1,12 +1,13 @@
 # UI Decision Log
 
-- Date: 2026-08-02
+- Date: 2026-08-03
 - Agent 2: `A2-UI`
-- Current task: `UI-DOC-BOOTSTRAP-001`
-- Prompt type: `DOCUMENTATION_ONLY_BOOTSTRAP`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-bootstrap`
-- Branch: `agent2/ui-bootstrap-authdep010`
-- Evidence baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
+- Current task: `UI-AUTH-DEPENDENCY-RECONCILIATION-001-A3-C1`
+- Prompt type: `POST_MERGE_UI_DURABLE_STATE_RECONCILIATION`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
+- Branch: `agent2/ui-auth-dependency-reconciliation`
+- Current evidence baseline: `ba4247af2195d4c8e60cb9990f616a95f2c54d54`
+- Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - Frontend implementation: `NOT_STARTED`
 - Frontend runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
 - `ASSUMED`: `NONE`
@@ -220,3 +221,99 @@ or infrastructure change.
 
 Recording a working architecture in `UI-DEC-004` through `UI-DEC-010` is a
 decision about intent. It is not authorization to build it.
+
+## Post-merge supersession map
+
+`UI-DEC-001` through `UI-DEC-019` above are preserved as the historical
+bootstrap decisions made at baseline `9ac5a24`. Their original reasoning has
+not been rewritten.
+
+| Historical decision | Current treatment |
+|---|---|
+| `UI-DEC-012` | Its `CONDITIONAL / PENDING AUTH-DEP-004` conclusion is historical and superseded by `UI-DEC-021` for contract/design only. Its warning that design evidence is not runtime evidence remains binding. |
+| `UI-DEC-016` | UI acceptance remains binding; its stale statement that the Auth-side record was pending is superseded by `UI-DEC-022`. |
+| `UI-DEC-018` | Its `AUTH-002 NOT_READY / BLOCKED` conclusion is historical and superseded by `UI-DEC-023` for contract/design readiness only. Its statement that no implementation began remains true. |
+| `UI-DEC-019` | Remains binding and is reaffirmed by `UI-DEC-024`; dependency acceptance does not authorize implementation. |
+
+## `UI-DEC-020` — UI bootstrap is merged
+
+`UI-DOC-BOOTSTRAP-001` is `PASS / VERIFIED_COMPLETE / MERGED`. The UI manager
+specification and six UI durable records merged through PR #19, merge commit
+`4c4b2e3aefb3529cb9acad2860f050247b47e6b2`. A2-UI is
+`INITIALIZED / DURABLE_RECORDS_MERGED`.
+
+The original uncommitted bootstrap state remains historical evidence. The
+specification at `docs/specifications/A2_UI_MANAGER.md` retains that snapshot
+and is not reconciled by this task.
+
+## `UI-DEC-021` — `AUTH-DEP-004` accepted for contract and design
+
+`AUTH-DEP-004` is `ACCEPTED_WITH_CONSTRAINTS / MERGED_VIA_PR_20 /
+SATISFIED_FOR_AUTH_CONTRACT_AND_DESIGN`. This supersedes only the pending-state
+portion of `UI-DEC-012`.
+
+Accepted design values:
+
+- Provider: `SUPABASE_AUTH_WITH_GITHUB_OAUTH`
+- Architecture: `APPROVED_FOR_AUTH_CONTRACT_AND_DESIGN`
+- Canonical issuer: `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1`
+- Audience: `authenticated`
+- JWKS:
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/.well-known/jwks.json`
+- Deployed Dashboard callback: `${DASHBOARD_ORIGIN}/auth/callback`
+- Local callback: `http://localhost:3000/auth/callback`
+- OAuth termination: Supabase Auth
+- FastAPI receives Supabase JWT access tokens only.
+- Refresh tokens are never forwarded to FastAPI.
+- Redirects require exact-match allowlisting.
+- Issuer comparison is exact and case-sensitive; independent issuer
+  normalization is prohibited.
+
+These values do not prove a provisioned Supabase project, configured GitHub
+OAuth, deployed Vercel project, production hostname, TLS, registered callbacks,
+injected environment values or secrets, or working callback/session behavior.
+
+## `UI-DEC-022` — `AUTH-DEP-010` acknowledged and reconciled
+
+`AUTH-DEP-010` is `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
+UI_OWNERSHIP_ESTABLISHED_VIA_PR_19 / AUTH_RECONCILED_VIA_PR_21`. PR #21
+supersedes the stale synchronization conclusion in `UI-DEC-016`.
+
+The accepted ownership boundary remains:
+
+- A2-UI owns UI durable records, future authorized `apps/web` implementation,
+  the user-facing `/auth/callback` route and UX, frontend session-state
+  presentation, frontend Auth integration and tests after authorization, and
+  accessibility.
+- A2-AUTH owns callback/session semantics, identity resolution, token custody,
+  token lifetime and refresh semantics, PKCE, and OAuth-state semantics.
+- A2-DEPLOYMENT owns provisioning, deployed domains, callback registration,
+  TLS, environment-variable registration, and secret injection.
+- A2-SECURITY with A2-AUTH owns final cookie, CSRF, and OAuth-state security
+  acceptance.
+
+All custody and enforcement constraints in `UI-DEC-013` through
+`UI-DEC-017` remain binding, including the cross-agent path boundaries.
+
+## `UI-DEC-023` — `AUTH-002` contract/design is ready
+
+`AUTH-002` is `READY_FOR_AUTH_002_CONTRACT_AND_DESIGN` because
+`AUTH-DEP-004` is satisfied for contract/design and `AUTH-DEP-010` is
+satisfied for ownership/coordination. This supersedes `UI-DEC-018` only for
+the contract/design readiness conclusion.
+
+Contract/design may begin only as a separate, newly authorized A2-AUTH task.
+This decision does not begin the work and authorizes no implementation.
+
+## `UI-DEC-024` — Implementation and provider runtime remain unauthorized
+
+- `AUTH-002` frontend implementation: `NOT_AUTHORIZED`
+- `AUTH-002` runtime implementation: `NOT_AUTHORIZED`
+- Provider runtime: `NOT_PROVISIONED / NOT_TESTED`
+- `apps/web`: `ABSENT`
+- Frontend implementation: `NOT_STARTED`
+- Frontend runtime: `NOT_IMPLEMENTED / NOT_TESTED`
+- Frontend Auth tests: `NOT_STARTED / NOT_TESTED`
+
+No decision in this log authorizes code, routes, components, tests, manifests,
+lockfiles, configuration, provisioning, staging, or publication.

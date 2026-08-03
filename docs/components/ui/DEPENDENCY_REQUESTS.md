@@ -1,18 +1,19 @@
 # UI Dependency Requests
 
-- Date: 2026-08-02
+- Date: 2026-08-03
 - Agent 2: `A2-UI`
-- Current task: `UI-DOC-BOOTSTRAP-001`
-- Prompt type: `DOCUMENTATION_ONLY_BOOTSTRAP`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-bootstrap`
-- Branch: `agent2/ui-bootstrap-authdep010`
-- Evidence baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
+- Current task: `UI-AUTH-DEPENDENCY-RECONCILIATION-001-A3-C1`
+- Prompt type: `POST_MERGE_UI_DURABLE_STATE_RECONCILIATION`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
+- Branch: `agent2/ui-auth-dependency-reconciliation`
+- Current evidence baseline: `ba4247af2195d4c8e60cb9990f616a95f2c54d54`
+- Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - `ASSUMED`: `NONE`
 
-Every request below is **opened by A2-UI** and awaits its owner's decision.
-A2-UI does not set the status of a request owned by another manager, and no
-status below is recorded as accepted, satisfied, or complete on A2-UI's behalf.
-Only the owning manager may accept, in that owner's own records.
+Every request below was opened by A2-UI. A2-UI records owning-manager evidence
+without substituting its own acceptance: `UI-DEP-DEPLOY-001` is partially
+satisfied by A2-DEPLOYMENT's merged decision, while the other three formal
+requests remain pending.
 
 No request below authorizes A3-UI to modify another component's files, and none
 authorizes UI code, tests, manifests, lockfiles, or configuration.
@@ -69,10 +70,33 @@ authorizes UI code, tests, manifests, lockfiles, or configuration.
   Auth variable name registered in
   `docs/components/deployment/ENVIRONMENT_VARIABLES.md` with no secret value;
   and a named non-production provider test configuration.
-- Current status: `PENDING` — opened by A2-UI. The upstream `AUTH-DEP-004` is
-  independently `PENDING` with `Completion evidence: None`
-  (`docs/components/auth/DEPENDENCY_REQUESTS.md:128-150`). A2-UI does not and
-  cannot change that status.
+- Current status: `PARTIALLY_SATISFIED_FOR_CONTRACT_AND_DESIGN` —
+  A2-DEPLOYMENT accepted `AUTH-DEP-004` with constraints through PR #20, and
+  A2-AUTH reconciled it through PR #21.
+
+Accepted for design:
+
+- Provider: `SUPABASE_AUTH_WITH_GITHUB_OAUTH`
+- Canonical issuer: `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1`
+- Audience: `authenticated`
+- JWKS:
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/.well-known/jwks.json`
+- Deployed Dashboard callback template: `${DASHBOARD_ORIGIN}/auth/callback`
+- Local callback: `http://localhost:3000/auth/callback`
+- OAuth termination: Supabase Auth
+- Exact-match redirect allowlisting
+- Exact, case-sensitive issuer comparison with no independent normalization
+- FastAPI receives Supabase JWT access tokens only; refresh tokens are never
+  forwarded to FastAPI.
+- Registered variable names: `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_GITHUB_CLIENT_ID`,
+  `SUPABASE_GITHUB_CLIENT_SECRET`, `AUTH_JWT_ISSUER`, `AUTH_JWT_AUDIENCE`,
+  `AUTH_JWKS_URL`, and `DASHBOARD_ORIGIN`.
+
+Still pending: actual provider provisioning; GitHub OAuth configuration; a
+Vercel project and production Dashboard domain; verified TLS; production
+callback registration; injected environment values and secrets; secret
+injection evidence; and a non-production provider test configuration.
 
 ## `UI-DEP-BACKEND-001` — API route surface, error envelope, and CORS
 
@@ -146,16 +170,17 @@ them prematurely would freeze another owner's contract against guessed needs.
 
 ## Summary
 
-Four dependency requests are open: `UI-DEP-AUTH-001`, `UI-DEP-DEPLOY-001`,
-`UI-DEP-BACKEND-001`, and `UI-DEP-SECURITY-001`. All four are `PENDING` with
-their owning manager. Five further Workflow, Evidence, Evaluation, and API
-dependencies are recorded as pending and not yet opened.
+Four formal UI requests remain open. `UI-DEP-AUTH-001` remains `PENDING`
+because the Auth records do not yet provide the complete requested
+session/callback, refresh, sign-out, PKCE, OAuth-state, and error semantics.
+`UI-DEP-DEPLOY-001` is
+`PARTIALLY_SATISFIED_FOR_CONTRACT_AND_DESIGN`; its runtime and test-provider
+remainders stay pending. `UI-DEP-BACKEND-001` and `UI-DEP-SECURITY-001` remain
+`PENDING`. Five future Workflow, Evidence, Evaluation, and API dependencies
+remain pending and not yet opened.
 
-`AUTH-DEP-010` is the one dependency A2-UI **owns**, and A2-UI records it as
-`ACCEPTED_WITH_CONSTRAINTS` — see `DECISION_LOG.md` `UI-DEC-016` and
-`TASK_LEDGER.md` `AUTH-DEP-010-RESPONSE-001-R1`. The Auth-side copy of that
-record still reads `PENDING` and is forbidden to this task; reconciliation is
-tracked as `UI-ISSUE-012`.
-
-`AUTH-DEP-004` is owned by A2-DEPLOYMENT and remains `PENDING`. A2-UI has not
-marked it, or any other manager's request, accepted.
+`AUTH-DEP-004` is `ACCEPTED_WITH_CONSTRAINTS / MERGED_VIA_PR_20 /
+SATISFIED_FOR_AUTH_CONTRACT_AND_DESIGN`. `AUTH-DEP-010` is
+`ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
+UI_OWNERSHIP_ESTABLISHED_VIA_PR_19 / AUTH_RECONCILED_VIA_PR_21`. Neither is
+pending, and neither authorizes implementation.
