@@ -1,144 +1,154 @@
 # Latest Backend Handoff
 
-- Agent 2: `A2-BACKEND`
+- Manager: `A2-BACKEND`
 - Agent 3: `A3-BACKEND`
-- Task: `BACK-001-C2 — record manager acceptance`
-- Prompt type: `FINAL_ACCEPTANCE`
-- `BACK-001`: `PASS / VERIFIED_COMPLETE / A2_BACKEND_ACCEPTED`
-- `BACK-001-C1`: `PASS / VERIFIED_COMPLETE / A2_BACKEND_ACCEPTED`
-- Base/HEAD: `ba4247af2195d4c8e60cb9990f616a95f2c54d54`
-- Branch: `agent2/backend-api-contract`
+- Task: `BACK-CONTRACT-API-001 — draft CONTRACT-API-001 and consumer-review package`
+- Prompt type: `INITIAL_IMPLEMENTATION`
+- Worktree: `/private/tmp/testgap-backend-contract-api-001`
+- Branch: `agent2/backend-contract-api-001`
+- Base: `7706f51eef07b7f89f322548eedd7bfba27a01e5`
+- Result: `IMPLEMENTED_AS_DRAFT / PENDING_A2_BACKEND_AND_CONSUMER_REVIEW`
+
+## Work summary
+
+Created `CONTRACT-API-001@0.1.0-draft.1` as a documentation-only proposal. It
+defines Backend-owned `/api/v1`, OpenAPI, request/correlation header, safe
+error, cursor/query, Auth handoff, probe, run placeholder, webhook raw-body,
+async accepted/status, and compatibility boundaries without implementing a
+route or inventing an external owner schema.
+
+Created formal Backend-owned review requests for `A2-UI`, `A2-AUTH`,
+`A2-DATABASE`, `A2-AGENT-WORKFLOW`, `A2-DEPLOYMENT`, `A2-SECURITY`,
+`A2-EVALUATION`, `A2-QUEUE`, and `A2-INTEGRATION`. All are open; silence is not
+acceptance.
 
 ## Files inspected
 
-Application and tests (read in full):
+- Authoritative manager prompt:
+  `/Users/omkar/Documents/TestGap Miner/A2_BACKEND_MANAGER.md`.
+- All six pre-existing Backend audit records.
+- Current Auth records, including `AUTH-001_AUDIT.md` and
+  `CONTRACT-AUTH-001@1.0.0-draft.2`.
+- Current Database records and DB-002/DB-003 ownership/status evidence.
+- Current Agent Workflow records and
+  `CONTRACT-WORKFLOW-001@1.0.0-draft.1`.
+- Current Deployment records, `CONTRACT-DEPLOY-001`, and
+  `ENVIRONMENT_VARIABLES.md`.
+- Current UI and Integration records.
+- Security, Evaluation, and Queue component record directories were checked
+  and are absent at this baseline. Their semantics were not inferred.
 
-- `apps/api/app/main.py`
-- `apps/api/app/settings.py`
-- `apps/api/pyproject.toml`
-- `tests/api/test_main.py`
-- `tests/api/test_settings.py`
-- `tests/conftest.py`
+## Exact files changed
 
-Backend baselines (read and replaced with audited records):
+1. `docs/api/CONTRACT-API-001.md` — created.
+2. `docs/components/backend/COMPONENT_STATUS.md` — updated.
+3. `docs/components/backend/DECISION_LOG.md` — updated.
+4. `docs/components/backend/DEPENDENCY_REQUESTS.md` — updated.
+5. `docs/components/backend/LATEST_AGENT3_HANDOFF.md` — updated.
+6. `docs/components/backend/OPEN_ISSUES.md` — updated.
+7. `docs/components/backend/TASK_LEDGER.md` — updated.
 
-- `docs/components/backend/COMPONENT_STATUS.md`
-- `docs/components/backend/DECISION_LOG.md`
-- `docs/components/backend/DEPENDENCY_REQUESTS.md`
-- `docs/components/backend/LATEST_AGENT3_HANDOFF.md`
-- `docs/components/backend/OPEN_ISSUES.md`
-- `docs/components/backend/TASK_LEDGER.md`
+No file was deleted. No file outside the allowed documentation paths changed.
 
-Cross-component records inspected by exact path group (every file in each
-group was enumerated and searched; relevant contracts/status/dependency/task
-sections were read in full):
+## Draft contract summary
 
-- `docs/components/auth/`: `AUTH-001_AUDIT.md`, `COMPONENT_STATUS.md`,
-  `CONTRACT-AUTH-001.md`, `DECISION_LOG.md`, `DEPENDENCY_REQUESTS.md`,
-  `LATEST_AGENT3_HANDOFF.md`, `OPEN_ISSUES.md`, `TASK_LEDGER.md`
-- `docs/components/agent-workflow/`: `COMPONENT_STATUS.md`,
-  `CONTRACT-WORKFLOW-001.md`, `DECISION_LOG.md`, `DEPENDENCY_REQUESTS.md`,
-  `LATEST_AGENT3_HANDOFF.md`, `OPEN_ISSUES.md`, `TASK_LEDGER.md`
-- `docs/components/database/`: `COMPONENT_STATUS.md`, `DECISION_LOG.md`,
-  `DEPENDENCY_REQUESTS.md`, `LATEST_AGENT3_HANDOFF.md`, `OPEN_ISSUES.md`,
-  `TASK_LEDGER.md`
-- `docs/components/deployment/`: `COMPONENT_STATUS.md`,
-  `CONTRACT-DEPLOY-001.md`, `DECISION_LOG.md`, `DEPENDENCY_REQUESTS.md`,
-  `ENVIRONMENT_VARIABLES.md`, `LATEST_AGENT3_HANDOFF.md`, `OPEN_ISSUES.md`,
-  `TASK_LEDGER.md`
-- `docs/components/integration/`: `COMPONENT_STATUS.md`, `DECISION_LOG.md`,
-  `DEPENDENCY_REQUESTS.md`, `LATEST_AGENT3_HANDOFF.md`, `OPEN_ISSUES.md`,
-  `TASK_LEDGER.md`
-- `docs/components/ui/`: `COMPONENT_STATUS.md`, `DECISION_LOG.md`,
-  `DEPENDENCY_REQUESTS.md`, `LATEST_AGENT3_HANDOFF.md`, `OPEN_ISSUES.md`,
-  `TASK_LEDGER.md`
-- `docs/specifications/`: `00_AGENT1_DECOMPOSITION_AND_INDEX(1).md`,
-  `A2_DATABASE_MANAGER(1).md`, `A2_UI_MANAGER.md`,
-  `SPECIFICATION_INDEX.md`, `deep-research-report (12)(4).md`,
-  `deep-research-report (13)(4).md`, `deep-research-report (15)(2).md`,
-  `deep-research-report (8)(8).md`
+- `/api/v1` is the proposed application major-version prefix; probes remain
+  unversioned.
+- Every response carries opaque request/correlation IDs; invalid inbound IDs
+  are replaced, not reflected.
+- Every application error uses the safe
+  `error.code/message/request_id/details` envelope.
+- Collections use opaque cursor pagination, a bounded limit, allowlisted
+  filters/sorts, and deterministic UUID tie-breaking.
+- Protected routes accept bearer access tokens; the Auth context stays an
+  internal Auth-owned handoff and authorization is deny-by-default.
+- `/healthz` is process-only liveness; `/readyz` is a Deployment-reviewed
+  traffic-readiness boundary.
+- Proposed placeholders cover run request, list, detail, action, and GitHub
+  webhook raw-body handling.
+- `202` points to a polled run status and never claims Queue delivery, worker
+  start, completion, or artefact creation.
+- Breaking changes require a new URI major; draft changes remain versioned and
+  reviewed.
 
-Total inspected paths: 62 (6 application/test, 6 Backend baselines, 42 other
-component records, 8 specifications).
+## Every unresolved cross-owner decision
 
-## `BACK-001-C1` correction
+1. Auth context/identity formats, JWT/JWKS handoff, exact Auth decision shape.
+2. Auth/Security `403` versus concealed `404` non-disclosure policy.
+3. `AUTH-DEP-007` installation reference and `AUTH-DEP-008` machine actor.
+4. DB-002 response mapping, cursor/index impact, and duplicate/conflict HTTP
+   behavior.
+5. DB-003 steps/events/action audit/human-decision persistence; DB-003 is
+   `NOT_STARTED / NOT_AUTHORIZED`.
+6. Workflow cancellation, regeneration/rerun, human disposition, publication,
+   and action request/response mapping.
+7. Queue ownership, contract, durable handoff, enqueue, delivery, redelivery,
+   results, dead letters, cancellation, worker status, correlation, and retry
+   semantics.
+8. Durable GitHub delivery replay owner and webhook-to-run idempotency.
+9. Evidence, artefact, human-decision, publication, access, expiry, checksum,
+   and download semantics; `CONTRACT-EVIDENCE-001` is absent.
+10. Evaluation benchmark/metric/provenance/baseline/release-gate/summary
+    semantics; `CONTRACT-EVAL-001` is absent.
+11. Security redaction, safe details, disclosure, limits, rate/abuse,
+    security-event, retention, CORS/CSRF, and artefact policy;
+    `CONTRACT-SEC-001` and Security records are absent.
+12. Deployment readiness dependencies, runtime values, public URLs, Dashboard
+    origin, CORS input, webhook configuration, Queue/storage adapters,
+    `Retry-After`, and polling guidance.
+13. UI endpoint filters/sorts, polling cadence, and fixture/mock needs.
+14. Integration generated-client compatibility, deprecation, release,
+    acceptance, overlap, and rollback.
 
-Authoritative specification inspected read-only:
-`/Users/omkar/Documents/TestGap Miner/A2_BACKEND_MANAGER.md`.
+## Consumer-review requests
 
-Files changed by `BACK-001-C1`:
+| Request | Reviewer | Status |
+|---|---|---|
+| `BACK-API-REVIEW-UI-001` | `A2-UI` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-AUTH-001` | `A2-AUTH` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-DATABASE-001` | `A2-DATABASE` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-WORKFLOW-001` | `A2-AGENT-WORKFLOW` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-DEPLOYMENT-001` | `A2-DEPLOYMENT` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-SECURITY-001` | `A2-SECURITY` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-EVALUATION-001` | `A2-EVALUATION` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-QUEUE-001` | `A2-QUEUE` | `OPEN / PENDING_OWNER_REVIEW` |
+| `BACK-API-REVIEW-INTEGRATION-001` | `A2-INTEGRATION` | `OPEN / PENDING_OWNER_REVIEW` |
 
-- `docs/components/backend/COMPONENT_STATUS.md`
-- `docs/components/backend/DEPENDENCY_REQUESTS.md`
-- `docs/components/backend/LATEST_AGENT3_HANDOFF.md`
-- `docs/components/backend/OPEN_ISSUES.md`
-- `docs/components/backend/TASK_LEDGER.md`
+## Change classification
 
-`DECISION_LOG.md` required no correction. No path outside
-`docs/components/backend/` changed.
-
-## Audit findings
-
-1. The application has no application route. Its only HTTP surface is
-   FastAPI's generated OpenAPI/Swagger/ReDoc routes.
-2. The API suite has five tests: one OpenAPI availability test and four
-   settings tests. No application behavior is tested.
-3. Versioning, request IDs, safe error envelope, health/readiness, Auth
-   context, authorization runtime, webhook processing, Queue production,
-   cancellation API/runtime, artefact APIs, and benchmark APIs are absent.
-4. Idempotency is partial only at the DB-002 run-request persistence layer;
-   there is no API/webhook/Queue runtime idempotency.
-5. `CONTRACT-API-001` is absent and requires a separately authorized future
-   draft/review task.
-6. Queue ownership and `CONTRACT-QUEUE-001` remain pending A2-QUEUE's
-   `QUEUE-003` process. No Queue work is recommended or authorized.
-7. `CONTRACT-WORKFLOW-001` supplies cancellation/lifecycle semantics but no
-   runtime. `CONTRACT-AUTH-001` supplies identity/action semantics but no Auth
-   runtime. Evidence, Evaluation, and Security contracts are absent.
-8. No DB-003 or Queue runtime implementation is recommended.
-
-## Dependency matrix
-
-The exact matrix for `BACK-002` through `BACK-008` is maintained in
-`DEPENDENCY_REQUESTS.md`. Controlling blockers are the absent
-`CONTRACT-API-001`; missing Auth runtime/exact-tuple input; pending A2-QUEUE
-`QUEUE-003` and absent Queue contract; absent Evidence/Evaluation/Security
-contracts; incomplete Deployment operational boundaries; and final consumer
-acceptance.
+- Database/API runtime/UI/AI/security/environment changes: none.
+- Contract documentation: one new draft.
+- Backend management documentation: six records updated.
+- Tests added or changed: none; forbidden by task.
+- Git actions: no stage, commit, push, PR, or merge.
 
 ## Command results
 
 | Command | Result |
 |---|---|
-| `git status --short --branch` (before validation) | Exit 0; `## agent2/backend-api-contract...origin/main` and `?? docs/components/backend/` only. |
-| `UV_CACHE_DIR=/private/tmp/testgap-backend-api-contract-uv-cache uv sync --project apps/api --all-groups --locked` | Initial sandboxed attempt exit 1 on PyPI DNS while fetching `annotated-types==0.8.0`; approved network retry exit 0, resolved 33 packages and installed 30 into the ignored `apps/api/.venv`. Manifest and lockfile unchanged. |
-| `UV_CACHE_DIR=/private/tmp/testgap-backend-api-contract-uv-cache uv run --project apps/api pytest -c apps/api/pyproject.toml tests/api -q` | Exit 0; `5 passed, 1 warning in 0.04s`. Warning: Starlette deprecates use of `httpx` with `starlette.testclient` in favor of `httpx2`. |
-| `UV_CACHE_DIR=/private/tmp/testgap-backend-api-contract-uv-cache uv run --project apps/api python -c "from app.main import app; print(app.openapi()['openapi'])"` | Exit 0; `3.1.0`. |
-| `git diff --check` | Exit 0; no output. Backend records are untracked, so this Git command does not inspect their content; a supplemental trailing-whitespace scan found none. |
-| `git diff --stat` | Exit 0; no output because the six Backend records are untracked. |
-| `git diff --name-only` | Exit 0; no output because the six Backend records are untracked. |
-| `git status --short --branch` (final required check) | Exit 0; branch/tracking unchanged and `?? docs/components/backend/` only. |
+| `git diff --check` | Exit 0; no output. This checks the six tracked Backend record edits; the new untracked contract is covered by the supplemental trailing-whitespace scan below. |
+| `git diff --stat` | Exit 0; lists six modified Backend records. Git omits the new untracked `docs/api/CONTRACT-API-001.md` until staged; staging is forbidden. |
+| `git diff --name-only` | Exit 0; lists exactly the six modified Backend records. The seventh changed file is reported by `git status`. |
+| `git status --short --branch` | Exit 0; branch `agent2/backend-contract-api-001...origin/main`; six modified Backend records and untracked `docs/api/`. |
+| `rg -n '[[:blank:]]+$' docs/api/CONTRACT-API-001.md docs/components/backend` | Exit 1 with no matches, the expected clean result; covers the untracked draft as well as Backend records. |
 
-Test count: **5 passed, 0 failed, 0 skipped**. The one warning does not fail
-the suite. The required sync created an ignored local virtual environment;
-repository-managed modifications remain exactly the six Backend Markdown
-records.
-
-## Recommended next A2-BACKEND task
-
-Separately authorize a `CONTRACT-API-001` draft and cross-consumer review.
-Do not begin `BACK-002` implementation until that contract task is accepted.
+No test suite or OpenAPI generator was run because this task is documentation
+only and explicitly forbids tests/runtime implementation.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: six-file Backend audit record package; existing minimal
-  FastAPI/settings/test scaffold and DB-002 persistence are accurately
-  inventoried, not reimplemented.
-- `TESTED`: locked sync, five API/settings tests, OpenAPI `3.1.0`, required Git
-  checks, and supplemental untracked-record whitespace validation; scope is
-  scaffold/OpenAPI/settings, not application APIs.
-- `NOT_TESTED`: all application route and runtime capabilities.
-- `BLOCKED`: later Backend implementation on the exact dependency matrix.
-- `ASSUMED`: `NONE`; exact later task titles are verified from the
-  authoritative Backend manager specification. No runtime behavior, owner
-  acceptance, or deployed environment is inferred from documentation.
+- `IMPLEMENTED`: draft contract, nine consumer-review requests, and reconciled
+  Backend records only.
+- `TESTED`: final Git diff/scope/whitespace checks only.
+- `NOT_TESTED`: OpenAPI generation and every runtime/API/Auth/Database/Queue/
+  worker/webhook/UI/deployment/security behavior.
+- `BLOCKED`: contract acceptance and later Backend implementation on all nine
+  reviews and all unresolved external decisions above.
+- `ASSUMED`: no external semantics and no runtime readiness; absence of
+  Security/Evaluation/Queue records was verified from the repository tree.
+
+## Recommended next task
+
+A2-BACKEND reviews this draft, then sends the nine requests to their owning
+managers. Issue a focused documentation continuation for review feedback. Do
+not begin `BACK-002`, DB-003, Queue/worker work, or API implementation.
