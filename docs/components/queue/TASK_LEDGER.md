@@ -23,18 +23,22 @@
 | A2-EVALUATION review | `ACCEPTED_WITH_CONSTRAINTS` | Measurement provenance, thresholds, capacity, reliability, and release gates remain future inputs. |
 | `QUEUE-004-C3-CONSUMER-REVIEW-CONSOLIDATED-CORRECTION-A3` | `CHANGES_REQUIRED / SUPERSEDED_BY_FOCUSED_FINAL_CORRECTION` | A2-QUEUE found the missing exact Workflow sequence and incomplete accepted-constraint register. |
 | `QUEUE-004-C3-C1-FINAL-WORKFLOW-SEQUENCE-AND-CONSUMER-CONSTRAINT-RECORD-CORRECTION` | `WORKFLOW_SEQUENCE_ACCEPTED / REGISTER_SOURCE_FIDELITY_CHANGES_REQUIRED` | A2-QUEUE accepted the sequence and table structure but found 17 Auth/Integration/Evaluation source-record defects. |
-| `QUEUE-004-C3-C2-CONSTRAINT-REGISTER-SOURCE-FIDELITY-CORRECTION` | `CORRECTION_PREPARED / A2_QUEUE_FINAL_SOURCE_REVIEW_PENDING` | Corrected exact mappings and complete evidence obligations in 7 Auth, 5 Integration, and 5 Evaluation rows; contract content unchanged; no commit or push authorized. |
-| Current-main reconciliation | `PENDING` | Deferred until the later reviewed commit/push task; no merge or rebase performed. |
-| Affected-owner re-review | `NOT_BEGUN` | Required at the new A2-QUEUE-reviewed head. |
+| `QUEUE-004-C3-C2-CONSTRAINT-REGISTER-SOURCE-FIDELITY-CORRECTION` | `COMPLETE / ACCEPTED_BY_A2_QUEUE` | A2-QUEUE final source review `PASS`; reviewed correction commit `16a396f03b2de7b1bf2c8a0380e6463fb7f42773`. |
+| `QUEUE-004-C4-DRAFT2-COMMIT-MAIN-RECONCILIATION-AND-PUSH-A3` | `RECONCILIATION_COMPLETE / STATUS_RECORDED` | Normal merge commit `8d7606ed6a68e5b98579245b5f4944e40cc8e37e` reconciles `origin/main` `e7de96fc96e665fc32163dc9f26986e0e56e5510`; PR update and normal push follow this status commit. |
+| Current-main reconciliation | `COMPLETE / NO_QUEUE_SEMANTIC_CONFLICT_FOUND` | Zero commits behind `origin/main`; PR diff remains limited to seven Queue documentation paths. |
+| Affected-owner re-review | `PENDING / NOT_BEGUN` | Required from A2-AGENT-WORKFLOW, A2-DATABASE, A2-EVIDENCE, A2-EXECUTION, A2-SECURITY, A2-AUTH, A2-DEPLOYMENT, A2-INTEGRATION, and A2-EVALUATION. A2-BACKEND is not reopened because no Backend/API-owned normative boundary changed. |
 | Provider/value selection | `NOT_STARTED / NOT_AUTHORIZED` | Provider remains unselected; configuration and measurement inputs remain unresolved. |
 | Queue implementation | `NOT_STARTED / NOT_AUTHORIZED` | No runtime, adapter, worker, tests, dependencies, or infrastructure authorized. |
 | DB-003 | `NOT_STARTED / UNAUTHORIZED` | No physical design, model, migration, or persistence implementation authorized. |
 
-## Completion conditions for this correction
+## Current draft.2 boundary
 
-- Exactly seven authorized Queue documentation files changed and remain unstaged.
+- Exactly seven Queue documentation paths remain in the PR diff.
 - The canonical 26 IDs, titles, and drafting statuses remain exact.
 - All ten dispositions and ten correction groups are recorded.
-- Draft.1 remains historical review evidence; draft.2 remains unaccepted.
-- No provider, runtime, dependency, test, migration, infrastructure, PR, commit,
-  push, merge, rebase, or DB-003 action occurs.
+- Draft.1 remains historical review evidence; draft.2 remains unaccepted and
+  awaits nine affected-owner re-reviews.
+- PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`.
+- Provider remains `UNSELECTED`; runtime remains
+  `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`; DB-003 remains
+  `NOT_STARTED / UNAUTHORIZED`.

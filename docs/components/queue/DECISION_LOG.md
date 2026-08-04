@@ -1,5 +1,27 @@
 # Queue Decision Log
 
+## 2026-08-04 — Record draft.2 approval and current-main reconciliation
+
+- A2-QUEUE final source review: `PASS`.
+- `QUEUE-004-C3-C2-CONSTRAINT-REGISTER-SOURCE-FIDELITY-CORRECTION`:
+  `COMPLETE / ACCEPTED_BY_A2_QUEUE`.
+- Reviewed correction commit:
+  `16a396f03b2de7b1bf2c8a0380e6463fb7f42773`.
+- Current-main reconciliation:
+  `COMPLETE / NO_QUEUE_SEMANTIC_CONFLICT_FOUND`; normal merge commit
+  `8d7606ed6a68e5b98579245b5f4944e40cc8e37e` reconciles `origin/main`
+  `e7de96fc96e665fc32163dc9f26986e0e56e5510`.
+- Focused affected-owner re-review is `PENDING / NOT_BEGUN` for
+  A2-AGENT-WORKFLOW, A2-DATABASE, A2-EVIDENCE, A2-EXECUTION, A2-SECURITY,
+  A2-AUTH, A2-DEPLOYMENT, A2-INTEGRATION, and A2-EVALUATION. A2-BACKEND is not
+  reopened because draft.2 changed no Backend/API-owned normative boundary.
+- PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`; provider remains
+  `UNSELECTED`; runtime remains `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`;
+  DB-003 remains `NOT_STARTED / UNAUTHORIZED`.
+- This is a status-only record. Draft.2 remains unaccepted and not
+  implementation-ready; no runtime, provider, release, or DB-003 authorization
+  is created.
+
 ## 2026-08-04 — Correct constraint-register source fidelity
 
 - A2-QUEUE renewed review accepted the `EXECUTING_BUGGY` then

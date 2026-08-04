@@ -4,7 +4,7 @@
 - Requester/owner: `A2-QUEUE`
 - Historical reviewed contract: `CONTRACT-QUEUE-001@1.0.0-draft.1`
 - Active corrected contract: `CONTRACT-QUEUE-001@1.0.0-draft.2`
-- Status: `CORRECTION_PREPARED / A2_QUEUE_FINAL_SOURCE_REVIEW_PENDING`
+- Status: `DRAFT / A2_QUEUE_REVIEW_PASSED / AFFECTED_OWNER_REREVIEW_PENDING`
 - API dependency: `CONTRACT-API-001@0.1.0-draft.1`
 - Rule: no disposition authorizes runtime, provider selection, or DB-003.
 
@@ -13,18 +13,31 @@ unconditional acceptance; two specification conflicts and two rejections
 blocked merge. The affected owners MUST re-review draft.2 at the new
 A2-QUEUE-reviewed head. Silence remains non-acceptance.
 
-A2-QUEUE's independent draft.2 review found two final defects: the exact
+At that review point, A2-QUEUE's independent draft.2 review found two final defects: the exact
 Workflow repaired-candidate sequence was omitted and the constrained responses
-were not fully enumerated. Both records are corrected; final A2-QUEUE review is
-pending. Affected-owner re-review has not begun, current-main reconciliation
-has not occurred, and commit/push remain unauthorized.
+were not fully enumerated. Both records were corrected; final A2-QUEUE review,
+affected-owner re-review, current-main reconciliation, and commit/push were
+then pending.
 
 A2-QUEUE's renewed review accepted the exact Workflow sequence and confirmed
-the 39-row table was structurally valid, but found source-fidelity defects in
-17 Auth, Integration, and Evaluation rows. Their exact affected mappings and
-complete constraint/evidence obligations are now corrected. Final A2-QUEUE
-source review remains pending; affected-owner re-review has not begun,
-current-main reconciliation has not occurred, and commit/push are unauthorized.
+the 39-row table was structurally valid. The source-fidelity defects in 17
+Auth, Integration, and Evaluation rows were corrected, and A2-QUEUE's final
+source review passed. `QUEUE-004-C3-C2-CONSTRAINT-REGISTER-SOURCE-FIDELITY-CORRECTION`
+is `COMPLETE / ACCEPTED_BY_A2_QUEUE` in reviewed correction commit
+`16a396f03b2de7b1bf2c8a0380e6463fb7f42773`.
+
+Current-main reconciliation is `COMPLETE / NO_QUEUE_SEMANTIC_CONFLICT_FOUND`:
+normal merge commit `8d7606ed6a68e5b98579245b5f4944e40cc8e37e`
+reconciles `origin/main` `e7de96fc96e665fc32163dc9f26986e0e56e5510`.
+Focused draft.2 re-review is `PENDING / NOT_BEGUN` for A2-AGENT-WORKFLOW,
+A2-DATABASE, A2-EVIDENCE, A2-EXECUTION, A2-SECURITY, A2-AUTH, A2-DEPLOYMENT,
+A2-INTEGRATION, and A2-EVALUATION. A2-BACKEND is not reopened because draft.2
+changed no Backend/API-owned normative boundary.
+
+PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`; provider remains
+`UNSELECTED`; runtime remains `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`;
+DB-003 remains `NOT_STARTED / UNAUTHORIZED`. Draft.2 remains unaccepted and
+not implementation-ready.
 
 | Request / reviewer | Draft.1 disposition | Constraint or blocking finding preserved in draft.2 | Future closure input |
 |---|---|---|---|
