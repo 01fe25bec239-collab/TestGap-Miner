@@ -1,12 +1,12 @@
 # UI Open Issues
 
-- Date: 2026-08-03
+- Date: 2026-08-04
 - Agent 2: `A2-UI`
-- Current task: `UI-AUTH-DEPENDENCY-RECONCILIATION-001-A3-C1`
-- Prompt type: `POST_MERGE_UI_DURABLE_STATE_RECONCILIATION`
+- Current task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
+- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
 - Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
 - Branch: `agent2/ui-auth-dependency-reconciliation`
-- Current evidence baseline: `ba4247af2195d4c8e60cb9990f616a95f2c54d54`
+- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - Frontend implementation: `NOT_STARTED`
 - Frontend runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
@@ -138,21 +138,34 @@ finding. Each issue records what is unresolved and who owns resolving it.
 - Blocks: `UI-005`, `UI-010`.
 - Resolution path: `UI-DEP-BACKEND-001` and `UI-DEP-SECURITY-001`.
 
-## `UI-ISSUE-008` — Backend authenticated-route and error contract is absent
+## `UI-ISSUE-008` — API draft is present but not implementation-ready
 
-- Classification: `OPEN` / contract gap
+- Classification: `PARTIALLY_RESOLVED` / draft contract and runtime gap
 - Severity: `HIGH`
 - Owner: `A2-BACKEND`
-- Evidence: `apps/api/app/main.py` is three lines with no routes.
-  `CONTRACT-API-001` is not published in `docs/`.
-- Impact: The UI has no route surface, no request or response model, no
-  pagination scheme, no authenticated request context, and no error envelope to
-  bind to. Every data-bearing UI surface is blocked. The error envelope matters
-  specifically because the UI must render a safe message, surface a
-  `request_id` for support, and never leak `details` that could contain
-  sensitive content.
+- Historical evidence: At baseline `ba4247a`, no API contract was published;
+  the UI therefore recorded the route, model, pagination, authenticated
+  context, and error surface as absent.
+- Current evidence: `CONTRACT-API-001@0.1.0-draft.1` is
+  `PRESENT / DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY`. It proposes
+  `/api/v1`, `Authorization: Bearer` access-token transport, refresh-token
+  exclusion, a safe `error.code/message/request_id/details` envelope,
+  `X-Request-ID`, `X-Correlation-ID`, shared cursor pagination, and polling via
+  `Location`.
+- Remaining gap: final authenticated-context shape is
+  `UNRESOLVED / AUTH_OWNED / RUNTIME_HANDOFF_NOT_FROZEN`; exact `403` versus
+  concealed `404` is `UNRESOLVED_PENDING_AUTH_AND_SECURITY`; CORS is
+  `UNRESOLVED / DEPLOYMENT_AND_SECURITY_INPUT_REQUIRED /
+  BACKEND_CONFIGURATION_NOT_DEFINED`; validating OpenAPI/client fixtures are
+  absent; endpoint-specific models and owner projections are partial; and API
+  runtime is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`.
+- Impact: The UI has useful shared transport draft input, but every
+  data-bearing implementation surface remains blocked. Safe error rendering
+  must use only accepted fields and must never leak raw `details`.
 - Blocks: `UI-005`, `UI-006`, `UI-007`, `UI-008`, `UI-009`.
-- Resolution path: `UI-DEP-BACKEND-001`.
+- Resolution path: complete consumer/owner review, freeze the unresolved
+  boundaries, provide validating OpenAPI/client fixtures and endpoint models,
+  then separately authorize runtime and UI implementation.
 
 ## `UI-ISSUE-009` — Provider test configuration is absent
 
@@ -228,17 +241,19 @@ finding. Each issue records what is unresolved and who owns resolving it.
 - Disposition: `A2_UI_MANAGER.md` retains the Agent 1 index title as canonical
   and records the variance. Not resolved by assumption. Nonblocking.
 
-## `UI-ISSUE-014` — Future Workflow, Evidence, and API contracts are needed for full Dashboard function
+## `UI-ISSUE-014` — Owner projections and action semantics are incomplete for full Dashboard function
 
 - Classification: `OPEN` / future contract need
 - Severity: `MEDIUM`
 - Owners: `A2-AGENT-WORKFLOW`, `A2-BACKEND`, `A2-EVALUATION`
-- Evidence: No UI-facing projection exists for `CONTRACT-WORKFLOW-001`
-  (run states, workflow steps, failure codes, retry and abstention
-  transitions), `CONTRACT-EVIDENCE-001` (candidate patch, execution attempt,
-  evidence card, artefact manifest), `CONTRACT-EVAL-001` (benchmark case,
-  metric result, baseline, release-gate result), or `CONTRACT-API-001` (the
-  transport that carries all of them).
+- Historical evidence: At baseline `ba4247a`, no UI-facing API contract was
+  published.
+- Current evidence: `CONTRACT-API-001@0.1.0-draft.1` now proposes shared
+  transport, cursor pagination, polling, and placeholder run surfaces. The
+  endpoint-specific projections and actions remain `PARTIAL /
+  OWNER_DEPENDENT`. Workflow projections remain incomplete; Evidence and
+  Evaluation projections remain absent; Queue delivery semantics remain
+  unresolved; and DB-003 inputs remain `NOT_STARTED / NOT_AUTHORIZED`.
 - Impact: The two PRD-named UI surfaces — the evidence card and the benchmark
   dashboard — cannot be specified, built, or tested without these. Specific
   unknowns include: which run states are user-visible and how terminal
@@ -262,7 +277,8 @@ by PR #21. None is an exploitable UI finding because `apps/web` remains
 blockers are the runtime remainders in `UI-ISSUE-001` through
 `UI-ISSUE-007` and `UI-ISSUE-009`: provisioning, runtime values, deployed
 domain/TLS/callback registration, complete Auth semantics, Security
-acceptance, and provider test configuration. `UI-ISSUE-008` remains the
-controlling blocker for every data-bearing surface. Runtime, implementation,
-session, Security, Backend, Workflow, Evidence, and Evaluation issues remain
-open without additional evidence.
+acceptance, and provider test configuration. `UI-ISSUE-008` is partially
+resolved by the API draft but remains the controlling contract/runtime blocker
+for every data-bearing surface. Runtime, implementation, Auth context,
+`403`/`404` disclosure, CORS, validating fixtures, Queue, DB-003, Workflow,
+Evidence, and Evaluation issues remain open without additional evidence.

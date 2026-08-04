@@ -1,19 +1,20 @@
 # UI Dependency Requests
 
-- Date: 2026-08-03
+- Date: 2026-08-04
 - Agent 2: `A2-UI`
-- Current task: `UI-AUTH-DEPENDENCY-RECONCILIATION-001-A3-C1`
-- Prompt type: `POST_MERGE_UI_DURABLE_STATE_RECONCILIATION`
+- Current task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
+- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
 - Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
 - Branch: `agent2/ui-auth-dependency-reconciliation`
-- Current evidence baseline: `ba4247af2195d4c8e60cb9990f616a95f2c54d54`
+- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - `ASSUMED`: `NONE`
 
 Every request below was opened by A2-UI. A2-UI records owning-manager evidence
 without substituting its own acceptance: `UI-DEP-DEPLOY-001` is partially
-satisfied by A2-DEPLOYMENT's merged decision, while the other three formal
-requests remain pending.
+satisfied by A2-DEPLOYMENT's merged decision, and `UI-DEP-BACKEND-001` is
+partially satisfied by the published API draft. The Auth and Security requests
+remain pending.
 
 No request below authorizes A3-UI to modify another component's files, and none
 authorizes UI code, tests, manifests, lockfiles, or configuration.
@@ -123,8 +124,31 @@ injection evidence; and a non-production provider test configuration.
   code list; a CORS policy naming the allowed origin and credential mode; and
   a documented statement that the error envelope leaks no secret and no
   internal detail.
-- Current status: `PENDING` — opened by A2-UI, awaiting A2-BACKEND.
-  `apps/api/app/main.py` is three lines with no routes.
+- Current status: `PARTIALLY_SATISFIED_BY_CONTRACT_API_001_DRAFT`.
+
+Satisfied documentary inputs from `CONTRACT-API-001@0.1.0-draft.1`:
+
+- versioned draft contract publication and `/api/v1` convention;
+- `Authorization: Bearer` access-token transport;
+- refresh-token forwarding prohibition;
+- safe `error.code/message/request_id/details` envelope;
+- `X-Request-ID` and `X-Correlation-ID`;
+- shared cursor-pagination conventions;
+- polling through the response `Location` header.
+
+Still pending:
+
+- an accepted implementation-ready contract;
+- a validating OpenAPI/client fixture;
+- final authenticated-context shape from A2-AUTH;
+- final `403` versus concealed `404` policy from Auth/Security;
+- CORS, including Deployment/Security input and Backend configuration;
+- complete endpoint-specific request/response models;
+- complete Workflow, Evidence, Evaluation, Queue, and DB-003 projections;
+- complete action semantics;
+- API runtime implementation and API runtime tests.
+
+API runtime remains `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`.
 
 ## `UI-DEP-SECURITY-001` — Cookie, CSRF, and OAuth-state acceptance
 
@@ -166,7 +190,7 @@ them prematurely would freeze another owner's contract against guessed needs.
 | `UI-DEP-EVIDENCE-001` | `A2-AGENT-WORKFLOW` | `CONTRACT-EVIDENCE-001` | Evidence-card field set and rendering contract: candidate patch reference, execution attempts on buggy and fixed revisions, artefact manifest, artefact reference and short-lived download-URL issuance and expiry, and what the UI must show to make a claim reviewable rather than asserted | `UI-007` | `PENDING — NOT_YET_OPENED` |
 | `UI-DEP-WORKFLOW-002` | `A2-AGENT-WORKFLOW`, with `A2-AUTH` | `CONTRACT-WORKFLOW-001`, `CONTRACT-AUTH-001` | Human decision contract: how accept, reject, regenerate, and dismiss are submitted, how the immutable audit event is rendered, how current decision state is derived, and confirmation that no prohibited action — auto-merge, approval bypass, branch-protection bypass, production-code edit — is exposed | `UI-008` | `PENDING — NOT_YET_OPENED` |
 | `UI-DEP-EVAL-001` | `A2-EVALUATION` | `CONTRACT-EVAL-001` | Benchmark dashboard surface: benchmark case identity, metric result set and value ranges, baseline references, release-gate result representation, and the required provenance fields to display | `UI-009` | `PENDING — NOT_YET_OPENED` |
-| `UI-DEP-API-002` | `A2-BACKEND` | `CONTRACT-API-001` | Transport for the Workflow, Evidence, and Evaluation surfaces above: list and detail endpoints, filtering, pagination at dashboard scale, and any streaming or polling contract for in-progress runs | `UI-006` – `UI-009` | `PENDING — NOT_YET_OPENED` |
+| `UI-DEP-API-002` | `A2-BACKEND` | `CONTRACT-API-001` | Shared cursor pagination and polling through `Location` are proposed. Workflow, Evidence, and Evaluation projections remain pending; endpoint-specific filters, fields, and actions remain owner-dependent. | `UI-006` – `UI-009` | `PARTIAL_DRAFT_INPUT_AVAILABLE / NOT_YET_OPENED` |
 
 ## Summary
 
@@ -175,9 +199,13 @@ because the Auth records do not yet provide the complete requested
 session/callback, refresh, sign-out, PKCE, OAuth-state, and error semantics.
 `UI-DEP-DEPLOY-001` is
 `PARTIALLY_SATISFIED_FOR_CONTRACT_AND_DESIGN`; its runtime and test-provider
-remainders stay pending. `UI-DEP-BACKEND-001` and `UI-DEP-SECURITY-001` remain
-`PENDING`. Five future Workflow, Evidence, Evaluation, and API dependencies
-remain pending and not yet opened.
+remainders stay pending. `UI-DEP-BACKEND-001` is
+`PARTIALLY_SATISFIED_BY_CONTRACT_API_001_DRAFT`; acceptance, owner inputs,
+fixtures, endpoint models, CORS, and runtime remain pending.
+`UI-DEP-SECURITY-001` remains `PENDING`. Four future Workflow, Evidence, and
+Evaluation dependencies remain pending and not yet opened;
+`UI-DEP-API-002` has partial shared-transport draft input but is not yet
+formally opened.
 
 `AUTH-DEP-004` is `ACCEPTED_WITH_CONSTRAINTS / MERGED_VIA_PR_20 /
 SATISFIED_FOR_AUTH_CONTRACT_AND_DESIGN`. `AUTH-DEP-010` is

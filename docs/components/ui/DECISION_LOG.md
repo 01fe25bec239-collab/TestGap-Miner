@@ -1,12 +1,12 @@
 # UI Decision Log
 
-- Date: 2026-08-03
+- Date: 2026-08-04
 - Agent 2: `A2-UI`
-- Current task: `UI-AUTH-DEPENDENCY-RECONCILIATION-001-A3-C1`
-- Prompt type: `POST_MERGE_UI_DURABLE_STATE_RECONCILIATION`
+- Current task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
+- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
 - Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
 - Branch: `agent2/ui-auth-dependency-reconciliation`
-- Current evidence baseline: `ba4247af2195d4c8e60cb9990f616a95f2c54d54`
+- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - Frontend implementation: `NOT_STARTED`
 - Frontend runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
@@ -317,3 +317,38 @@ This decision does not begin the work and authorizes no implementation.
 
 No decision in this log authorizes code, routes, components, tests, manifests,
 lockfiles, configuration, provisioning, staging, or publication.
+
+## `UI-DEC-025` — API draft consumer review partially satisfies the UI dependency
+
+`CONTRACT-API-001@0.1.0-draft.1` is
+`PRESENT / DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY`. A2-UI has
+completed manager-level consumer review. `UI-DEP-BACKEND-001` is
+`PARTIALLY_SATISFIED_BY_CONTRACT_API_001_DRAFT`; it is not fully satisfied.
+
+The draft documents these proposed shared transport conventions:
+
+- `/api/v1` application paths;
+- `Authorization: Bearer` access-token transport;
+- refresh-token forwarding is `PROHIBITED`;
+- a safe `error.code/message/request_id/details` envelope;
+- `X-Request-ID` and `X-Correlation-ID`;
+- shared opaque cursor pagination;
+- polling of accepted operations through the `Location` header.
+
+The following remain unresolved and are not frozen by this UI decision:
+
+- final authenticated context:
+  `UNRESOLVED / AUTH_OWNED / RUNTIME_HANDOFF_NOT_FROZEN`;
+- exact `403` versus concealed `404` disclosure:
+  `UNRESOLVED_PENDING_AUTH_AND_SECURITY`;
+- CORS: `UNRESOLVED / DEPLOYMENT_AND_SECURITY_INPUT_REQUIRED /
+  BACKEND_CONFIGURATION_NOT_DEFINED`;
+- endpoint-specific projections and actions: `PARTIAL / OWNER_DEPENDENT`,
+  including incomplete Workflow projections, absent Evidence/Evaluation
+  projections, unresolved Queue delivery, and unauthorized DB-003 inputs;
+- validating OpenAPI/client fixtures and complete endpoint models.
+
+API runtime is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`. Frontend
+runtime is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`. This consumer
+review creates no API, frontend, Auth, Queue, Database, Evidence, Evaluation,
+Security, Deployment, or other implementation authorization.

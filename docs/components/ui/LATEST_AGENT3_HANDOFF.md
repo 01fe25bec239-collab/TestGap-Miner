@@ -1,6 +1,148 @@
 # Latest A3-UI Handoff
 
-## Current reconciliation handoff
+## Current API dependency reconciliation handoff
+
+- Managing agent: `A2-UI` — Frontend and UI Component Manager
+- Implementation agent: `A3-UI` — temporary, task-scoped
+- Parent task: `UI-API-DEPENDENCY-RECONCILIATION-001`
+- Task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
+- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
+- Result: `PASS — UI_API_DOCUMENTATION_REPAIRED_ON_CURRENT_MAIN`
+- Date: 2026-08-04
+- Repository: `01fe25bec239-collab/TestGap-Miner`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
+- Branch: `agent2/ui-auth-dependency-reconciliation`
+- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
+- Pre-rebase UI commit: `a2e6de7d0625ef8e33e7b487f79330c2191cc6bd`
+- Resulting rebased UI commit: `729bf5405fae3d21b04dc069ffa9cff22f4cddcd`
+- Resulting parent: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
+- `ASSUMED`: `NONE`
+
+### Rebase and content preservation
+
+- Pre-rebase branch relation to `origin/main`: `1 2`.
+- Exact command: `git rebase origin/main`.
+- Conflict result: none; rebase completed successfully.
+- Post-rebase branch relation: `1 0`.
+- The accepted Auth-reconciliation contents remained byte-for-byte identical:
+  all six pre/post SHA-256 values matched.
+- No rebase remains active.
+
+### Inputs inspected and protected
+
+Read in full before editing:
+
+- `docs/api/CONTRACT-API-001.md`
+- all six records under `docs/components/backend/`
+- all six records under `docs/components/ui/`
+
+The API contract, Backend records, Auth records, Deployment records,
+specifications, `apps`, and `tests` are protected and unchanged.
+
+### Exact repair scope
+
+Exactly six existing UI durable records were modified, unstaged:
+
+1. `docs/components/ui/COMPONENT_STATUS.md`
+2. `docs/components/ui/TASK_LEDGER.md`
+3. `docs/components/ui/OPEN_ISSUES.md`
+4. `docs/components/ui/DECISION_LOG.md`
+5. `docs/components/ui/DEPENDENCY_REQUESTS.md`
+6. `docs/components/ui/LATEST_AGENT3_HANDOFF.md`
+
+After the authorized rebase, no repair file was created, deleted, or renamed.
+All six focused repair edits remain unstaged, and no repair-content commit was
+created.
+
+### API consumer-review result
+
+- `CONTRACT-API-001@0.1.0-draft.1`:
+  `PRESENT / DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY`.
+- A2-UI completed manager-level consumer review.
+- `UI-DEP-BACKEND-001`:
+  `PARTIALLY_SATISFIED_BY_CONTRACT_API_001_DRAFT`.
+- Draft inputs available: `/api/v1`; `Authorization: Bearer`; refresh-token
+  exclusion; safe errors; request/correlation IDs; shared cursor pagination;
+  polling through `Location`.
+- Final authenticated context remains
+  `UNRESOLVED / AUTH_OWNED / RUNTIME_HANDOFF_NOT_FROZEN`.
+- Exact `403` versus concealed `404` remains
+  `UNRESOLVED_PENDING_AUTH_AND_SECURITY`.
+- CORS remains `UNRESOLVED / DEPLOYMENT_AND_SECURITY_INPUT_REQUIRED /
+  BACKEND_CONFIGURATION_NOT_DEFINED`.
+- Endpoint-specific projections/actions remain `PARTIAL / OWNER_DEPENDENT`.
+- API and frontend runtimes remain
+  `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`.
+
+### UI task classifications
+
+| Task | Current state |
+|---|---|
+| `UI-005` | `BLOCKED / NOT_AUTHORIZED / DRAFT_INPUT_AVAILABLE` |
+| `UI-006` | `BLOCKED / NOT_AUTHORIZED / PLACEHOLDER_SURFACE_AVAILABLE` |
+| `UI-007` | `BLOCKED / NOT_AUTHORIZED` |
+| `UI-008` | `BLOCKED / NOT_AUTHORIZED / ACTION_PLACEHOLDER_ONLY` |
+| `UI-009` | `BLOCKED / NOT_AUTHORIZED` |
+
+`UI-002` could logically proceed independently of final API semantics but
+still requires separate explicit Agent 1 implementation authorization.
+
+### Remaining blockers
+
+- Auth: final authenticated-context handoff, session semantics, and identity
+  formats.
+- Security: denial disclosure, safe details, cookie/CSRF/OAuth-state, limits,
+  and redaction acceptance.
+- Deployment: CORS origin/input, provider/runtime proof, domains, TLS,
+  callbacks, environment injection, Queue/storage adapters, and polling
+  guidance.
+- Backend: accepted implementation-ready contract, validating OpenAPI/client
+  fixture, complete endpoint models, runtime, and tests.
+- Queue: ownership, durable handoff, delivery/redelivery, cancellation,
+  correlation, worker result, and retry semantics.
+- Workflow: complete endpoint projections and action semantics.
+- Evidence and Evaluation: contracts and UI projections remain absent.
+- DB-003: steps/events/action-audit/human-decision persistence remains
+  unauthorized and unavailable.
+
+### Validation results
+
+- `git diff --check`: passed.
+- Exact diff: six unstaged existing-file modifications under
+  `docs/components/ui/`; no seventh or untracked path.
+- Protected-path checks: all exited zero.
+- Stale current-state search: no unqualified claim remains that
+  `CONTRACT-API-001` is absent or unpublished.
+- Secret check: no real secret, credential, token, private key, provider
+  project reference, production hostname, or injected value added.
+
+### Git and implementation state
+
+Repairs remain **unstaged and uncommitted** for A2-UI review. The authorized
+rebase created commit 729bf5405fae3d21b04dc069ffa9cff22f4cddcd, but no
+repair-content commit was created afterward. No push, pull request, or merge
+was performed. No API, frontend, Auth, Queue, Database, Evidence, Evaluation,
+Security, Deployment, or runtime implementation is
+authorized by this reconciliation.
+
+### Evidence labels
+
+- `IMPLEMENTED`: six unstaged UI durable-record repairs on the rebased accepted
+  Auth reconciliation commit.
+- `TESTED`: repository/rebase state, content preservation, exact repair scope,
+  protected paths, stale-statement removal, diff check, and Git boundaries.
+- `NOT_TESTED`: frontend, API, Auth provider, CORS, Queue, Evidence,
+  Evaluation, DB-003, and runtime behavior.
+- `BLOCKED`: staging, commit, push, PR, merge, and all runtime implementation.
+- `ASSUMED`: `NONE`.
+
+### Recommended next action
+
+A2-UI reviews this unstaged six-file consumer-review reconciliation and sends
+its decision to A2-BACKEND. Any staging or later implementation requires
+separate authorization.
+
+## Historical Auth reconciliation handoff — preserved
 
 - Managing agent: `A2-UI` — Frontend and UI Component Manager
 - Implementation agent: `A3-UI` — temporary, task-scoped
@@ -18,7 +160,7 @@
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - `ASSUMED`: `NONE`
 
-### Reuse preflight
+### Historical Auth reuse preflight
 
 The dedicated branch and worktree were manually created under A2-UI direction.
 Continuation `C1` explicitly authorized their reuse without deletion,
@@ -40,7 +182,7 @@ Current Git history confirms PR #19 at merge commit
 `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`, and PR #21 at current baseline
 `ba4247af2195d4c8e60cb9990f616a95f2c54d54` are merged.
 
-### Files inspected and protected
+### Historical Auth files inspected and protected
 
 Read in full and not modified:
 
@@ -57,7 +199,7 @@ All six UI records were also read in full before editing. Protected-path
 validation confirms no change under the specification, Auth, Deployment,
 `apps`, or `tests` paths named by the task.
 
-### Files modified
+### Historical Auth files modified
 
 Exactly six existing UI-owned records, with no creation, deletion, or rename:
 
@@ -68,7 +210,7 @@ Exactly six existing UI-owned records, with no creation, deletion, or rename:
 5. `docs/components/ui/DEPENDENCY_REQUESTS.md`
 6. `docs/components/ui/LATEST_AGENT3_HANDOFF.md`
 
-### Reconciliation recorded
+### Historical Auth reconciliation recorded
 
 - A2-UI is `INITIALIZED / DURABLE_RECORDS_MERGED`.
 - `UI-DOC-BOOTSTRAP-001` is `PASS / VERIFIED_COMPLETE / MERGED` through PR
@@ -89,7 +231,7 @@ Exactly six existing UI-owned records, with no creation, deletion, or rename:
   pending. `UI-DEP-DEPLOY-001` is
   `PARTIALLY_SATISFIED_FOR_CONTRACT_AND_DESIGN` with runtime remainders.
 
-### Validation results
+### Historical Auth validation results
 
 | Command | Result |
 |---|---|
@@ -120,7 +262,7 @@ provider, deployment, callback, session, or runtime behavior. No secret value,
 real provider project reference, production hostname, or injected environment
 value was added.
 
-### Remaining blockers
+### Historical Auth remaining blockers
 
 - A2-AUTH must publish complete callback/session, refresh, sign-out, PKCE,
   OAuth-state, and error semantics.
@@ -128,18 +270,19 @@ value was added.
   callback registration, runtime environment and secret injection, and test
   provider configuration.
 - A2-SECURITY with A2-AUTH must accept cookie, CSRF, and OAuth-state security.
-- A2-BACKEND must publish the API surface, authenticated context, error
-  envelope, and CORS contract.
+- Historical Auth-reconciliation state at baseline `ba4247a`: the API surface,
+  authenticated context, error envelope, and CORS contract had not yet been
+  published.
 - Workflow, Evidence, and Evaluation UI projections remain absent.
 - `UI-001` and every implementation task require separate authorization.
 
-### Git actions
+### Historical Auth Git actions
 
 Changes are **unstaged and uncommitted** for A2-UI review. A3-UI did not stage,
 commit, push, open a pull request, merge, delete a branch, or delete a
 worktree.
 
-### Evidence labels
+### Historical Auth evidence labels
 
 - `IMPLEMENTED`: six UI documentation reconciliations only.
 - `TESTED`: exact diff scope, whitespace, status, and protected paths only.
@@ -149,7 +292,7 @@ worktree.
   unauthorized implementation task listed above.
 - `ASSUMED`: `NONE`.
 
-### Recommended next action
+### Historical Auth recommended next action
 
 A2-UI reviews and accepts or repairs this unstaged, uncommitted six-file
 documentation reconciliation. No implementation or Git publication action is
