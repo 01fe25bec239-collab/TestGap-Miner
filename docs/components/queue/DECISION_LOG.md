@@ -1,5 +1,22 @@
 # Queue Decision Log
 
+## 2026-08-04 — Correct the canonical requirement matrix
+
+- Finding: The original section 17 count-only validation passed with 26 unique
+  sequential IDs, but semantic mapping validation failed because several IDs
+  named the wrong subjects.
+- Decision: Replace the matrix with the canonical 26-ID title mapping and move
+  each requirement's constraints, evidence, dependencies, and owner effects to
+  its correct semantic row without changing `1.0.0-draft.1`.
+- Review: After the semantic ID/title correction, A2-QUEUE found seven
+  drafting-status mapping mismatches; those statuses are corrected pending
+  final A2-QUEUE review. No runtime, provider, or DB-003 work is authorized.
+- Final semantic-boundary review: A2-QUEUE found defects in at-least-once
+  disposition handling, Execution versus Workflow cleanup ownership, and the
+  outbox-plus-inbox capability requirements. All three are corrected pending
+  one final A2-QUEUE diff review; PR #24 is not ready and consumer review has
+  not begun.
+
 ## 2026-08-04 — Initialize A2-QUEUE durable records
 
 - Decision: A2-QUEUE is initialized as Queue and asynchronous-execution
@@ -58,3 +75,11 @@
   define transport semantics. Queue ordering/acknowledgement/DLQ/lease expiry
   do not define Workflow ordering/completion/terminality or Evidence proof.
 - Status: Provider unselected; runtime not implemented; consumer review pending.
+
+## 2026-08-04 — Approve the complete correction for additive commit
+
+- Independent review: A2-QUEUE reviewed the complete unstaged correction.
+- Result: The canonical mapping and final semantic-boundary correction passed.
+- Decision: Approve the correction for one additive documentation commit.
+- Authorization boundary: No runtime, provider, DB-003, or implementation work
+  is authorized.

@@ -9,6 +9,8 @@
 | `QUEUE-003` owner confirmation | `COMPLETE` | All owner responses complete; no confirmation work repeated. |
 | `QUEUE-004` initial authorization | `SUPERSEDED_BY_REAUTHORIZATION` | Reconciled by the current authorized task. |
 | `QUEUE-004-CONTRACT-QUEUE-001-PROVIDER-NEUTRAL-DRAFT-AND-REVIEW-001` | `REAUTHORIZED / DOCUMENTATION COMPLETE / CONSUMER_REVIEW_PENDING` | `CONTRACT-QUEUE-001@1.0.0-draft.1` and review records created against the exact baseline. |
+| `QUEUE-004-C1-CANONICAL-REQUIREMENT-MATRIX-CORRECTION-A3` | `COMPLETE / ACCEPTED_BY_A2_QUEUE` | Identifier completeness passed 26/26; canonical titles passed 26/26; drafting statuses passed 26/26; canonical meanings passed 26/26. |
+| `QUEUE-004-C1-FINAL-SEMANTIC-BOUNDARY-CORRECTION-A3` | `COMPLETE / ACCEPTED_BY_A2_QUEUE` | The three final semantic-boundary corrections passed A2-QUEUE review; consumer review has not begun. |
 | PR #23 reconciliation | `COMPLETE` | `CONTRACT-API-001@0.1.0-draft.1` treated only as an external Backend API draft dependency and required Queue consumer review. |
 | Ten consumer dispositions | `OPEN` | Written review required; silence is not acceptance. |
 | Provider/value selection | `NOT_STARTED / NOT_AUTHORIZED` | Unresolved configuration, external policy, measurement, implementation, and release-gate inputs remain classified. |
@@ -18,7 +20,9 @@
 ## Completion conditions for this documentation task
 
 - Exactly seven authorized Queue-owned files exist.
-- The authoritative contract contains one complete 26-row matrix.
+- The authoritative contract contains one complete 26-row matrix with every
+  canonical ID exactly once and each exact canonical title and meaning assigned
+  to its proper row.
 - All six API–Queue reconciliation boundaries and ten review duties are explicit.
 - No provider, unsupported numeric value, external-owner semantic, runtime,
   application, test, dependency, migration, or infrastructure change is made.

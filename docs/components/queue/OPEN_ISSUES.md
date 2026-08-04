@@ -6,6 +6,8 @@
 
 | Issue | Classification | Owner / closure |
 |---|---|---|
+| Corrected canonical requirement matrix | `RESOLVED / A2_QUEUE_REVIEW_PASSED` | Count-only validation originally passed. A3 corrected the semantic ID/title mapping and seven drafting-status mismatches; the complete correction passed A2-QUEUE review. |
+| Final semantic-boundary correction | `RESOLVED / A2_QUEUE_REVIEW_PASSED` | A2-QUEUE found and reviewed corrections for at-least-once disposition handling, Execution versus Workflow cleanup ownership, and outbox-plus-inbox capability requirements; all three passed. Consumer review has not begun. |
 | Ten mandatory consumer reviews | `EXTERNAL_OWNER_POLICY_REQUIRED` | Each named reviewer returns an allowed written disposition; silence is not acceptance. |
 | Security-approved envelope fields, redaction/disclosure, events, integrity algorithm/canonicalization, MAC/signature, and key custody | `EXTERNAL_OWNER_POLICY_REQUIRED` | A2-SECURITY records accepted policy and evidence requirements. |
 | Actor/service identities, authorization-context format, current-authorization checks, and freshness | `EXTERNAL_OWNER_POLICY_REQUIRED` | A2-AUTH with A2-SECURITY records accepted references/policy. |

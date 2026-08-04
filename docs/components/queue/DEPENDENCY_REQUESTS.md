@@ -7,6 +7,12 @@
 - API dependency: `CONTRACT-API-001@0.1.0-draft.1`
 - Rule: silence is not acceptance; no request authorizes runtime or DB-003.
 
+A2-QUEUE's final correction review passed. The Queue contract is ready for
+consumer-review dispatch after the additive correction commit is pushed.
+Consumer review has not begun, all ten written dispositions remain required,
+and silence is not acceptance. Existing review requests remain open and
+unchanged.
+
 Every response MUST use `ACCEPTED`, `ACCEPTED_WITH_CONSTRAINTS`,
 `REJECTED_WITH_REASON`, or `SPECIFICATION_CONFLICT`. A constraint records the
 reviewer, exact section/requirement, rationale, compatibility impact, required
