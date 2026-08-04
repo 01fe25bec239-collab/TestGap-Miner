@@ -1,0 +1,27 @@
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 2000;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  background: #173b86;
+  font: 700 0.875rem/1.25 system-ui, sans-serif;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  outline: 3px solid #f4b740;
+  outline-offset: 2px;
+  transform: translateY(0);
+}

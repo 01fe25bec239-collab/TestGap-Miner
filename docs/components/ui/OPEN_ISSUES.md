@@ -1,12 +1,13 @@
 # UI Open Issues
 
-- Date: 2026-08-02
+- Date: 2026-08-04
 - Agent 2: `A2-UI`
-- Current task: `UI-DOC-BOOTSTRAP-001`
-- Prompt type: `DOCUMENTATION_ONLY_BOOTSTRAP`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-bootstrap`
-- Branch: `agent2/ui-bootstrap-authdep010`
-- Starting commit: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
+- Current task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
+- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
+- Branch: `agent2/ui-auth-dependency-reconciliation`
+- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
+- Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - Frontend implementation: `NOT_STARTED`
 - Frontend runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
 - `ASSUMED`: `NONE`
@@ -17,69 +18,75 @@ An absent feature is recorded as an absence, not as a vulnerability. At this
 commit the UI component has no runtime, so no issue below is an exploitable
 finding. Each issue records what is unresolved and who owns resolving it.
 
-## `UI-ISSUE-001` — `AUTH-DEP-004` is pending
+## `UI-ISSUE-001` — `AUTH-DEP-004` runtime remainder
 
-- Classification: `OPEN` / dependency gap
+- Classification: `PARTIALLY_RESOLVED` / runtime dependency gap
 - Severity: `HIGH`
 - Owner: `A2-DEPLOYMENT`
-- Evidence: `docs/components/auth/DEPENDENCY_REQUESTS.md:128-150` —
-  `Approval status: PENDING`, `Completion evidence: None`.
-- Impact: `AUTH-DEP-004` is the authoritative deployment callback and human
-  IdP metadata boundary. Until it is accepted by its owner, the UI has no
-  approved provider, no issuer, no audience, no key source, no endpoints, no
-  owned dashboard domain, no callback allowlist, no TLS statement, no client
-  variable names, and no secret-injection owner.
-- Blocks: `UI-004`; `AUTH-002` frontend work.
-- Resolution path: A2-DEPLOYMENT accepts `AUTH-DEP-004`. Tracked from the UI
-  side as `UI-DEP-DEPLOY-001`.
-- Disposition: This task changes nothing about `AUTH-DEP-004`. It remains
-  `PENDING`.
+- Historical bootstrap evidence: At baseline `9ac5a24`,
+  `docs/components/auth/DEPENDENCY_REQUESTS.md` recorded `Approval status:
+  PENDING` and `Completion evidence: None`.
+- Current evidence: PR #20 merged A2-DEPLOYMENT's
+  `ACCEPTED_WITH_CONSTRAINTS` response; PR #21 merged A2-AUTH's
+  acknowledgement. `AUTH-DEP-004` is
+  `SATISFIED_FOR_AUTH_CONTRACT_AND_DESIGN`.
+- Disposition: Resolved for Auth contract/design. Runtime provisioning,
+  production domain, TLS, callback registration, environment values, secret
+  injection, and provider test configuration remain open.
+- Blocks: Runtime verification for `UI-004` and `UI-010`, not Auth contract
+  and design.
 
-## `UI-ISSUE-002` — Final identity provider is unresolved
+## `UI-ISSUE-002` — Provider runtime configuration remains unresolved
 
-- Classification: `OPEN` / decision gap
+- Classification: `PARTIALLY_RESOLVED` / runtime decision gap
 - Severity: `HIGH`
 - Owner: `A2-DEPLOYMENT`, with `A2-AUTH`
-- Evidence: No provider is named in any accepted Deployment record.
-  `docs/components/deployment/ENVIRONMENT_VARIABLES.md` registers eleven
-  variables, all database-scoped; zero Auth variables exist.
-- Impact: Supabase Auth is recorded as `CONDITIONAL / PENDING AUTH-DEP-004`,
-  never as an accepted Deployment decision. A2-UI must not build a
-  provider-specific browser or server Auth client, and must not represent
-  Supabase or any other provider as selected.
-- Blocks: `UI-004`.
-- Resolution path: `AUTH-DEP-004` acceptance names the provider or approved
-  equivalent.
+- Historical bootstrap evidence: No provider was named in an accepted
+  Deployment record, and the variable registry contained only database-scoped
+  names.
+- Current evidence: PR #20 selected `SUPABASE_AUTH_WITH_GITHUB_OAUTH` with
+  architecture status `APPROVED_FOR_AUTH_CONTRACT_AND_DESIGN`.
+- Disposition: Provider selection is resolved for design. Actual Supabase
+  provisioning, GitHub OAuth configuration, deployed environment values, and
+  runtime behavior remain open and untested.
+- Blocks: Runtime implementation and verification for `UI-004`.
 
-## `UI-ISSUE-003` — Exact issuer, audience, and JWKS source are unresolved
+## `UI-ISSUE-003` — Runtime issuer, audience, and JWKS validation is unproven
 
-- Classification: `OPEN` / dependency gap
+- Classification: `PARTIALLY_RESOLVED` / runtime dependency gap
 - Severity: `HIGH`
 - Owner: `A2-DEPLOYMENT` (values), `A2-BACKEND` (validation), `A2-AUTH` (semantics)
-- Evidence: `docs/components/auth/AUTH-001_AUDIT.md:348-350` records wrong-issuer,
-  wrong-audience, and JWKS-rotation handling as `NOT_STARTED`, each blocked on
+- Historical bootstrap evidence: `AUTH-001_AUDIT.md` recorded wrong-issuer,
+  wrong-audience, and JWKS-rotation handling as `NOT_STARTED`, then blocked on
   `AUTH-DEP-004`.
-- Impact: The UI cannot assert that any token it forwards will be accepted,
-  and cannot design a correct expired-or-rejected-session experience without
-  knowing what the backend will reject and how it will report the rejection.
-- Blocks: `UI-004`, `UI-005`.
-- Resolution path: `AUTH-DEP-004` for values; `CONTRACT-API-001` for the error
-  surface.
+- Current evidence: PR #20 accepted the issuer template
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1`, audience
+  `authenticated`, and JWKS template
+  `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/.well-known/jwks.json`
+  for design. Issuer comparison is exact and case-sensitive; independent
+  normalization is prohibited.
+- Disposition: Design templates are accepted. Runtime values, key retrieval,
+  validation, rejection behavior, and rotation handling remain unproven.
+- Blocks: Runtime verification for `UI-004`; `CONTRACT-API-001` error handling
+  for `UI-005`.
 
-## `UI-ISSUE-004` — Domain and callback registration are unresolved
+## `UI-ISSUE-004` — Production domain and callback registration remain unresolved
 
-- Classification: `OPEN` / dependency gap
+- Classification: `PARTIALLY_RESOLVED` / runtime dependency gap
 - Severity: `HIGH`
 - Owner: `A2-DEPLOYMENT`
-- Evidence: No owned dashboard domain, exact-match callback allowlist, TLS
-  termination statement, or deployed callback registration exists in any
-  accepted record.
-- Impact: `/auth/callback` is reserved as a UI-owned route, but the deployed
-  URL, its registration with the provider, the domain, and TLS termination are
-  all unknown. A2-UI owns the route and its user-facing UX; A2-UI does not own
-  the deployed registration.
+- Historical bootstrap evidence: No accepted deployed callback template,
+  production domain, exact-match allowlist, TLS statement, or callback
+  registration existed.
+- Current evidence: PR #20 accepted `${DASHBOARD_ORIGIN}/auth/callback` and
+  `http://localhost:3000/auth/callback` as design templates and requires
+  exact-match redirect allowlisting.
+- Impact: `/auth/callback` remains a UI-owned, unimplemented route. The actual
+  production origin, provider registration, deployed domain, and verified TLS
+  remain absent.
 - Blocks: `UI-004`, `UI-010`.
-- Resolution path: `AUTH-DEP-004` and `UI-DEP-DEPLOY-001`.
+- Disposition: Callback design is resolved; production registration, domain,
+  TLS, and runtime evidence remain open under `UI-DEP-DEPLOY-001`.
 
 ## `UI-ISSUE-005` — Cookie and session boundary is unresolved
 
@@ -131,35 +138,51 @@ finding. Each issue records what is unresolved and who owns resolving it.
 - Blocks: `UI-005`, `UI-010`.
 - Resolution path: `UI-DEP-BACKEND-001` and `UI-DEP-SECURITY-001`.
 
-## `UI-ISSUE-008` — Backend authenticated-route and error contract is absent
+## `UI-ISSUE-008` — API draft is present but not implementation-ready
 
-- Classification: `OPEN` / contract gap
+- Classification: `PARTIALLY_RESOLVED` / draft contract and runtime gap
 - Severity: `HIGH`
 - Owner: `A2-BACKEND`
-- Evidence: `apps/api/app/main.py` is three lines with no routes.
-  `CONTRACT-API-001` is not published in `docs/`.
-- Impact: The UI has no route surface, no request or response model, no
-  pagination scheme, no authenticated request context, and no error envelope to
-  bind to. Every data-bearing UI surface is blocked. The error envelope matters
-  specifically because the UI must render a safe message, surface a
-  `request_id` for support, and never leak `details` that could contain
-  sensitive content.
+- Historical evidence: At baseline `ba4247a`, no API contract was published;
+  the UI therefore recorded the route, model, pagination, authenticated
+  context, and error surface as absent.
+- Current evidence: `CONTRACT-API-001@0.1.0-draft.1` is
+  `PRESENT / DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY`. It proposes
+  `/api/v1`, `Authorization: Bearer` access-token transport, refresh-token
+  exclusion, a safe `error.code/message/request_id/details` envelope,
+  `X-Request-ID`, `X-Correlation-ID`, shared cursor pagination, and polling via
+  `Location`.
+- Remaining gap: final authenticated-context shape is
+  `UNRESOLVED / AUTH_OWNED / RUNTIME_HANDOFF_NOT_FROZEN`; exact `403` versus
+  concealed `404` is `UNRESOLVED_PENDING_AUTH_AND_SECURITY`; CORS is
+  `UNRESOLVED / DEPLOYMENT_AND_SECURITY_INPUT_REQUIRED /
+  BACKEND_CONFIGURATION_NOT_DEFINED`; validating OpenAPI/client fixtures are
+  absent; endpoint-specific models and owner projections are partial; and API
+  runtime is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`.
+- Impact: The UI has useful shared transport draft input, but every
+  data-bearing implementation surface remains blocked. Safe error rendering
+  must use only accepted fields and must never leak raw `details`.
 - Blocks: `UI-005`, `UI-006`, `UI-007`, `UI-008`, `UI-009`.
-- Resolution path: `UI-DEP-BACKEND-001`.
+- Resolution path: complete consumer/owner review, freeze the unresolved
+  boundaries, provide validating OpenAPI/client fixtures and endpoint models,
+  then separately authorize runtime and UI implementation.
 
 ## `UI-ISSUE-009` — Provider test configuration is absent
 
 - Classification: `OPEN` / dependency gap
 - Severity: `MEDIUM`
 - Owner: `A2-DEPLOYMENT`, with `A2-AUTH`
-- Evidence: No non-production provider tenant, test client, test callback
-  registration, or seeded test identity exists in any record. No Auth
-  environment variable is registered anywhere
-  (`docs/components/auth/AUTH-001_AUDIT.md:573`).
-- Impact: Even after `AUTH-DEP-004` is accepted, frontend Auth integration
-  tests cannot run without a test configuration. Provider provisioning is
-  `NOT_PROVEN` / `NOT_TESTED`. Fixture-only tests can never demonstrate real
-  provider behavior and must be labeled as fixture evidence.
+- Historical bootstrap evidence: No Auth environment-variable name or
+  non-production provider configuration was registered.
+- Current evidence: PR #20 registered the Auth variable names
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+  `SUPABASE_GITHUB_CLIENT_ID`, `SUPABASE_GITHUB_CLIENT_SECRET`,
+  `AUTH_JWT_ISSUER`, `AUTH_JWT_AUDIENCE`, `AUTH_JWKS_URL`, and
+  `DASHBOARD_ORIGIN`, without values.
+- Impact: Variable-name registration is design evidence only. No provider
+  tenant, test client, test callback registration, seeded identity, injected
+  runtime value, or frontend Auth integration test exists. Fixture-only tests
+  cannot demonstrate provider behavior.
 - Blocks: `UI-004` verification, `UI-010`.
 - Resolution path: `UI-DEP-DEPLOY-001`.
 
@@ -168,9 +191,11 @@ finding. Each issue records what is unresolved and who owns resolving it.
 - Classification: `OPEN` / absent feature
 - Severity: `INFORMATIONAL` (absence, not vulnerability)
 - Owner: `A2-UI`
-- Evidence: `apps/web` is `ABSENT`; `ls apps/` returns exactly `api`;
-  `find . -type d -name web` returns nothing; 80 tracked files contain no
-  frontend page, route, component, test, manifest, or lockfile.
+- Current evidence: `apps/web` is `ABSENT`; no frontend page, layout, route,
+  component, test, manifest, or lockfile exists. Frontend implementation is
+  `NOT_STARTED`.
+- `HISTORICAL BOOTSTRAP EVIDENCE AT BASELINE 9ac5a24`: the repository then
+  contained 80 tracked files and no frontend artefact listed above.
 - Impact: There is no build, no render, no accessibility audit, no end-to-end
   run, and no screenshot. Frontend runtime is `NOT_IMPLEMENTED` /
   `NOT_TESTED`, and frontend Auth tests are `NOT_STARTED` / `NOT_TESTED`. No
@@ -191,20 +216,19 @@ finding. Each issue records what is unresolved and who owns resolving it.
   `UI-DOC-BOOTSTRAP-001` and was not modified. The index edit requires separate
   Agent 1 authorization. Nonblocking.
 
-## `UI-ISSUE-012` — `AUTH-DEP-010` still reads `PENDING` in the Auth records
+## `UI-ISSUE-012` — `AUTH-DEP-010` Auth-record reconciliation
 
-- Classification: `OPEN` / record-synchronization gap
+- Classification: `RESOLVED` / record synchronization
 - Severity: `LOW`
 - Owner: `A2-AUTH` (record), coordinated with `A2-UI`
-- Evidence: `docs/components/auth/DEPENDENCY_REQUESTS.md:300` —
-  `Approval status: PENDING`. The Auth summary at lines 309-311 also lists
-  `AUTH-DEP-010` among the still-pending requests.
-- Impact: A2-UI records `AUTH-DEP-010` as `ACCEPTED_WITH_CONSTRAINTS` via
-  `AUTH-DEP-010-RESPONSE-001-R1`; the Auth-side record has not yet been
-  updated. Until reconciled, the two records disagree.
-- Disposition: `docs/components/auth/**` is Auth-owned and forbidden to this
-  task; it was not modified. A2-UI must coordinate the update with A2-AUTH
-  rather than editing it. Nonblocking for the documentation bootstrap.
+- Historical bootstrap evidence: The Auth-side record at baseline `9ac5a24`
+  still read `Approval status: PENDING`, while UI recorded
+  `ACCEPTED_WITH_CONSTRAINTS`.
+- Current evidence: A2-AUTH acknowledged `AUTH-DEP-010`, recorded
+  `SATISFIED_FOR_OWNERSHIP_AND_COORDINATION`, and merged its reconciliation
+  through PR #21.
+- Disposition: Resolved by PR #21. Auth-owned records were inspected but not
+  modified by this UI task.
 
 ## `UI-ISSUE-013` — Manager title variance
 
@@ -217,17 +241,19 @@ finding. Each issue records what is unresolved and who owns resolving it.
 - Disposition: `A2_UI_MANAGER.md` retains the Agent 1 index title as canonical
   and records the variance. Not resolved by assumption. Nonblocking.
 
-## `UI-ISSUE-014` — Future Workflow, Evidence, and API contracts are needed for full Dashboard function
+## `UI-ISSUE-014` — Owner projections and action semantics are incomplete for full Dashboard function
 
 - Classification: `OPEN` / future contract need
 - Severity: `MEDIUM`
 - Owners: `A2-AGENT-WORKFLOW`, `A2-BACKEND`, `A2-EVALUATION`
-- Evidence: No UI-facing projection exists for `CONTRACT-WORKFLOW-001`
-  (run states, workflow steps, failure codes, retry and abstention
-  transitions), `CONTRACT-EVIDENCE-001` (candidate patch, execution attempt,
-  evidence card, artefact manifest), `CONTRACT-EVAL-001` (benchmark case,
-  metric result, baseline, release-gate result), or `CONTRACT-API-001` (the
-  transport that carries all of them).
+- Historical evidence: At baseline `ba4247a`, no UI-facing API contract was
+  published.
+- Current evidence: `CONTRACT-API-001@0.1.0-draft.1` now proposes shared
+  transport, cursor pagination, polling, and placeholder run surfaces. The
+  endpoint-specific projections and actions remain `PARTIAL /
+  OWNER_DEPENDENT`. Workflow projections remain incomplete; Evidence and
+  Evaluation projections remain absent; Queue delivery semantics remain
+  unresolved; and DB-003 inputs remain `NOT_STARTED / NOT_AUTHORIZED`.
 - Impact: The two PRD-named UI surfaces — the evidence card and the benchmark
   dashboard — cannot be specified, built, or tested without these. Specific
   unknowns include: which run states are user-visible and how terminal
@@ -243,11 +269,16 @@ finding. Each issue records what is unresolved and who owns resolving it.
 
 ## Summary
 
-Fourteen issues are open. None is an exploitable finding, because the UI
-component has no runtime: `apps/web` is `ABSENT` and frontend runtime is
-`NOT_IMPLEMENTED` / `NOT_TESTED`.
+Thirteen issues remain open or partially resolved; `UI-ISSUE-012` is resolved
+by PR #21. None is an exploitable UI finding because `apps/web` remains
+`ABSENT` and frontend runtime is `NOT_IMPLEMENTED / NOT_TESTED`.
 
-The controlling blockers are `UI-ISSUE-001` (`AUTH-DEP-004` pending) for every
-Auth-touching surface and `UI-ISSUE-008` (no `CONTRACT-API-001`) for every
-data-bearing surface. `AUTH-DEP-004` remains `PENDING` and `AUTH-002` remains
-`NOT_READY / BLOCKED`; this task changed neither.
+`AUTH-DEP-004` and `AUTH-DEP-010` are no longer pending. The controlling Auth
+blockers are the runtime remainders in `UI-ISSUE-001` through
+`UI-ISSUE-007` and `UI-ISSUE-009`: provisioning, runtime values, deployed
+domain/TLS/callback registration, complete Auth semantics, Security
+acceptance, and provider test configuration. `UI-ISSUE-008` is partially
+resolved by the API draft but remains the controlling contract/runtime blocker
+for every data-bearing surface. Runtime, implementation, Auth context,
+`403`/`404` disclosure, CORS, validating fixtures, Queue, DB-003, Workflow,
+Evidence, and Evaluation issues remain open without additional evidence.
