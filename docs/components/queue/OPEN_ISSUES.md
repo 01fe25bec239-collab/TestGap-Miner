@@ -1,26 +1,39 @@
 # Queue Open Issues
 
-- Contract: `CONTRACT-QUEUE-001@1.0.0-draft.1`
-- State: `DRAFT / PENDING_CONSUMER_REVIEW`
+- Contract: `CONTRACT-QUEUE-001@1.0.0-draft.2`
+- State: `CORRECTION_PREPARED / A2_QUEUE_FINAL_SOURCE_REVIEW_PENDING`
+- Historical review: `1.0.0-draft.1 / 10_OF_10_RESPONSES_RECEIVED / NOT_ACCEPTED`
 - Provider: `UNSELECTED`
 
-| Issue | Classification | Owner / closure |
+| Correction issue | State | Closure boundary |
 |---|---|---|
-| Corrected canonical requirement matrix | `RESOLVED / A2_QUEUE_REVIEW_PASSED` | Count-only validation originally passed. A3 corrected the semantic ID/title mapping and seven drafting-status mismatches; the complete correction passed A2-QUEUE review. |
-| Final semantic-boundary correction | `RESOLVED / A2_QUEUE_REVIEW_PASSED` | A2-QUEUE found and reviewed corrections for at-least-once disposition handling, Execution versus Workflow cleanup ownership, and outbox-plus-inbox capability requirements; all three passed. Consumer review has not begun. |
-| Ten mandatory consumer reviews | `EXTERNAL_OWNER_POLICY_REQUIRED` | Each named reviewer returns an allowed written disposition; silence is not acceptance. |
-| Security-approved envelope fields, redaction/disclosure, events, integrity algorithm/canonicalization, MAC/signature, and key custody | `EXTERNAL_OWNER_POLICY_REQUIRED` | A2-SECURITY records accepted policy and evidence requirements. |
-| Actor/service identities, authorization-context format, current-authorization checks, and freshness | `EXTERNAL_OWNER_POLICY_REQUIRED` | A2-AUTH with A2-SECURITY records accepted references/policy. |
-| Publication-intent/outbox/inbox equivalent, fencing, durable effect, deletion barrier, and uniqueness design | `IMPLEMENTATION_DETAIL_DEFERRED` | A2-DATABASE reviews the contract; later work requires explicit authorization. DB-003 remains unauthorized. |
-| Workflow eligibility, attempt creation, cancellation, repair, result acceptance, and terminality | `EXTERNAL_OWNER_POLICY_REQUIRED` | A2-AGENT-WORKFLOW accepts or constrains the Queue boundary. |
-| Evidence reference, accepted-result binding, deletion, proof, and retention | `EXTERNAL_OWNER_POLICY_REQUIRED` | A2-EVIDENCE supplies owner semantics; deleted Evidence cannot be recreated. |
-| Worker protected effects, checkpoint compatibility, cleanup, and result production | `EXTERNAL_OWNER_POLICY_REQUIRED` | A2-EXECUTION supplies owner semantics. |
-| Provider and configurable limits/timeouts/retries | `CONFIGURATION_VALUE_NOT_YET_SELECTED` | A2-DEPLOYMENT selects values after consumer constraints and measurements. |
-| Concurrency, throughput, and provider capacity | `BLOCKED_BY_MISSING_MEASUREMENT_INPUT` | A2-EVALUATION and Deployment provide reproducible measurements. |
-| Latency and other release thresholds | `RELEASE_GATE_INPUT_REQUIRED` | A2-EVALUATION/Integration define gates without changing transport semantics. |
-| Provider receipt mapping and physical adapter details | `IMPLEMENTATION_DETAIL_DEFERRED` | Future authorized adapter implementation demonstrates conformance. |
-| API duplicate response (`200`, `202`, or `409`) and `Retry-After` | `EXTERNAL_OWNER_POLICY_REQUIRED` | Backend/Database/Workflow/Integration/Deployment review; Queue does not select HTTP behavior. |
-| Runtime conformance evidence | `IMPLEMENTATION_DETAIL_DEFERRED` | Future implementation supplies fencing, duplicate, crash, cancellation, redaction, integrity, replay, and dead-letter evidence. |
+| A2-QUEUE Workflow-sequence review | `ACCEPTED` | Exact `EXECUTING_BUGGY` then `EXECUTING_FIXED` invariant passed renewed review. |
+| Constraint-register structure | `VALID / 39_ROWS / 11_COLUMNS` | All stable IDs and required fields remain present. |
+| Auth/Integration/Evaluation source fidelity | `17_ROWS_CORRECTED / A2_QUEUE_FINAL_SOURCE_REVIEW_PENDING` | Confirm exact mappings and full constraint/evidence obligations for 7 Auth, 5 Integration, and 5 Evaluation rows. |
+| 1. Workflow attempt identity | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm run/step occurrence/kind/occurrence/zero-based attempt binding and Workflow-only creation/meaning. |
+| 2. Checkpoint claim/fence scope | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm conditional producing claim/fence and Workflow checkpoint authority. |
+| 3. One-repair maximum | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm Queue operations never alter/recreate the Workflow-owned `0..1` repair allowance. |
+| 4. Workflow lifecycle versus Execution runtime | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm Workflow semantic ownership, Execution runtime ownership, and Queue transport-only ownership. |
+| 5. Physical persistence versus Evidence semantics | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm Database-exclusive physical ownership, Evidence semantic ownership, commit-before-ack, and no DB-003. |
+| 6. Producer-result identity and layered deduplication | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm stable Workflow-authorized result-slot identity, per-submission validation, separate canonicalizations, and layered owners. |
+| 7. Heartbeat and renewal authority | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm Execution inputs, Queue renewal authority, Deployment transport/configuration, Security policy, and no signal-derived authority. |
+| 8. Retry classification ownership | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm Queue transport categories, Workflow semantic classification, and Deployment configuration-only boundary. |
+| 9. Local/test adapter isolation | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm clean-checkout/no-production-credential-or-state isolation and mandatory common conformance. |
+| 10. Provider-adapter Security and operational mapping | `CORRECTED_IN_DRAFT_2 / A2_QUEUE_REVIEW_PENDING` | Confirm encryption/access/identity/secret/admin mapping and minimum operational signal capability. |
 
-No issue authorizes Queue runtime, a provider, DB-003, application code, tests,
-dependencies, migrations, workers, sandboxes, or infrastructure.
+## Still unresolved after correction
+
+| Issue | State / owner boundary |
+|---|---|
+| Affected-owner re-review | `NOT_BEGUN`; required at the new A2-QUEUE-reviewed head. |
+| Current-main reconciliation | `PENDING`; deferred to the later reviewed commit/push task. |
+| Commit/push authorization | `NOT_AUTHORIZED`; pending final A2-QUEUE source review. |
+| PR #24 ready/merge decision | `OPEN / DRAFT / NOT_READY / NOT_MERGED`. |
+| Provider selection | `CONFIGURATION_VALUE_NOT_YET_SELECTED`. |
+| DB-003 | `NOT_STARTED / UNAUTHORIZED`; no physical schema/design authorized. |
+| Implementation evidence | `NOT_YET_AVAILABLE`; requires separately authorized runtime work. |
+| Release gates | `INPUTS_MISSING`; configuration, compatibility, Security, and Evaluation measurements required. |
+
+No issue authorizes runtime, provider selection, application code, tests,
+dependencies, migrations, workers, sandboxes, infrastructure, PR mutation, or
+DB-003.
