@@ -1,14 +1,22 @@
 # Auth Open Issues
 
-- Date: 2026-08-03
-- Current task: `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
-- Parent task: `AUTH-001`
-- Prompt type: `POST_DEPENDENCY_MERGE_DURABLE_RECONCILIATION`
-- Scope: `AUTH_DOCUMENTATION_RECONCILIATION_ONLY`
-- Base commit: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
-- Evidence: `docs/components/auth/AUTH-001_AUDIT.md`
+- Date: 2026-08-06
+- Current task:
+  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`
+- Prior correction task:
+  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1`
+- Originating task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
+- Parent task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
+- Prompt type: `VERSIONED_AUTH_CONTRACT_AND_DESIGN / A3_DOCUMENTATION_EXECUTION_AND_VALIDATION`
+- Scope: `AUTH_CONTRACT_AND_DESIGN_DOCUMENTATION_ONLY`
+- Base commit: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Evidence: `docs/components/auth/AUTH-001_AUDIT.md`,
+  `docs/components/auth/CONTRACT-AUTH-001.md`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
 - Auth runtime: `NOT_STARTED` / `NOT_TESTED`
+- `CONTRACT-AUTH-001@1.1.0-draft.1`: `DRAFT_FOR_CONSUMER_REVIEW /
+  NOT_IMPLEMENTATION_READY`
+- `ASSUMED`: `NONE`
 
 Severity vocabulary is `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`,
 `INFORMATIONAL`. An absent feature is recorded as absence, not as a
@@ -125,18 +133,28 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 
 - Classification: `CONFIRMED_BY_AUDIT`
 - Severity: `HIGH`
-- Evidence: `AUTH-001` inventoried all 82 tracked files. The only first-party
-  Auth artefacts are Database-owned persistence
+- Original evidence (historical): `AUTH-001` inventoried all 82 tracked files.
+  The only first-party Auth artefacts were Database-owned persistence
   (`apps/api/app/db/models/auth.py`), Database-owned schema tests
   (`tests/database/test_auth_constraints.py`), and the Auth documentation
-  records. `apps/api/app/main.py` is three lines. `apps/web` does not exist.
+  records. `apps/api/app/main.py` is three lines. `apps/web` did not exist.
+- Corrected current evidence at baseline `006cc88`: the "`apps/web` does not
+  exist" statement is `SUPERSEDED`. `apps/web` now exists through merged
+  `UI-002` (PR #26), `UI-003` (PR #27) and the frontend regression foundation
+  (PR #28). It contains no Auth surface: `apps/web/src/app` holds only
+  `layout.tsx`, `page.tsx`, `providers.tsx`, `globals.css` and `page.test.tsx`;
+  there is no `/auth/callback` route, no Auth adapter, no token-storage
+  behavior and no provider integration; and `apps/web/package.json` declares no
+  Supabase dependency. The finding itself is unchanged: Auth runtime remains
+  absent.
 - Impact: No human sign-in, session, JWT validation, GitHub App
   authentication, webhook verification, authorization enforcement, or
   publication control exists.
 - Owning component: A2-AUTH.
-- Blocking task: `AUTH-002` onward.
+- Blocking task: `AUTH-002` implementation onward.
 - Resolution path: sequential `AUTH-002`…`AUTH-008` after their dependencies
-  are accepted.
+  are accepted. `CONTRACT-AUTH-001@1.1.0-draft.1` defines `AUTH-002` semantics
+  but implements nothing and authorizes no implementation.
 
 ## Issues opened by AUTH-001
 
@@ -158,21 +176,26 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 
 ### `AUTH-ISSUE-011` — `CONTRACT-AUTH-001` metadata contradicts merged state
 
-- Classification: `CONTRADICTORY_CONTRACT`
-- Severity: `MEDIUM`
-- Evidence: `docs/components/auth/CONTRACT-AUTH-001.md:9-12` records
-  `Status: DRAFT_FOR_CONSUMER_REVIEW`, `Blocking consumer: A2-DATABASE`,
-  `Blocking consumer task: DB-002`; lines 310-311 state DB-002 is still
-  blocked. A2-DATABASE has acknowledged and merged the contract and DB-002 is
-  `MERGED`.
-- Impact: A reader of the contract alone would conclude DB-002 is still
-  blocked and the contract still unaccepted.
+- Classification: `RESOLVED_IN_DRAFT / PENDING_A2_AUTH_ACCEPTANCE_AND_MERGE`
+- Severity: `MEDIUM` at the original baseline
+- Original evidence (historical): `CONTRACT-AUTH-001.md` recorded
+  `Blocking consumer: A2-DATABASE` and `Blocking consumer task: DB-002`, and
+  its closing section stated DB-002 was still blocked, after A2-DATABASE had
+  acknowledged and merged the contract and DB-002 was `MERGED`.
+- Original impact: A reader of the contract alone would conclude DB-002 was
+  still blocked and the contract still unaccepted.
 - Owning component: A2-AUTH.
-- Blocking task: none technically; a correctness defect in the authoritative
-  record.
-- Resolution path: A2-AUTH revises the contract metadata under a compatible
-  revision. `CONTRACT-AUTH-001.md` is forbidden to `AUTH-001` and was not
-  modified.
+- Resolution evidence: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
+  revised the metadata under the compatible `1.1.0-draft.1` revision.
+  A2-DATABASE is recorded as `HISTORICAL_BLOCKING_CONSUMER /
+  ACKNOWLEDGED_AND_IMPLEMENTED`; the required consumers for the new additions
+  are `A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND` and
+  `A2-INTEGRATION`; the evidence baseline is `006cc88`; and the closing
+  limitations block records `DB-002` as merged, unblocked, and creating no new
+  Database obligation.
+- Residual: the correction is unstaged and uncommitted. It becomes durable only
+  after A2-AUTH acceptance and merge. Until then this issue is resolved in
+  draft only.
 
 ### `AUTH-ISSUE-012` — Run requests cannot reconstruct the exact authorization tuple
 
@@ -280,10 +303,12 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
   and `docs/components/ui/**`.
 - Resolution: The ownership and coordination gap is closed. See
   `AUTH-DEP-010` in `DEPENDENCY_REQUESTS.md` for the full boundary.
-- Residual — not resolved by this reconciliation: no frontend exists, and
-  `AUTH-002` frontend implementation and frontend Auth integration tests
-  remain `NOT_AUTHORIZED` and `NOT_TESTED`. A3-AUTH may not modify UI-owned
-  paths without A2-UI coordination.
+- Residual — updated at baseline `006cc88`: the "no frontend exists" statement
+  is `SUPERSEDED`. A frontend now exists at `apps/web`, but it has no Auth
+  surface and no `/auth/callback` route. `AUTH-002` frontend implementation and
+  frontend Auth integration tests remain `NOT_AUTHORIZED` and `NOT_TESTED`,
+  and `UI-004` remains unauthorized. A3-AUTH may not modify UI-owned paths
+  without A2-UI coordination; no UI-owned path was modified by this task.
 
 ### `AUTH-ISSUE-018` — CI workflow contains literal placeholder passwords
 
@@ -318,10 +343,162 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 - Resolution path: the future integration owner defines durable idempotency.
   This continuation authorizes no new Database model or dependency contract.
 
+## Issues opened by `AUTH-002` contract and design
+
+### `AUTH-ISSUE-020` — Browser session custody cannot be `HttpOnly`
+
+- Classification: `OWNER_DECISION_REQUIRED`
+- Severity: `MEDIUM`
+- Evidence: current primary Supabase documentation states that `HttpOnly`
+  cookies are "not necessary" for its session model and that "the browser-based
+  side of your application needs access to the refresh token to properly
+  maintain a browser session anyway". The official `@supabase/ssr` browser
+  client reads and writes the session cookie from browser code, so an
+  `HttpOnly` session cookie is incompatible with the accepted architecture.
+- Impact: none on the accepted constraints, which prohibit `localStorage`,
+  `sessionStorage` and duplicate stores but never required `HttpOnly`. The
+  browser-readable refresh token is nevertheless a Security posture question
+  that A2-SECURITY must decide explicitly rather than inherit by default.
+- Owning component: A2-SECURITY with A2-AUTH.
+- Blocking task: `AUTH-002` implementation, `UI-004`, `AUTH-007`.
+- Resolution path: `AUTH-DEP-011`.
+
+### `AUTH-ISSUE-021` — The default browser client factory violates the storage constraints
+
+- Classification: `IMPLEMENTATION_HAZARD`
+- Severity: `HIGH` if implemented incorrectly; `INFORMATIONAL` at this
+  baseline because no Auth code exists
+- Evidence: `createClient` from `@supabase/supabase-js` defaults to persisting
+  the session to `localStorage` in a browser. The accepted constraints prohibit
+  any access or refresh token in `localStorage`. `apps/web/package.json`
+  currently declares neither package, so nothing is presently violated.
+- Impact: a future implementer following a generic Supabase quickstart rather
+  than the server-side rendering guide would silently violate a binding
+  storage constraint.
+- Owning component: A2-AUTH, enforced by A2-UI at implementation time.
+- Blocking task: none now; a required check for `UI-004` and `AUTH-002`
+  implementation acceptance.
+- Resolution path: `CONTRACT-AUTH-001@1.1.0-draft.1` prohibits the defaulting
+  factory in browser code and mandates `createBrowserClient` from
+  `@supabase/ssr`. Acceptance requires an explicit implementation-time check.
+
+### `AUTH-ISSUE-022` — Sign-out does not revoke issued Backend access tokens
+
+- Classification: `ACCEPTED_LIMITATION / OWNER_DECISION_REQUIRED`
+- Severity: `MEDIUM`
+- Evidence: the accepted architecture gives FastAPI a Supabase JWT access
+  token validated against JWKS. Nothing in the accepted provider or Backend
+  design proves that a sign-out invalidates an already-issued access token
+  before its expiry.
+- Impact: after sign-out, a previously issued access token may remain
+  acceptable to FastAPI until it expires. The contract therefore forbids any
+  record from claiming that sign-out revokes issued Backend tokens.
+- Owning component: A2-SECURITY with A2-BACKEND.
+- Blocking task: `AUTH-003`, `AUTH-007`, `AUTH-008` final acceptance.
+- Resolution path: `AUTH-DEP-011` and `AUTH-DEP-014` decide the acceptable
+  residual window and any revocation or short-lifetime requirement.
+
+### `AUTH-ISSUE-023` — UI durable records contradict merged frontend evidence
+
+- Classification: `EXTERNAL_RECORD_INCONSISTENCY`
+- Severity: `LOW`
+- Evidence: `docs/components/ui/COMPONENT_STATUS.md` records `apps/web` as
+  `ABSENT` and frontend implementation as `NOT_STARTED`;
+  `docs/components/ui/TASK_LEDGER.md` records `UI-002` and `UI-003` as
+  `NOT_AUTHORIZED`. Merged repository evidence contradicts all four: `apps/web`
+  exists through PR #26, PR #27 and PR #28.
+- Impact: coordination and review accuracy only. No Auth work is blocked, and
+  the Auth contract relies on repository evidence rather than the stale
+  statements.
+- Owning component: A2-UI. These are UI-owned files; A3-AUTH must not modify
+  them and did not.
+- Blocking task: none.
+- Resolution path: raised to A2-UI as a review question in `AUTH-DEP-012`.
+
+### `AUTH-ISSUE-024` — No A2-SECURITY component records exist
+
+- Classification: `DEPENDENCY_GAP`
+- Severity: `MEDIUM`
+- Evidence: `docs/components/` contains `agent-workflow`, `auth`, `backend`,
+  `database`, `deployment`, `integration` and `ui`. There is no
+  `docs/components/security/` directory and no Security-owned durable record
+  anywhere in the repository. Every Security requirement relevant to sessions,
+  cookies, CSRF, PKCE, OAuth state, redirects, redaction and token handling
+  currently exists only inside other components' records.
+- Impact: `AUTH-DEP-005` and the new `AUTH-DEP-011` have a named owner but no
+  durable record set to respond in, so the Security consumer review cannot be
+  filed anywhere at present.
+- Owning component: Agent 1, to establish A2-SECURITY records.
+- Blocking task: `AUTH-002` acceptance, `AUTH-007`, `AUTH-008`.
+- Resolution path: Agent 1 assigns or bootstraps the Security component
+  records. `AUTH-002` cannot be merged on the basis of an absent Security
+  reviewer.
+
+## Issues opened by the A2-AUTH correction round
+
+### `AUTH-ISSUE-025` — Return-state and callback-correlation mechanisms are undecided
+
+- Classification: `OWNER_DECISION_REQUIRED`
+- Severity: `MEDIUM`
+- Evidence: `AUTH-DEC-037` requires a callback-completion correlation record
+  proving that a duplicate invocation belongs to the same sign-in attempt,
+  callback flow and completed outcome, because an existing session is not
+  correlation. `AUTH-DEC-040` gives that record a two-phase lifecycle —
+  `PENDING_ATTEMPT_CORRELATION` at sign-in, then
+  `COMPLETED_CALLBACK_CORRELATION` on successful first callback processing —
+  whose completed phase must survive successful completion for a bounded,
+  non-indefinite post-completion window, and which a failed or rejected flow
+  must never produce. `AUTH-DEC-039` requires an Auth-owned intended-return state
+  that is attempt-bound, expiry-limited, single-use, integrity-protected or held
+  in Auth-controlled same-origin state, and removed after success and failure
+  alike. `CONTRACT-AUTH-001@1.1.0-draft.1` states the required properties and
+  lifecycle of both and deliberately does **not** state a mechanism, a
+  representation, or a duration.
+- Impact: the contract is complete on semantics and intentionally incomplete on
+  mechanism. An implementer must not select a storage or integrity scheme, must
+  not choose the retention duration of the bounded post-completion correlation
+  window, and must not reuse provider OAuth `state` as a return-path container,
+  before A2-SECURITY decides. Nothing here is recorded as an accepted final
+  Security decision. Until the window length is decided, both failure modes
+  remain open: a window too short breaks the required post-success duplicate and
+  reload correlation, and a window too long extends reusable completion evidence
+  further than Security has accepted.
+- Owning component: A2-SECURITY with A2-AUTH.
+- Blocking task: `AUTH-002` acceptance and implementation, `UI-004`.
+- Resolution path: `AUTH-DEP-011` questions 11, 12 and 15. Blocked in practice by
+  `AUTH-ISSUE-024`, since no Security record set exists to answer in.
+
+### `AUTH-ISSUE-026` — Cross-context refresh is not serialized and is untested
+
+- Classification: `ACCEPTED_LIMITATION / UNTESTED_BEHAVIOR`
+- Severity: `MEDIUM`
+- Evidence: the accepted `@supabase/ssr` cookie-backed model shares session
+  state between browsing contexts, but nothing in the accepted provider design
+  serializes refresh across separate browser tabs, parallel server requests or
+  separate runtime instances. `onAuthStateChange` and `BroadcastChannel`
+  deliver notifications, not serialization guarantees. No test in this
+  repository exercises concurrent cross-context refresh; the behavior is
+  `NOT_TESTED`.
+- Impact: concurrent cross-context refresh may produce a stale cookie, a
+  temporarily null session, or one successful refresh paired with one rejected
+  refresh. `AUTH-DEC-038` requires every such race to fail closed, tolerate
+  provider cookie synchronization, avoid restoring stale authenticated state,
+  use at most one bounded retry after a newer valid session is observed, and
+  never create an automatic refresh loop. No Auth record may claim global
+  single-flight refresh.
+- Owning component: A2-AUTH, with A2-SECURITY and A2-INTEGRATION confirmation.
+- Blocking task: `AUTH-002` acceptance; runtime verification blocked by absent
+  Auth implementation and provider provisioning.
+- Resolution path: `AUTH-DEP-011` question 13 and `AUTH-DEP-015` questions 10
+  and 11; runtime verification once `AUTH-002` implementation and provider
+  provisioning are separately authorized.
+
 ## Summary
 
 `DB-002` is merged, `CONTRACT-AUTH-001@1.0.0-draft.2` is acknowledged and
-merged, and no Database rereview is outstanding.
+merged, and no Database rereview is outstanding. `CONTRACT-AUTH-001` is now
+drafted at `1.1.0-draft.1` and is `DRAFT_FOR_CONSUMER_REVIEW /
+NOT_IMPLEMENTATION_READY`.
 
 This reconciliation reclassified exactly the issues whose sole cause was
 missing `AUTH-DEP-004` design metadata or missing A2-UI ownership:
@@ -330,10 +507,47 @@ missing `AUTH-DEP-004` design metadata or missing A2-UI ownership:
 `PARTIALLY_RESOLVED` for its human-IdP half only. No runtime provisioning,
 implementation, Security, Backend, Workflow or testing issue was resolved.
 
+`AUTH-002` contract and design resolved `AUTH-ISSUE-011` in draft and corrected
+the superseded "`apps/web` does not exist" evidence in `AUTH-ISSUE-007` and
+`AUTH-ISSUE-017`. It opened `AUTH-ISSUE-020` through `AUTH-ISSUE-024`. It
+resolved no runtime, provisioning, Security, Backend or testing issue, and it
+closed nothing by acceptance.
+
+The A2-AUTH correction round (`AUTH-DEC-036` through `AUTH-DEC-039`) closed no
+issue. It tightened the drafted refresh, callback, cross-context and
+return-state semantics and opened `AUTH-ISSUE-025` and `AUTH-ISSUE-026`, both
+of which record decisions Auth deliberately did not make on A2-SECURITY's
+behalf. `AUTH-ISSUE-024` remains the blocker that prevents either from being
+answered, and it remains owned by Agent 1: no Security file was created by this
+correction round.
+
+The second A2-AUTH correction round (`AUTH-DEC-040` and `AUTH-DEC-041`) also
+closed no issue and opened no new one. It fixed two defects internal to the
+draft text rather than surfacing a new external dependency:
+
+- `AUTH-DEC-040` replaced a self-contradictory correlation lifetime — the draft
+  required post-success duplicate correlation while also removing the record at
+  the successful terminal outcome — with a bounded two-phase lifecycle. This
+  broadened `AUTH-ISSUE-025` rather than creating a sibling: the undecided
+  mechanism now explicitly includes the record's representation, retention
+  duration and cleanup, and the length of its bounded post-completion window.
+- `AUTH-DEC-041` separated callback-attempt failure from session-validity
+  failure. No new issue was opened for it, because it decides an Auth-owned
+  semantic outright and defers nothing to another owner; the residual questions
+  are consumer-review questions already carried by `AUTH-DEP-011` and
+  `AUTH-DEP-012`, not undecided ownership.
+
+Neither correction relaxed a fail-closed rule, and neither made an existing
+session sufficient callback correlation.
+
 What remains open is Auth runtime absence, provider provisioning and every
 untested runtime behavior — callback runtime, JWT validation, cookies, CSRF,
 PKCE, OAuth state and frontend Auth integration — plus the remaining scoped
-external dependencies, one contradictory contract metadata block, the absent
-Auth test suite, and downstream durable webhook idempotency. No implementation
-defect is claimed in merged code: every gap above is either absence, an
-unresolved dependency, or a documentation contradiction.
+external dependencies, the unresolved cookie and Security posture decisions,
+the absent A2-SECURITY record set, the absent Auth test suite, and downstream
+durable webhook idempotency. No implementation defect is claimed in merged
+code: every gap above is either absence, an unresolved dependency, an owner
+decision, or a documentation inconsistency.
+
+A drafted contract resolves nothing by itself. `CONTRACT-AUTH-001@1.1.0-draft.1`
+is not accepted, is not implementation-ready, and authorizes no implementation.

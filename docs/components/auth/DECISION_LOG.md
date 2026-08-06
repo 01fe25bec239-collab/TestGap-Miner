@@ -1,16 +1,21 @@
 # Auth Decision Log
 
-- Date: 2026-08-03
-- Current task: `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
-- Parent task: `AUTH-001`
-- Prompt type: `POST_DEPENDENCY_MERGE_DURABLE_RECONCILIATION`
-- Scope: `AUTH_DOCUMENTATION_RECONCILIATION_ONLY`
-- Evidence baseline: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
-- Prior evidence baseline: `1511f474ee301651b631c8adfe406aeb775327aa`
+- Date: 2026-08-06
+- Current task:
+  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`
+- Prior correction task:
+  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1`
+- Originating task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
+- Parent task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
+- Prompt type: `VERSIONED_AUTH_CONTRACT_AND_DESIGN / A3_DOCUMENTATION_EXECUTION_AND_VALIDATION`
+- Scope: `AUTH_CONTRACT_AND_DESIGN_DOCUMENTATION_ONLY`
+- Evidence baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Prior evidence baseline: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
 - Prior contract-task baseline: `739a331c9942ed64a1ad8276d611889bbee53a27`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
 - Auth runtime implementation: `NOT_STARTED`
 - Auth runtime: `NOT_TESTED`
+- `ASSUMED`: `NONE`
 
 `AUTH-DEC-001` through `AUTH-DEC-013` are contract decisions made under
 `AUTH-DB002-CONTRACT-001`. They remain in force unchanged. `AUTH-001` adds
@@ -18,8 +23,40 @@
 them alters `CONTRACT-AUTH-001` semantics.
 `AUTH-DEPENDENCY-RECONCILIATION-001-A3` adds `AUTH-DEC-021` through
 `AUTH-DEC-025`, which record merged dependency acceptances and readiness only.
-None of them alters `CONTRACT-AUTH-001` semantics; `CONTRACT-AUTH-001.md` was
-not modified by this task.
+None of them alters `CONTRACT-AUTH-001` semantics.
+
+`AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3` adds `AUTH-DEC-026`
+through `AUTH-DEC-035`. These are the first decisions in this log that do
+change `CONTRACT-AUTH-001`: they raise it to `1.1.0-draft.1` and add
+browser-session semantics. Every earlier decision remains in force, and none of
+the additions alters any identity, issuer, actor, access-grant, lifecycle,
+attribution or secret-exclusion semantic. The statement in `AUTH-DEC-025` that
+"no decision in this log authorizes Auth code, tests, or configuration" remains
+true: the new decisions are documentation and design only.
+
+`AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1` adds `AUTH-DEC-036`
+through `AUTH-DEC-039`, applying four A2-AUTH manager corrections issued as
+`CHANGES_REQUIRED_BEFORE_A2_AUTH_ACCEPTANCE`. Each correction **restricts** the
+drafted behavior: it removes an ambiguity or an overclaim rather than adding a
+capability. `AUTH-DEC-031` and `AUTH-DEC-032` are amended in place, below, and
+`AUTH-DEC-034` is extended by `AUTH-DEC-039`. The contract version identifier
+remains `1.1.0-draft.1` and the classification remains
+`ADDITIVE_COMPATIBLE_MINOR`, because the draft was never accepted and no
+consumer has implemented against it. These decisions likewise authorize no Auth
+code, test, or configuration.
+
+`AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2` adds `AUTH-DEC-040` and
+`AUTH-DEC-041`, applying a second round of A2-AUTH manager corrections issued as
+`CHANGES_REQUIRED_BEFORE_A2_AUTH_ACCEPTANCE`. `AUTH-DEC-040` replaces the
+self-contradictory correlation-record lifetime in `AUTH-DEC-037` with a coherent
+two-phase lifecycle; `AUTH-DEC-041` separates callback-attempt failure from
+session-validity failure, which `AUTH-DEC-037` had conflated. `AUTH-DEC-037` is
+amended in place, below. Neither correction relaxes correlation, replay
+resistance, single-use authorization codes, or fail-closed behavior under
+uncertainty. The contract version identifier remains `1.1.0-draft.1` and the
+classification remains `ADDITIVE_COMPATIBLE_MINOR`, for the same reason: the
+draft is still unaccepted. These decisions authorize no Auth code, test, or
+configuration either.
 
 ## `AUTH-DEC-001` — Contract-first dependency bridge
 
@@ -320,4 +357,384 @@ Workflow and runtime prerequisites.
 No decision in this log authorizes Auth code, tests, or configuration. The
 shared registry's missing Database consumer remains an owner correction. The
 stale `CONTRACT-AUTH-001` metadata recorded as `AUTH-ISSUE-011` is an A2-AUTH
-correction; `AUTH-001` is forbidden to edit that file and did not.
+correction; `AUTH-001` is forbidden to edit that file and did not. That
+correction is made in draft by `AUTH-DEC-027` below.
+
+## `AUTH-DEC-026` — `CONTRACT-AUTH-001@1.1.0-draft.1` versioning classification
+
+`CONTRACT-AUTH-001` moves from `1.0.0-draft.2` to `1.1.0-draft.1`. The change
+category is `ADDITIVE_COMPATIBLE_MINOR`.
+
+This classification was verified independently against the contract's own
+`Compatibility and versioning` rules rather than assumed from the expected
+version. None of the listed breaking items occurs: issuer-subject uniqueness is
+unchanged; exact case-sensitive issuer comparison and the prohibition on
+independent normalization are unchanged; no external ID becomes an internal ID;
+no actor type is removed; the exact user-installation-repository access tuple is
+unchanged; no local credential is permitted; no cross-installation or
+cross-repository access is permitted; no lifecycle change re-enables denied
+access; and no organization tenancy or generic RBAC is introduced.
+
+Compatibility impact: existing `1.0.0-draft.2` consumers require no change, and
+`DB-002` requires no migration, column or table.
+
+Consumer-review consequence: the additions create new obligations for `A2-UI`,
+`A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND` and `A2-INTEGRATION`, so each must
+review before the version may be treated as accepted.
+
+Status after this task: `DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY /
+NOT_IMPLEMENTED / NOT_TESTED`.
+
+## `AUTH-DEC-027` — Contract metadata reconciliation
+
+`A2-DATABASE` and `DB-002` are no longer represented as an unresolved blocking
+consumer. Database is recorded as `HISTORICAL_BLOCKING_CONSUMER /
+ACKNOWLEDGED_AND_IMPLEMENTED`, evidenced by PR #12, implementation `5506ab5`
+and merge `3701520`. The evidence baseline moves to `006cc88`. The contract's
+closing limitations block records `DB-002` as merged and unblocked, and records
+that `1.1.0-draft.1` creates no new Database obligation.
+
+This resolves `AUTH-ISSUE-011` in draft. It becomes durable only after A2-AUTH
+acceptance and merge.
+
+## `AUTH-DEC-028` — Provider architecture is unchanged and Supabase terminates the provider callback
+
+`SUPABASE_AUTH_WITH_GITHUB_OAUTH` is retained exactly as accepted in
+`AUTH-DEC-022`. Supabase Auth terminates the GitHub OAuth callback. The
+Dashboard `/auth/callback` route is not the GitHub provider's direct OAuth
+callback, and no Auth record may describe it as GitHub-registered. Repository
+evidence proves no architecture change, so none is documented.
+
+All issuer, audience, JWKS and callback values remain unresolved placeholder
+templates. Consistent with `AUTH-DEC-015` and `AUTH-DEC-018`, they are design
+values only and are not evidence of any configured runtime.
+
+## `AUTH-DEC-029` — Token custody uses the official cookie-backed SSR integration
+
+Determined from current primary Supabase documentation rather than remembered
+SDK behavior; the exact sources are listed in `LATEST_AGENT3_HANDOFF.md`.
+
+The accepted storage constraints **can** be satisfied. The required integration
+model is the official server-side rendering integration, `@supabase/ssr` with
+`@supabase/supabase-js`, using `createBrowserClient` in browser code and
+`createServerClient` in Server Components, Server Actions and Route Handlers.
+The canonical session source is that integration's cookie-backed store, with
+PKCE. There is no second store.
+
+The session is browser-readable by design: the official guidance states that
+`HttpOnly` is not necessary and that the browser side needs access to the
+refresh token to maintain the session. `HttpOnly` is therefore not achievable
+for this cookie and is not claimed. It was never one of the accepted
+constraints, so no accepted constraint is weakened, and no
+`TOKEN_CUSTODY_DESIGN_CONFLICT` arises. The final cookie posture is an
+unresolved A2-SECURITY decision.
+
+Binding prohibition: browser code must not initialize a Supabase client with
+`createClient` from `@supabase/supabase-js`, because that client persists the
+session to `localStorage` by default in a browser. The `localStorage`
+prohibition is not waived because an SDK defaults to it; the defaulting factory
+is prohibited instead. Recorded as `AUTH-ISSUE-021`.
+
+No custom storage mechanism is invented, and every existing prohibition on
+`localStorage`, `sessionStorage`, duplicate stores and refresh-token forwarding
+to FastAPI is preserved.
+
+## `AUTH-DEC-030` — Callback ownership split is frozen
+
+A2-UI owns route existence, loading, success and error UX, accessibility,
+presentation and the final navigation using the destination Auth returns.
+A2-AUTH owns callback meaning, provider-result handling, PKCE and OAuth-state
+verification semantics, session establishment, replay and duplicate behavior,
+outcome classification, and post-callback session validity. A2-DEPLOYMENT owns
+deployed registration, origin, TLS, environment registration, allowlist
+registration and secret injection. A2-SECURITY with A2-AUTH owns final
+acceptance of state protection, PKCE, CSRF posture, cookie posture, redirect
+safety and replay resistance.
+
+Owning the route is owning the surface. It never confers authority to define
+what a callback means or to treat a rendered page as authentication.
+
+## `AUTH-DEC-031` — Loading is never authenticated and uncertainty fails closed
+
+Amended by `AUTH-DEC-036`.
+
+The session model defines nine UI-observable states. `INITIALIZING`,
+`SIGN_IN_PENDING`, `CALLBACK_PROCESSING` and `REFRESH_PENDING` are loading
+states and are never authenticated. Stale UI state is never authorization, and
+protected content is removed rather than overlaid on entry to
+`UNAUTHENTICATED`, `SIGN_OUT_PENDING` or `TERMINAL_SESSION_ERROR`. Whenever
+session validity is uncertain, the session fails closed to
+`TERMINAL_SESSION_ERROR`; uncertainty is never resolved in favor of access.
+
+Amendment: `REFRESH_PENDING` carries two mutually exclusive modes determined at
+entry, and protected content is additionally removed on entry to mode
+`UNPROVEN_CREDENTIAL`. Uncertainty must never preserve existing access, not
+merely never grant new access. See `AUTH-DEC-036`.
+
+## `AUTH-DEC-032` — Bounded refresh and no unbounded retry
+
+Amended by `AUTH-DEC-036` and `AUTH-DEC-038`.
+
+Refresh is provider-managed ahead of expiry, with application-triggered refresh
+permitted only through the Auth-owned adapter and only in bounded cases.
+Concurrent refresh is single-flight **within one Auth adapter/client instance or
+one browsing context**; the original unqualified "single-flight: one exchange,
+one shared outcome" is corrected, because nothing in the accepted provider
+design serializes refresh across separate browser tabs, parallel server
+requests, or separate runtime instances. A protected request that receives `401`
+justifies at most one refresh and at most one retry; a second failure ends the
+attempt and the session fails closed. A Backend `401` never creates an unbounded
+refresh-and-retry cycle, and UI belief that a session exists never overrides
+Backend denial. Refresh tokens are never forwarded to FastAPI.
+
+Amendment: the refresh entry condition now determines a fail-closed mode
+(`AUTH-DEC-036`), and cross-context refresh races are explicitly not serialized
+(`AUTH-DEC-038`).
+
+## `AUTH-DEC-033` — Sign-out is local-first and claims no Backend token revocation
+
+Local authenticated state is cleared whether or not the remote sign-out
+succeeds, and `SIGN_OUT_FAILED` still leaves the user signed out in this
+browser. Sign-out wins over a concurrent refresh and over a late callback
+success. The provider sign-out scope must be passed explicitly rather than
+defaulted, because the official integration defaults to signing the user out of
+every device; the Auth-proposed default is current-session scope and the final
+value is an A2-SECURITY decision.
+
+No Auth record may claim that sign-out revokes already-issued Backend access
+tokens. The accepted provider and Backend design proves no such revocation.
+Recorded as `AUTH-ISSUE-022`.
+
+## `AUTH-DEC-034` — Redirects are Auth-validated relative paths only
+
+Extended by `AUTH-DEC-039`: format validation is necessary but never
+sufficient. A return path must also be bound to the sign-in attempt being
+completed.
+
+Only a single relative path beginning with exactly one `/` may become a
+post-authentication destination. Protocol-relative forms, any scheme prefix,
+absolute URLs, user-info `@` forms, backslashes, control characters, encoded
+and nested bypass forms, malformed paths and disallowed internal routes are all
+rejected, and every rejection falls back to the default destination.
+Provider-returned data never directly controls final navigation. Callback
+destinations remain exact-match allowlisted with no wildcard, prefix, suffix or
+normalized comparison. This design prevents open redirects.
+
+## `AUTH-DEC-035` — Stable error vocabulary with no failure oracle
+
+The Auth-owned error vocabulary for this version is exactly eleven
+classifications: `USER_CANCELLED`, `PROVIDER_DENIED`, `INVALID_CALLBACK`,
+`STATE_VALIDATION_FAILED`, `PKCE_VALIDATION_FAILED`, `SESSION_EXCHANGE_FAILED`,
+`SESSION_EXPIRED`, `REFRESH_FAILED`, `SIGN_OUT_FAILED`,
+`CONFIGURATION_UNAVAILABLE` and `TEMPORARY_PROVIDER_FAILURE`. A consumer must
+not invent an Auth error class and must not map an unrecognized failure onto a
+more permissive one.
+
+`STATE_VALIDATION_FAILED`, `PKCE_VALIDATION_FAILED`, `INVALID_CALLBACK` and
+`SESSION_EXCHANGE_FAILED` must present the same generic user-facing sign-in
+failure, so the UI creates no oracle distinguishing which validation step
+failed. Authorization codes, PKCE verifiers, tokens, raw provider payloads, raw
+headers, cookie values, the project reference, hostnames, secrets, stack traces
+and unapproved internal identifiers are redacted from every classification.
+
+Removing a classification, or changing an existing one's retry,
+reauthentication or Backend-eligibility meaning, is a breaking change under the
+contract's versioning rules.
+
+## `AUTH-DEC-036` — `REFRESH_PENDING` carries two fail-closed-aware modes
+
+Corrects the drafted `REFRESH_PENDING` state, which combined proactive refresh
+of a still-valid credential with refresh after expiry, after a Backend `401`,
+or under unknown session validity. Those cases must not be interpretable
+identically.
+
+`REFRESH_PENDING` remains one of the nine session states and is not split into
+a tenth. It carries two mutually exclusive modes, determined at entry rather
+than inferred afterwards:
+
+- Mode `PROVEN_CREDENTIAL` — refresh begins while the current access token and
+  the session are known-valid. Existing protected content may remain visible,
+  new protected Backend requests wait for the refresh outcome, and no new
+  privileged effect may begin using an expired token.
+- Mode `UNPROVEN_CREDENTIAL` — refresh begins because the access token is
+  expired, because Backend returned `401`, because session validity is unknown,
+  or because the current credential cannot be proven usable. Protected content
+  is removed or hidden, protected interactions are disabled, protected Backend
+  requests are prohibited rather than queued, and the session fails closed
+  pending the outcome.
+
+A `PROVEN_CREDENTIAL` refresh that loses proof of validity while in flight
+degrades immediately and irreversibly to `UNPROVEN_CREDENTIAL`.
+
+A loading state remains never authenticated in either mode, and uncertainty
+must never preserve access. The two modes must never be satisfiable by the same
+implementation behavior; an ambiguous single state is prohibited.
+
+## `AUTH-DEC-037` — A duplicate callback resolves only on proven correlation
+
+Corrects the drafted duplicate-callback rule, which allowed a second invocation
+to resolve successfully merely because a valid session already existed. That is
+too permissive: an existing session proves only that some sign-in once
+succeeded, never anything about the invocation being processed now.
+
+A prior successful callback result is reusable only when Auth verifies that the
+invocation belongs to the same sign-in attempt, the same callback flow, and the
+same previously completed callback outcome. An existing session alone is not
+correlation.
+
+An unrelated, malformed, consumed, expired, replayed or uncorrelated callback
+must create no session, perform no new code exchange, perform no
+callback-directed navigation, return `INVALID_CALLBACK`, clear the callback
+parameters, and produce the required Security event.
+
+A page reload after successful callback processing may resolve to the
+established session only when callback completion for that exact flow is proven
+by the correlation record; otherwise it fails closed. The single-use
+authorization-code rule and the replay-resistance requirement are preserved
+unchanged and apply independently of correlation.
+
+The correlation record is Auth-owned and created when the sign-in attempt
+begins. Its exact storage, lifetime and required strength are
+`PENDING_A2_SECURITY_ACCEPTANCE` under `AUTH-DEP-011` and are not invented
+here. Recorded as `AUTH-ISSUE-025`.
+
+**Amended by the second A2-AUTH correction round.** As first drafted, this
+decision also stated that the correlation record is removed once the callback
+flow reaches a terminal outcome. A successful callback is a terminal callback
+outcome, so that statement contradicted the post-success duplicate-correlation
+requirement in the same decision. The record's lifecycle is now defined by
+`AUTH-DEC-040` and supersedes any immediate-removal reading here. This decision
+also implied that an uncorrelated callback invalidates the browser session;
+`AUTH-DEC-041` supersedes that, and the requirement that an existing session is
+never correlation is unchanged by both amendments.
+
+## `AUTH-DEC-038` — Single-flight refresh is scoped, not global
+
+Corrects any reading of the draft under which provider behavior guarantees
+global single-flight refresh. It does not, and no Auth record may claim it.
+
+Single-flight refresh is guaranteed only within one Auth adapter/client
+instance or one browsing context. Serialization is **not** promised across
+separate browser tabs, parallel server requests, or separate runtime instances.
+
+Concurrent cross-context refresh may produce a stale cookie, a temporarily null
+session, or one successful refresh paired with one rejected refresh. Every such
+race must fail closed, tolerate provider cookie synchronization, avoid
+restoring stale authenticated state, use at most one bounded retry and only
+after a newer valid session has actually been observed, and never create an
+automatic refresh loop.
+
+`onAuthStateChange` events and `BroadcastChannel` messages are synchronization
+signals only. They are never proof that all refresh exchanges were serialized.
+
+The observable behavior of concurrent cross-context refresh under the official
+`@supabase/ssr` cookie model is `NOT_TESTED` in this repository. Recorded as
+`AUTH-ISSUE-026`, with review questions in `AUTH-DEP-011` and `AUTH-DEP-015`.
+
+## `AUTH-DEC-039` — Intended-return state is Auth-owned and attempt-bound
+
+Separates provider OAuth state from the Dashboard's intended-return state.
+Supabase/provider OAuth-state handling remains provider-integration-owned. The
+Dashboard intended-return state is separately Auth-owned.
+
+The intended-return state must be created by Auth, bound to exactly one sign-in
+attempt, given a defined expiry, single-use, integrity-protected or stored in
+Auth-controlled same-origin state, and removed after callback success and
+failure alike. It must never be accepted merely because it contains a
+syntactically safe path: format validation and binding validation are two
+independent gates, and passing format alone authorizes nothing.
+
+Missing, expired, tampered, replayed or unbound return state falls back to the
+default post-sign-in destination without affecting the session outcome.
+
+The exact storage and integrity mechanism remains `PENDING_A2_SECURITY_ACCEPTANCE`
+and must not be recorded as an accepted final Security decision. The provider
+OAuth `state` parameter must not be reused as an application return-path
+container unless current official provider documentation explicitly supports
+that design and A2-SECURITY accepts it; no such documented support is recorded
+at this baseline, so the reuse is prohibited. Recorded as `AUTH-ISSUE-025`.
+
+## `AUTH-DEC-040` — The callback-correlation record has a two-phase bounded lifecycle
+
+Resolves the internal contradiction in `AUTH-DEC-037` as first drafted: it
+required a duplicate invocation and a post-success reload to correlate to the
+same completed callback outcome, while also removing the correlation record once
+the flow reached a terminal outcome. A successful callback **is** a terminal
+callback outcome, so immediate removal made the required post-success
+correlation impossible.
+
+The correlation record now has two successive Auth-owned states, scoped to one
+callback flow:
+
+1. `PENDING_ATTEMPT_CORRELATION` — created when `beginSignIn` starts a sign-in
+   attempt, and held until the callback flow completes.
+2. `COMPLETED_CALLBACK_CORRELATION` — created on successful first callback
+   processing, by transition or replacement of the pending state.
+
+A completed record proves exactly four things: the originating sign-in attempt,
+the callback flow, the completed callback outcome, and whether that outcome may
+be reused for a correlated duplicate invocation. It proves nothing else. It is
+not a session, not a credential and not authorization, and it never carries an
+authorization code, a token or a PKCE verifier.
+
+The completed record remains available for a **bounded post-completion
+correlation window**, so that an immediate duplicate invocation and a page
+reload after successful callback processing can both correlate to that outcome
+without a second code exchange and without a second session. A successful
+callback therefore does not discard its correlation evidence at the instant it
+completes.
+
+The record is never valid indefinitely. Once its bounded window expires, or the
+record is otherwise removed, a later callback invocation is not correlated: it
+returns `INVALID_CALLBACK`, performs no exchange, and performs no
+callback-directed navigation.
+
+Failed, abandoned, malformed, expired and terminally rejected flows leave no
+reusable successful-callback correlation evidence. Only a flow that actually
+completed successfully may produce a `COMPLETED_CALLBACK_CORRELATION` record.
+
+The exact storage mechanism, integrity mechanism, record representation,
+retention duration and cleanup implementation — including the length of the
+bounded post-completion window — remain `PENDING_A2_SECURITY_ACCEPTANCE` under
+`AUTH-DEP-011`. No duration and no Security mechanism is invented here.
+Recorded as `AUTH-ISSUE-025`.
+
+## `AUTH-DEC-041` — An invalid callback does not invalidate an independent session
+
+Corrects the drafted treatment of `INVALID_CALLBACK` as proof that the entire
+existing browser session is invalid. A rejected callback attempt and an
+independently established session are separate facts, and the contract now
+represents them separately.
+
+Every unrelated, malformed, consumed, expired, replayed or uncorrelated callback
+still creates no new session, performs no code exchange, performs no
+callback-directed navigation, returns `INVALID_CALLBACK`, clears the callback
+parameters, removes the intended-return state associated with the rejected
+attempt, and emits the required Security event. An existing session remains
+insufficient callback correlation in every case.
+
+The resulting **session** state is conditional on the pre-existing session
+alone:
+
+- no independently valid pre-existing session — `TERMINAL_SESSION_ERROR`,
+  presenting as `UNAUTHENTICATED`, and reauthentication is required;
+- a session independently established before the rejected callback and still
+  known-valid — preserved and still `AUTHENTICATED`, while the callback attempt
+  fails, no callback success is reported, no callback-directed destination is
+  used, the UI presents a safe callback-error outcome or safe route recovery,
+  and FastAPI authorization remains authoritative;
+- a pre-existing session whose validity is unknown or unprovable — fail closed:
+  protected content removed, protected requests prohibited, and
+  `TERMINAL_SESSION_ERROR` unless later independently proven valid through an
+  authorized session-restoration path.
+
+Preserving a known-valid session is not resolving the callback with it. The
+callback must never use the existing session as evidence that callback
+processing succeeded. Conversely, a malformed callback must never revoke or sign
+out a separately valid provider session merely because the callback itself was
+invalid; session invalidation requires an independent session-validity failure,
+classified under its own error code.
+
+The `INVALID_CALLBACK` error vocabulary now expresses this conditional resulting
+session state instead of always forcing `TERMINAL_SESSION_ERROR`. This narrows
+no fail-closed rule: uncertainty still resolves against access.
