@@ -1,58 +1,33 @@
 # Auth Task Ledger
 
-- Date: 2026-08-08
+- Date: 2026-08-09
 - Current task:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3-PR30`
-- Continuation of:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3`
+  `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`
 - Authorized manager task:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001`
-- Supersedes the narrower task:
-  `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001`, whose uncommitted
-  Auth-side corrections are preserved and reconciled into this package
-- Consumer reviews reconciled:
-  `AUTH-002-CONSUMER-REVIEW-A2-UI-001` — `A2-UI` — `SPECIFICATION_CONFLICT`;
-  `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` — `A2-SECURITY` —
-  `REJECTED_WITH_REASON`, seven required normative corrections
-- Reviewed head for both: `7abe17af8e212bd2127160338ea6ef409da02101`
-- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED`
-- Prior correction tasks:
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`,
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1`
-- Originating task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
-- Parent task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
-- A2-AUTH review of the originating draft:
-  `CHANGES_REQUIRED_BEFORE_A2_AUTH_ACCEPTANCE`
-- Prompt type: `A2_AUTH_CORRECTION / A3_DOCUMENTATION_EXECUTION_AND_VALIDATION`
-- Scope: `AUTH_CONTRACT_AND_DESIGN_DOCUMENTATION_ONLY`
-- Base commit: `006cc885161ff49be582a9fa08f353a70c31c7b1`
-- Current `origin/main`: `63093f22c37a0fc6affe168f7d5230107b05cdf3`
-- Main divergence: `UI_DOCUMENTATION_ONLY / NO_AUTH_PATH_OVERLAP /
-  NO_REBASE_OR_BRANCH_MERGE_REQUIRED`
-- Merged external evidence: PR #30 — UI-owned `AUTH-002` conflict correction
-  `CORRECTED_AND_MERGED` (`30deb920` / `63093f22`; `UI-DEC-026`, `UI-DEC-027`)
+  `AUTH-002-FINAL-READINESS-RECONCILIATION-001`
+- Authorizing coordinator:
+  `Agent 1`
+- Task type:
+  `FINAL_NON_NORMATIVE_COORDINATION_RECONCILIATION / AUTH_DURABLE_RECORDS_ONLY`
+- Consumer reviews reconciled (Current Final Coordination State):
+  `A2-UI` (`ACCEPTED_WITH_CONSTRAINTS`), `A2-SECURITY` (`ACCEPTED_WITH_CONSTRAINTS`),
+  `A2-BACKEND` (`ACCEPTED_WITH_CONSTRAINTS`), `A2-DEPLOYMENT` (`ACCEPTED_WITH_CONSTRAINTS`),
+  `A2-INTEGRATION` (`ACCEPTED_WITH_CONSTRAINTS`)
+- Reviewed head for all: `84ad9e322d886f8963c34386f87074a444b3fa2b`
+- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`
+- Current `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`
+- Merged external evidence: PR #31 — shared registry merged (`a80145e2` / `1057ba72`)
 - Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-002-session-contract`
 - Branch: `agent2/auth-002-session-contract`
-- Branch HEAD: `7abe17af8e212bd2127160338ea6ef409da02101`
-- `CONTRACT-AUTH-001@1.1.0-draft.1`: `DRAFT_FOR_CONSUMER_REVIEW /
-  NOT_IMPLEMENTATION_READY / NOT_IMPLEMENTED / NOT_TESTED`
-- `CONTRACT-AUTH-001@1.0.0-draft.2`: `HISTORICAL / ACKNOWLEDGED_AND_MERGED`,
-  superseded as the current version by `1.1.0-draft.1`
-- `AUTH-DEPENDENCY-RECONCILIATION-001`: `COMPLETED / MERGED_VIA_PR_21`
-  (implementation `fb89d72`, merge `ba4247a`). Its branch and worktree are
-  `SUPERSEDED`.
-- `apps/web`: `PRESENT / NO_AUTH_SURFACE` (`UI-002` PR #26, `UI-003` PR #27,
-  frontend regression foundation PR #28)
+- Branch HEAD: `84ad9e322d886f8963c34386f87074a444b3fa2b`
+- `CONTRACT-AUTH-001@1.1.0-draft.1`: `UNCHANGED / FINAL_CONSUMER_REVIEW_COMPLETE / NOT_IMPLEMENTATION_READY`
+- Auth identity persistence: `VERIFIED_COMPLETE` and merged
+- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
 - `ASSUMED`: `NONE`
-- `DB-002`: `PASS / VERIFIED_COMPLETE / MERGED` (PR #12, merge commit
-  `3701520`; closed by PR #13, `1511f47`)
-- `AUTH-DEP-004`: `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
-  MERGED_VIA_PR_20`
-- `AUTH-DEP-010`: `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH /
-  UI_OWNERSHIP_ESTABLISHED_VIA_PR_19`
 
 | Task | Status | Evidence / blocker |
 |---|---|---|
+| `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3` — Final non-normative readiness reconciliation | `IMPLEMENTED / UNSTAGED / UNCOMMITTED / PENDING_A2_AUTH_REVIEW` | Reconciles non-normative readiness state across all five consumer domains (`A2-UI`, `A2-SECURITY`, `A2-BACKEND`, `A2-DEPLOYMENT`, `A2-INTEGRATION`) against corrected HEAD `84ad9e322d886f8963c34386f87074a444b3fa2b`. All five owners returned `ACCEPTED_WITH_CONSTRAINTS`. Reconciles merged shared registry PR #31 (`a80145e2` / `1057ba72`), setting `AUTH-DEP-003` to `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED` and `AUTH-ISSUE-002` to `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`. Preserves historical responses at `7abe17af` (`A2-UI` `SPECIFICATION_CONFLICT`, `A2-SECURITY` `REJECTED_WITH_REASON`, `A2-INTEGRATION` `ACCEPTED_WITH_CONSTRAINTS`). Adds decision `AUTH-DEC-053`. `CONTRACT-AUTH-001.md` blob SHA `8ed2154561785566b4b17baa16535e1fad8e662c` is byte-identical and untouched. Auth runtime remains `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`, Provider runtime `NOT_PROVISIONED / NOT_TESTED`, `UI-004` `NOT_AUTHORIZED`, Release `NOT_READY`. PR #29 remains `OPEN / DRAFT / NOT_MERGED` pending final Agent 1 readiness decision. |
 | `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3-PR30` — PR #30 merged-state reconciliation | `RECONCILED / UNSTAGED / UNCOMMITTED / PENDING_A2_AUTH_REVIEW` | Continuation of `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3` in the same branch and worktree; the existing uncommitted seven-file Auth package was preserved, not discarded or recreated. Reconciles that package to the new `origin/main` `63093f22c37a0fc6affe168f7d5230107b05cdf3`, produced by the merged UI correction PR #30 — `docs(ui): reconcile Auth session custody and merged frontend state`, implementation commit `30deb92000a20d3837b2423b6bdee3ea3335a7f1`, merge commit `63093f22c37a0fc6affe168f7d5230107b05cdf3`, six UI durable-record files, no `docs/components/auth/**` path. Records the UI-owned half of the `A2-UI` conflict as `CORRECTED_AND_MERGED` via `UI-DEC-026`/`UI-DEC-027`, which preserve the `localStorage` and `sessionStorage` prohibitions, the no-duplicate/shadow-store rule and canonical Auth-owned `@supabase/ssr` custody, propose `/` as the UI default and safe recovery route, and keep `UI-004` `NOT_AUTHORIZED`. Adds `AUTH-DEC-052`; `AUTH-DEC-042`–`AUTH-DEC-051` unchanged. The historical `A2-UI` `SPECIFICATION_CONFLICT` at `7abe17af` is preserved, not rewritten. `AUTH-DEP-012` moved to `OPEN / RESPONSE_RECEIVED / SPECIFICATION_CONFLICT_AT_7ABE17AF / UI_OWNER_CORRECTION_MERGED_VIA_PR_30 / AUTH_OWNER_CORRECTION_IN_PROGRESS / CORRECTED_HEAD_REREVIEW_REQUIRED / NOT_ACCEPTED`; `AUTH-ISSUE-027` stays `OPEN` with the UI side `CORRECTED_AND_MERGED` and the Auth side `CORRECTED_IN_WORKTREE / PENDING_A2_AUTH_ACCEPTANCE_AND_PUSH`; `AUTH-ISSUE-023` resolved by `UI-DEC-027`. No merge, rebase, cherry-pick, reset, amend or force-push; branch HEAD remains `7abe17af`. No Backend or Deployment acceptance invented. Contract version `1.1.0-draft.1` and classification `ADDITIVE_COMPATIBLE_MINOR` unchanged. Same seven authorized Auth files; no eighth path; no UI file modified — PR #30 is external merged evidence only; nothing staged, committed, pushed or merged. |
 | `AUTH-DB002-CONTRACT-001` — Publish DB-002 Auth contract and records | `PASS / COMPLETE / MERGED_AND_ACKNOWLEDGED` | Producer package accepted by A2-AUTH; A2-DATABASE recorded `CONTRACT-AUTH-001@1.0.0-draft.2` as `ACKNOWLEDGED_AND_MERGED`; DB-002 implemented against it and merged. No review action remains. |
 | `AUTH-DB002-CONTRACT-001-C2` — Issuer and access-grant expiration clarification | `PASS / COMPLETE` | Both clarifications are implemented in the merged schema and covered by passing constraint tests: exact case-sensitive un-normalized `issuer`/`subject`, and `expires_at`/`expired_at`/`revoked_at` kept distinct. |

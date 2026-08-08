@@ -1,36 +1,21 @@
 # Auth Decision Log
 
-- Date: 2026-08-08
+- Date: 2026-08-09
 - Current task:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3-PR30`
-- Continuation of:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3`
+  `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`
 - Authorized manager task:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001`
-- Current `origin/main`: `63093f22c37a0fc6affe168f7d5230107b05cdf3`
-- Merged external evidence: PR #30 — UI-owned correction `CORRECTED_AND_MERGED`
-- Supersedes the narrower task:
-  `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001`, whose uncommitted
-  Auth-side corrections are preserved and reconciled into this package
-- Consumer reviews reconciled:
-  `AUTH-002-CONSUMER-REVIEW-A2-UI-001` — `A2-UI` — `SPECIFICATION_CONFLICT`;
-  `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` — `A2-SECURITY` —
-  `REJECTED_WITH_REASON`, seven required normative corrections
-- Reviewed head for both: `7abe17af8e212bd2127160338ea6ef409da02101`
-- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED`
-- Prior correction tasks:
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`,
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1`
-- Originating task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
-- Parent task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
-- Prompt type: `VERSIONED_AUTH_CONTRACT_AND_DESIGN / A3_DOCUMENTATION_EXECUTION_AND_VALIDATION`
-- Scope: `AUTH_CONTRACT_AND_DESIGN_DOCUMENTATION_ONLY`
-- Evidence baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
-- Prior evidence baseline: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
-- Prior contract-task baseline: `739a331c9942ed64a1ad8276d611889bbee53a27`
+  `AUTH-002-FINAL-READINESS-RECONCILIATION-001`
+- Authorizing coordinator:
+  `Agent 1`
+- Current `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`
+- Merged external evidence: PR #31 — shared registry merged (`a80145e2` / `1057ba72`)
+- Reviewed HEAD: `84ad9e322d886f8963c34386f87074a444b3fa2b`
+- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`
+- Scope: `AUTH_DURABLE_RECORDS_ONLY`
+- Evidence baseline: `84ad9e322d886f8963c34386f87074a444b3fa2b`
+- Prior evidence baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
-- Auth runtime implementation: `NOT_STARTED`
-- Auth runtime: `NOT_TESTED`
+- Auth runtime implementation: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
 - `ASSUMED`: `NONE`
 
 `AUTH-DEC-001` through `AUTH-DEC-013` are contract decisions made under
@@ -130,6 +115,13 @@ remains `NOT_AUTHORIZED`, and no Backend or Deployment acceptance is created.
 The contract version identifier remains `1.1.0-draft.1`, the classification
 remains `ADDITIVE_COMPATIBLE_MINOR`, and this decision authorizes no code, test,
 configuration, implementation or provisioning.
+
+`AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3` adds `AUTH-DEC-053`. It records
+that all five affected owner reviews against corrected HEAD `84ad9e322d886f8963c34386f87074a444b3fa2b`
+are complete (`A2-UI`, `A2-SECURITY`, `A2-BACKEND`, `A2-DEPLOYMENT`, `A2-INTEGRATION` all returned
+`ACCEPTED_WITH_CONSTRAINTS`). No normative Auth correction remains. Shared registry correction is merged via PR #31
+(`a80145e2` / `1057ba72`), reconciling `AUTH-DEP-003` to `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED`
+and `AUTH-ISSUE-002` to `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`. Historical responses at `7abe17af` are preserved as historical provenance. `CONTRACT-AUTH-001.md` content remains untouched (`8ed2154561785566b4b17baa16535e1fad8e662c`). Old non-normative consumer status provenance embedded in `CONTRACT-AUTH-001.md` is superseded for coordination purposes by the corrected-head reviews against `84ad9e322d886f8963c34386f87074a444b3fa2b`. Implementation remains unauthorized; PR #29 remains DRAFT pending final Agent 1 readiness decision.
 
 ## `AUTH-DEC-001` — Contract-first dependency bridge
 
@@ -1267,3 +1259,49 @@ uncommitted on branch `agent2/auth-002-session-contract` at head `7abe17af`,
 pending A2-AUTH acceptance and push. No history reconciliation with `origin/main`
 was performed or required: PR #30 touched no Auth path, so the branch and main
 do not overlap.
+
+## `AUTH-DEC-053` — `AUTH-002_FINAL_CONSUMER_AND_REGISTRY_COORDINATION_RECONCILED`
+
+| Field | Value |
+|---|---|
+| Decision ID | `AUTH-DEC-053` |
+| Task | `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3` |
+| Authorizing coordinator | `Agent 1` |
+| Supervising manager | `A2-AUTH` |
+| Reviewed HEAD | `84ad9e322d886f8963c34386f87074a444b3fa2b` |
+| Current `origin/main` | `1057ba727a4e825259c5f7772b6d428511a58a37` |
+| Shared registry PR | PR #31 — merged (`a80145e2648596aef2254f4c3bd833c3a50be761` implementation, `1057ba727a4e825259c5f7772b6d428511a58a37` merge) |
+| Contract | `CONTRACT-AUTH-001@1.1.0-draft.1` — unchanged (`8ed2154561785566b4b17baa16535e1fad8e662c`) |
+| PR #29 status | `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION` |
+
+**Final Consumer Coordination Matrix.**
+All five current consumer domains have reviewed `CONTRACT-AUTH-001@1.1.0-draft.1` at HEAD `84ad9e322d886f8963c34386f87074a444b3fa2b` and returned `ACCEPTED_WITH_CONSTRAINTS`:
+1. `A2-UI` — `AUTH-002-CONSUMER-REREVIEW-A2-UI-001` — `ACCEPTED_WITH_CONSTRAINTS` (required Auth corrections: NONE).
+2. `A2-SECURITY` — `AUTH-002-CONSUMER-REREVIEW-A2-SECURITY-001` — `ACCEPTED_WITH_CONSTRAINTS` (seven original Security corrections ALL INCORPORATED, defective: NONE, required Auth corrections: NONE).
+3. `A2-BACKEND` — `AUTH-002-CORRECTED-HEAD-AFFECTED-REVIEW-A2-BACKEND-001` — `ACCEPTED_WITH_CONSTRAINTS` (required Auth corrections: NONE).
+4. `A2-DEPLOYMENT` — `AUTH-002-CORRECTED-HEAD-AFFECTED-REVIEW-A2-DEPLOYMENT-001` — `ACCEPTED_WITH_CONSTRAINTS` (required Auth corrections: NONE).
+5. `A2-INTEGRATION` — `AUTH-002-FINAL-CORRECTED-HEAD-REVIEW-A2-INTEGRATION-001` — `ACCEPTED_WITH_CONSTRAINTS` (normative Auth corrections: NONE, cross-contract normative conflict: NONE).
+
+**Historical Consumer Provenance Preserved.**
+Historical responses against earlier HEAD `7abe17af8e212bd2127160338ea6ef409da02101` (`A2-UI` `SPECIFICATION_CONFLICT`, `A2-SECURITY` `REJECTED_WITH_REASON`, `A2-INTEGRATION` `ACCEPTED_WITH_CONSTRAINTS`) are preserved verbatim as immutable historical provenance (`HISTORICAL_STATE`). They are superseded for current coordination state by the final responses against `84ad9e322d886f8963c34386f87074a444b3fa2b` (`CURRENT_FINAL_COORDINATION_STATE`).
+
+**Version-Aware Shared Registry Reconciled.**
+The shared registry in `docs/specifications/A2_DATABASE_MANAGER(1).md` was corrected and merged via PR #31 (`a80145e2` / `1057ba72`). Reconciles `AUTH-DEP-003` to `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED` and `AUTH-ISSUE-002` to `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`. The established version-aware registry semantics are:
+- `CONTRACT-AUTH-001@1.1.0-draft.1` current consumers: `A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND`, `A2-INTEGRATION`.
+- `A2-DATABASE`: `HISTORICAL_CONSUMER / ACKNOWLEDGED_AND_IMPLEMENTED_FOR_EARLIER_IDENTITY_CONTRACT_BOUNDARY` (`CONTRACT-AUTH-001@1.0.0-draft.2`).
+- A2-DATABASE is not classified as a current blocking consumer of the 1.1 browser/session additions.
+
+**Non-Normative Contract Status-Provenance Supersession.**
+`docs/components/auth/CONTRACT-AUTH-001.md` blob SHA `8ed2154561785566b4b17baa16535e1fad8e662c` is byte-identical and untouched. Old non-normative consumer status provenance embedded in `CONTRACT-AUTH-001.md` (such as "consumer review pending" or "rereview required") is superseded for coordination purposes by this authoritative readiness reconciliation. The corrected-head reviews against `84ad9e322d886f8963c34386f87074a444b3fa2b` are the authoritative CURRENT coordination evidence. No normative contract rule is superseded or modified; contract version remains `1.1.0-draft.1`.
+
+**Runtime Implementation Authorization Explicitly Prohibited.**
+This non-normative readiness reconciliation does **NOT** authorize runtime implementation:
+- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Frontend Auth: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Backend JWT/JWKS: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Provider runtime: `NOT_PROVISIONED / NOT_TESTED`
+- `UI-004`: `NOT_AUTHORIZED`
+- `AUTH-003`: `NOT_AUTHORIZED`
+- Release: `NOT_READY`
+
+Pull request #29 remains `OPEN / DRAFT / NOT_MERGED` pending final Agent 1 readiness decision.

@@ -1,33 +1,22 @@
 # Auth Open Issues
 
-- Date: 2026-08-08
+- Date: 2026-08-09
 - Current task:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3`
+  `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`
 - Authorized manager task:
-  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001`
-- Supersedes the narrower task:
-  `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001`, whose uncommitted
-  Auth-side corrections are preserved and reconciled into this package
-- Consumer reviews reconciled:
-  `AUTH-002-CONSUMER-REVIEW-A2-UI-001` — `A2-UI` — `SPECIFICATION_CONFLICT`;
-  `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` — `A2-SECURITY` —
-  `REJECTED_WITH_REASON`, seven required normative corrections
-- Reviewed head for both: `7abe17af8e212bd2127160338ea6ef409da02101`
-- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED`
-- Prior correction tasks:
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`,
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1`
-- Originating task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
-- Parent task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
-- Prompt type: `VERSIONED_AUTH_CONTRACT_AND_DESIGN / A3_DOCUMENTATION_EXECUTION_AND_VALIDATION`
-- Scope: `AUTH_CONTRACT_AND_DESIGN_DOCUMENTATION_ONLY`
-- Base commit: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+  `AUTH-002-FINAL-READINESS-RECONCILIATION-001`
+- Authorizing coordinator:
+  `Agent 1`
+- Reviewed head:
+  `84ad9e322d886f8963c34386f87074a444b3fa2b`
+- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`
+- Shared registry correction: PR #31 — `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED` (`a80145e2` / `1057ba72`)
+- Scope: `AUTH_DURABLE_RECORDS_ONLY`
 - Evidence: `docs/components/auth/AUTH-001_AUDIT.md`,
   `docs/components/auth/CONTRACT-AUTH-001.md`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
-- Auth runtime: `NOT_STARTED` / `NOT_TESTED`
-- `CONTRACT-AUTH-001@1.1.0-draft.1`: `DRAFT_FOR_CONSUMER_REVIEW /
-  NOT_IMPLEMENTATION_READY`
+- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- `CONTRACT-AUTH-001@1.1.0-draft.1`: `UNCHANGED / FINAL_CONSUMER_REVIEW_COMPLETE / NOT_IMPLEMENTATION_READY`
 - `ASSUMED`: `NONE`
 
 Severity vocabulary is `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`,
@@ -80,14 +69,12 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 
 ### `AUTH-ISSUE-002` — Shared registry omits the Database consumer
 
-- Classification: `OPEN`
+- Classification: `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`
 - Severity: `INFORMATIONAL`
-- Evidence: The shared registry omits A2-DATABASE as a blocking
-  `CONTRACT-AUTH-001` consumer, although DB-002 consumed and merged it.
-- Impact: Coordination record only; no Auth work is blocked.
+- Evidence: Merged PR #31 (`docs(integration): reconcile Auth contract registry consumers`), implementation commit `a80145e2648596aef2254f4c3bd833c3a50be761`, merge commit `1057ba727a4e825259c5f7772b6d428511a58a37`, registry path `docs/specifications/A2_DATABASE_MANAGER(1).md`.
+- Resolution: The defect was NOT solved by making Database a current 1.1 consumer. The registry is now version-aware: Database is historical for `CONTRACT-AUTH-001@1.0.0-draft.2` (having implemented the earlier identity/persistence boundary through DB-002), and Database is not a current blocking consumer of the 1.1 browser/session additions.
 - Owning component: A2-INTEGRATION or Agent 1.
-- Blocking task: none.
-- Resolution path: `AUTH-DEP-003`.
+- Resolution path: `AUTH-DEP-003` (`COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED`).
 
 ### `AUTH-ISSUE-004` — Identity-provider design metadata is not frozen
 
@@ -690,101 +677,13 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 ## Summary
 
 `DB-002` is merged, `CONTRACT-AUTH-001@1.0.0-draft.2` is acknowledged and
-merged, and no Database rereview is outstanding. `CONTRACT-AUTH-001` is now
-drafted at `1.1.0-draft.1` and is `DRAFT_FOR_CONSUMER_REVIEW /
-NOT_IMPLEMENTATION_READY`.
+merged, and no Database rereview is outstanding. `CONTRACT-AUTH-001` is
+drafted at `1.1.0-draft.1` and its non-normative readiness reconciliation is complete (`FINAL_CONSUMER_REVIEW_COMPLETE / RECONCILED`).
 
-This reconciliation reclassified exactly the issues whose sole cause was
-missing `AUTH-DEP-004` design metadata or missing A2-UI ownership:
-`AUTH-ISSUE-004` is `RESOLVED_FOR_CONTRACT_AND_DESIGN`, `AUTH-ISSUE-017` is
-`RESOLVED_FOR_OWNERSHIP_AND_COORDINATION`, and `AUTH-ISSUE-015` is
-`PARTIALLY_RESOLVED` for its human-IdP half only. No runtime provisioning,
-implementation, Security, Backend, Workflow or testing issue was resolved.
+All five current consumer domains (`A2-UI`, `A2-SECURITY`, `A2-BACKEND`, `A2-DEPLOYMENT`, `A2-INTEGRATION`) have completed review of `CONTRACT-AUTH-001@1.1.0-draft.1` at HEAD `84ad9e322d886f8963c34386f87074a444b3fa2b` with disposition `ACCEPTED_WITH_CONSTRAINTS`. `AUTH-ISSUE-027` and `AUTH-ISSUE-028` are resolved for contract coordination at HEAD `84ad9e322d886f8963c34386f87074a444b3fa2b`. Historical consumer responses at `7abe17af` (`A2-UI` `SPECIFICATION_CONFLICT`, `A2-SECURITY` `REJECTED_WITH_REASON`, `A2-INTEGRATION` `ACCEPTED_WITH_CONSTRAINTS`) remain preserved as immutable historical provenance (`HISTORICAL_STATE`).
 
-`AUTH-002` contract and design resolved `AUTH-ISSUE-011` in draft and corrected
-the superseded "`apps/web` does not exist" evidence in `AUTH-ISSUE-007` and
-`AUTH-ISSUE-017`. It opened `AUTH-ISSUE-020` through `AUTH-ISSUE-024`. It
-resolved no runtime, provisioning, Security, Backend or testing issue, and it
-closed nothing by acceptance.
+`AUTH-ISSUE-002` is `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED` via merged PR #31 (`a80145e2` / `1057ba72`), which established version-aware registry semantics in `docs/specifications/A2_DATABASE_MANAGER(1).md`.
 
-The A2-AUTH correction round (`AUTH-DEC-036` through `AUTH-DEC-039`) closed no
-issue. It tightened the drafted refresh, callback, cross-context and
-return-state semantics and opened `AUTH-ISSUE-025` and `AUTH-ISSUE-026`, both
-of which record decisions Auth deliberately did not make on A2-SECURITY's
-behalf. `AUTH-ISSUE-024` remains the blocker that prevents either from being
-answered, and it remains owned by Agent 1: no Security file was created by this
-correction round.
+`CONTRACT-AUTH-001.md` content remains untouched (`8ed2154561785566b4b17baa16535e1fad8e662c`). Embedded non-normative consumer status provenance is superseded for coordination purposes by this authoritative readiness reconciliation.
 
-The second A2-AUTH correction round (`AUTH-DEC-040` and `AUTH-DEC-041`) also
-closed no issue and opened no new one. It fixed two defects internal to the
-draft text rather than surfacing a new external dependency:
-
-- `AUTH-DEC-040` replaced a self-contradictory correlation lifetime — the draft
-  required post-success duplicate correlation while also removing the record at
-  the successful terminal outcome — with a bounded two-phase lifecycle. This
-  broadened `AUTH-ISSUE-025` rather than creating a sibling: the undecided
-  mechanism now explicitly includes the record's representation, retention
-  duration and cleanup, and the length of its bounded post-completion window.
-- `AUTH-DEC-041` separated callback-attempt failure from session-validity
-  failure. No new issue was opened for it, because it decides an Auth-owned
-  semantic outright and defers nothing to another owner; the residual questions
-  are consumer-review questions already carried by `AUTH-DEP-011` and
-  `AUTH-DEP-012`, not undecided ownership.
-
-Neither correction relaxed a fail-closed rule, and neither made an existing
-session sufficient callback correlation.
-
-The A2-UI consumer response opened `AUTH-ISSUE-027` and closed nothing.
-`A2-UI` returned `SPECIFICATION_CONFLICT` against head `7abe17a`, and that
-disposition stands for that head. Agent 1 authorized one correction per owner:
-the UI-owned supersession of the conflicting `UI-DEC-013` cookie meaning, which
-Auth did not perform or author, and the Auth-owned freezing of `/` as both the
-default post-sign-in destination and the preserved-session rejected-callback
-safe recovery destination, recorded as `AUTH-DEC-043`. `AUTH-DEC-042` records
-the response itself.
-
-The UI-owned half is now `CORRECTED_AND_MERGED`: `A2-UI` merged `UI-DEC-026` and
-`UI-DEC-027` in PR #30 — implementation commit `30deb920`, merge commit
-`63093f22`, current `origin/main` — recorded on the Auth side as
-`AUTH-DEC-052`. That merge also resolves `AUTH-ISSUE-023`. The Auth-owned half
-is `CORRECTED_IN_WORKTREE / PENDING_A2_AUTH_ACCEPTANCE_AND_PUSH`.
-`AUTH-ISSUE-027` remains `OPEN` until this Auth correction is accepted and
-pushed and `A2-UI` rereviews the new PR #29 head with an acceptable disposition.
-Freezing a route resolved an open contract slot; merging the UI record
-correction resolved the UI-owned half; neither is `A2-UI` acceptance of any Auth
-head.
-
-The A2-SECURITY consumer response opened `AUTH-ISSUE-028` and `AUTH-ISSUE-029`,
-closed nothing, and narrowed `AUTH-ISSUE-025`. `A2-SECURITY` returned
-`REJECTED_WITH_REASON` against the same head `7abe17a` with seven required
-normative corrections, while explicitly accepting the selected architecture —
-`SUPABASE_AUTH_WITH_GITHUB_OAUTH`, `@supabase/ssr`, `createBrowserClient`,
-`createServerClient`, one provider-owned cookie-backed session, a
-browser-readable provider-session cookie and required PKCE. All seven
-corrections are applied and recorded as `AUTH-DEC-045` through `AUTH-DEC-051`,
-with the response itself as `AUTH-DEC-044`. Applying every required correction
-closes nothing: `AUTH-DEP-011` remains `OPEN` and `NOT_ACCEPTED`, and
-`A2-SECURITY` rereview of the corrected PR #29 head is required.
-
-The Security decision on the browser-readable cookie also settles the *policy*
-question beneath the A2-UI conflict, which is why that posture is no longer
-described anywhere as pending Security. It did not settle the UI-owned record
-correction — PR #30 did, on its owner's side — and it does not remove the
-`A2-DEPLOYMENT` runtime and configuration
-confirmation, the `A2-BACKEND` compatibility confirmation, or any of the
-implementation and release requirements now tracked as `AUTH-ISSUE-029`.
-`AUTH-ISSUE-024` is likewise not closed: the Security response arrived through
-the coordinator, not through a `docs/components/security/` record set, which
-still does not exist and remains Agent 1's to create.
-
-What remains open is Auth runtime absence, provider provisioning and every
-untested runtime behavior — callback runtime, JWT validation, cookies, CSRF,
-PKCE, OAuth state and frontend Auth integration — plus the remaining scoped
-external dependencies, the unresolved cookie and Security posture decisions,
-the absent A2-SECURITY record set, the absent Auth test suite, and downstream
-durable webhook idempotency. No implementation defect is claimed in merged
-code: every gap above is either absence, an unresolved dependency, an owner
-decision, or a documentation inconsistency.
-
-A drafted contract resolves nothing by itself. `CONTRACT-AUTH-001@1.1.0-draft.1`
-is not accepted, is not implementation-ready, and authorizes no implementation.
+Runtime implementation remains explicitly `NOT_AUTHORIZED`: Auth runtime (`NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`), Frontend Auth (`NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`), Provider runtime (`NOT_PROVISIONED / NOT_TESTED`), `UI-004` (`NOT_AUTHORIZED`), Release (`NOT_READY`). PR #29 remains `OPEN / DRAFT / NOT_MERGED` pending final Agent 1 readiness decision.
