@@ -1,6 +1,236 @@
 # Latest A3-UI Handoff
 
-## Current API dependency reconciliation handoff
+## Current `AUTH-002` consumer-conflict and merged-frontend-state reconciliation handoff
+
+- Managing agent: `A2-UI` — Frontend and UI Component Manager
+- Implementation agent: `A3-UI` — temporary, task-scoped
+- Parent manager task: `UI-AUTH002-CONSUMER-CONFLICT-RECONCILIATION-001`
+- Task: `UI-AUTH002-CONSUMER-CONFLICT-RECONCILIATION-001-A3`
+- Prompt type: `DOCUMENTATION_ONLY / CONFLICT_RESOLUTION / MERGED_FRONTEND_STATE_RECONCILIATION`
+- Result: `DOCUMENTATION_COMPLETE / UNSTAGED / PENDING_INDEPENDENT_A2_UI_REVIEW`
+- Date: 2026-08-08
+- Repository: `01fe25bec239-collab/TestGap-Miner`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth002-conflict-reconciliation`
+- Branch: `agent2/ui-auth002-conflict-reconciliation`
+- Actual repository baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- `origin/main` after fetch: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- `git rev-list --left-right --count HEAD...origin/main`: `0	0`
+- `ASSUMED`: `NONE`
+
+### Preflight verification
+
+The branch and worktree were created by the repository owner and were **not**
+recreated, replaced, moved, deleted, reset, or rebased. Every fact below was
+independently verified rather than assumed from the prompt.
+
+| Check | Result |
+|---|---|
+| `pwd` | `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth002-conflict-reconciliation` |
+| `git rev-parse --show-toplevel` | Exact worktree path above |
+| Branch | `agent2/ui-auth002-conflict-reconciliation` |
+| `HEAD` | `006cc885161ff49be582a9fa08f353a70c31c7b1` |
+| `git status --porcelain=v1 --untracked-files=all` before editing | Empty — clean |
+| `git diff --cached --name-only` before editing | Empty — nothing staged |
+| `git diff --name-only` before editing | Empty — no unstaged change |
+| `git stash list` | Empty |
+| `origin/main` after `git fetch origin --prune` | `006cc885161ff49be582a9fa08f353a70c31c7b1` — unadvanced, so the advanced-main rule did not trigger |
+| `UI-DEC-026` pre-existing | No — `git grep` returned nothing |
+| `UI-DEC-027` pre-existing | No — `git grep` returned nothing |
+
+### Verified merged frontend history
+
+Each commit below was verified to exist and to be an ancestor of, or equal to,
+`HEAD`.
+
+| PR | Subject | Implementation commit | Merge commit | Checks |
+|---|---|---|---|---|
+| #26 | `feat(ui): add Next.js application scaffold` | `55fabbf452ed4a7429c8d2d075b218708db611e3` | `c5d4c8a462f6e76aa1dd4929e59012fb2823c999` | `validate: SUCCESS` |
+| #27 | `feat(ui): add MUI application shell` | `cbd9e99287c7a7c11c65d8ac349e8356401fc2d3` | `e7de96fc96e665fc32163dc9f26986e0e56e5510` | `validate: SUCCESS` |
+| #28 | `test(ui): add frontend regression foundation` | `7ad4334a5b0f7d1a6546b7c8140c359b8a5d3e6c` | `006cc885161ff49be582a9fa08f353a70c31c7b1` | `validate: SUCCESS` |
+
+All three are `MERGED`. Every expected commit SHA in the authorization matched
+the repository exactly.
+
+### `apps/web` verification
+
+`apps/web` is `PRESENT`. `ls apps/` returns `api` and `web`. `git ls-tree -r
+--name-only HEAD -- apps/web` returns eighteen tracked files:
+
+```text
+apps/web/.gitignore
+apps/web/README.md
+apps/web/eslint.config.mjs
+apps/web/next.config.ts
+apps/web/package-lock.json
+apps/web/package.json
+apps/web/src/app/globals.css
+apps/web/src/app/layout.tsx
+apps/web/src/app/page.test.tsx
+apps/web/src/app/page.tsx
+apps/web/src/app/providers.tsx
+apps/web/src/components/AppShell.test.tsx
+apps/web/src/components/AppShell.tsx
+apps/web/src/test/renderWithTheme.tsx
+apps/web/src/test/setup.ts
+apps/web/src/theme.ts
+apps/web/tsconfig.json
+apps/web/vitest.config.ts
+```
+
+Next.js App Router, TypeScript, the MUI theme and application shell, and the
+automated regression-test foundation are each `IMPLEMENTED`. The frontend
+foundation is `PRODUCTION_BUILDABLE`, established by the merged `validate`
+checks.
+
+**This is frontend evidence only. It is not evidence that Auth works.** No Auth
+client, session code, provider client, protected route, or `/auth/callback`
+handler exists in `apps/web`, and `apps/web` was not modified by this task.
+
+### Merged frontend-state reconciliation
+
+The six UI durable records previously described `apps/web` as `ABSENT`,
+frontend implementation as `NOT_STARTED`, and `UI-002` and `UI-003` as
+`NOT_AUTHORIZED`. Those statements contradicted merged PR #26, PR #27 and PR
+#28. They are now either corrected to current state or explicitly relabelled as
+historical and superseded, recorded as `UI-DEC-027`.
+
+### Cookie-custody conflict
+
+Original A2-UI consumer result on `CONTRACT-AUTH-001@1.1.0-draft.1`, at
+reviewed Auth PR #29 head `7abe17af8e212bd2127160338ea6ef409da02101`:
+
+`SPECIFICATION_CONFLICT`
+
+Agent 1 resolution direction:
+
+`PASS / UI_AUTH_COOKIE_CONFLICT_CONFIRMED / UI_OWNED_CORRECTION_AUTHORIZED` —
+the UI-owned side of the conflict is to be reconciled; Auth PR #29 is not to be
+modified; no A2-SECURITY decision is to be made; no Auth and no `UI-004`
+implementation is authorized.
+
+**Old conflicting current meaning, now superseded:**
+
+> The UI stores no access token and no refresh token in `localStorage`. The
+> same prohibition covers `sessionStorage` and any non-`HttpOnly` cookie
+> written by UI code.
+
+**New current normative custody meaning, recorded as `UI-DEC-026`:**
+
+A2-UI must not directly persist an access token or refresh token in
+`localStorage`, `sessionStorage`, React component state, React context, Redux,
+Zustand, IndexedDB, service-worker storage, an in-memory custom token cache, a
+custom cookie, or any duplicate or shadow session store.
+
+The only potentially permitted browser-readable session store is the canonical
+Auth-owned cookie-backed session, operated exclusively through the approved
+`@supabase/ssr` Auth adapter. That exception is `CONDITIONAL` on A2-SECURITY
+accepting the final cookie posture. Until A2-SECURITY acceptance, the storage
+design remains a contract candidate and browser Auth implementation is
+`NOT_AUTHORIZED`.
+
+A2-UI must never create the canonical session store itself, copy it into
+another store, manage a duplicate cookie, shadow the provider session, read or
+persist refresh tokens outside the Auth-owned adapter, initialize an
+independent provider client, or weaken the `localStorage` or `sessionStorage`
+prohibitions. Refresh tokens remain prohibited from FastAPI. Access-token use
+remains immediate single-request `Authorization: Bearer` transport with no
+cached copy.
+
+The supersession is scoped to the non-`HttpOnly`-cookie clause of `UI-DEC-013`
+alone. `UI-DEC-013`'s storage prohibitions, `UI-DEC-014`'s no-duplicate-store
+rule, and `UI-DEC-015`'s transport and refresh-token boundary are preserved
+intact.
+
+### Remaining Auth-owned correction
+
+The Auth-owned half of the conflict is **outstanding**. A2-AUTH must push its
+correction on PR #29. This UI-owned correction does not make PR #29 acceptable.
+
+### Remaining A2-SECURITY gate
+
+`HttpOnly` architecture policy, `SameSite`, cookie lifetime, cookie domain,
+`Secure` exceptions, CSRF, callback-correlation storage, integrity and
+duration, and intended-return-state storage and integrity are **A2-SECURITY**
+decisions, unresolved under `AUTH-DEP-011`. A3-UI decided none of them, and
+nothing in this package is Security approval for browser-readable cookies.
+
+### Preserved statuses
+
+| Status | Value |
+|---|---|
+| `UI-004` | `BLOCKED / NOT_AUTHORIZED` |
+| Auth runtime | `NOT_IMPLEMENTED / NOT_TESTED` |
+| Provider runtime | `NOT_PROVISIONED / NOT_TESTED` |
+| Frontend Auth behavior | `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED` |
+| Frontend Auth tests | `NOT_STARTED / NOT_TESTED` |
+| `/auth/callback` | `RESERVED / NOT_IMPLEMENTED` |
+| `AUTH-DEP-012` | `SPECIFICATION_CONFLICT` — not `ACCEPTED` |
+| Auth PR #29 | `OPEN / DRAFT / NOT_MERGED` |
+| A2-SECURITY final cookie acceptance | `PENDING` under `AUTH-DEP-011` |
+
+### Exact files modified
+
+Exactly six existing UI-owned records, with no creation, deletion, or rename:
+
+1. `docs/components/ui/COMPONENT_STATUS.md`
+2. `docs/components/ui/TASK_LEDGER.md`
+3. `docs/components/ui/OPEN_ISSUES.md`
+4. `docs/components/ui/DECISION_LOG.md`
+5. `docs/components/ui/DEPENDENCY_REQUESTS.md`
+6. `docs/components/ui/LATEST_AGENT3_HANDOFF.md`
+
+No seventh path was created, modified, deleted, or renamed. `apps/web`, Auth,
+Security, Deployment, Backend, Integration, `docs/api`, and
+`docs/specifications` are unchanged.
+
+### No implementation authorization
+
+This package authorizes no implementation. It does not implement `UI-004`,
+install Supabase, create `/auth/callback`, implement session logic, implement an
+API client, modify `apps/web`, provision a provider, create environment values,
+modify CI, or begin DB-003.
+
+### Required next steps
+
+1. **Independent A2-UI review** of these six unstaged files. A3-UI does not
+   perform that review and does not claim its acceptance.
+2. Repository-owner-managed staging, commit, push, PR, checks, and merge —
+   none of which A3-UI performed.
+3. A2-AUTH pushes the Auth-owned correction to PR #29.
+4. A2-UI rereviews the corrected Auth PR #29 head.
+
+The UI documentation correction must be merged before final A2-UI rereview of
+Auth PR #29.
+
+### Git state
+
+Changes are **`UNSTAGED` / `UNCOMMITTED`**. A3-UI did not stage, commit, push,
+open a pull request, merge, amend, rebase, reset, force-push, cherry-pick,
+stash, delete a branch, or delete a worktree.
+
+### Evidence labels
+
+- `IMPLEMENTED`: six unstaged UI documentation reconciliations only.
+- `TESTED`: repository preflight, merged-history commit verification,
+  `apps/web` inventory, exact six-path diff scope, whitespace, decision-ID
+  uniqueness, stale-state scan, cookie-policy scan, storage-prohibition scan,
+  secret scan, and staging state.
+- `NOT_TESTED`: all Auth, provider, callback, session, cookie, CSRF, API,
+  Queue, Evidence, Evaluation, DB-003, and runtime behavior. No frontend build,
+  render, accessibility audit, or end-to-end run was executed by this task.
+- `BLOCKED`: staging, commit, push, PR, merge, `UI-004`, and every runtime
+  implementation.
+- `ASSUMED`: `NONE`.
+
+## Historical API dependency reconciliation handoff — preserved
+
+**Historical record.** This handoff describes the state at baseline
+`ab60d4573d398fb610bc2ebb813f76d0c95b33d7`; its work was merged through PR #25.
+Its API consumer-review conclusions remain current. Its frontend statements —
+`apps/web` `ABSENT`, frontend implementation `NOT_STARTED`, `UI-002` and
+`UI-003` unauthorized — are **superseded** by the merged PR #26, PR #27 and PR
+#28 evidence in the current handoff above and by `UI-DEC-027`. Its Git-state
+statements describe that task's own unstaged edits, not the current task's.
 
 - Managing agent: `A2-UI` — Frontend and UI Component Manager
 - Implementation agent: `A3-UI` — temporary, task-scoped
@@ -84,8 +314,10 @@ created.
 | `UI-008` | `BLOCKED / NOT_AUTHORIZED / ACTION_PLACEHOLDER_ONLY` |
 | `UI-009` | `BLOCKED / NOT_AUTHORIZED` |
 
-`UI-002` could logically proceed independently of final API semantics but
-still requires separate explicit Agent 1 implementation authorization.
+At that baseline, `UI-002` could logically proceed independently of final API
+semantics but still required separate explicit Agent 1 implementation
+authorization. **Superseded:** that authorization was subsequently granted, and
+`UI-002` merged through PR #26.
 
 ### Remaining blockers
 
@@ -143,6 +375,15 @@ its decision to A2-BACKEND. Any staging or later implementation requires
 separate authorization.
 
 ## Historical Auth reconciliation handoff — preserved
+
+**Historical record.** This handoff describes the state at baseline
+`ba4247af2195d4c8e60cb9990f616a95f2c54d54`. Every present-tense frontend
+statement in it — `apps/web` `ABSENT`, frontend implementation `NOT_STARTED`,
+frontend runtime and Auth tests unimplemented — was true at that baseline and
+is **superseded** for the frontend foundation by the merged PR #26, PR #27 and
+PR #28 evidence in the current handoff above and by `UI-DEC-027`. Its Auth,
+provider, dependency and blocker statements remain current except where the
+current handoff above supersedes them.
 
 - Managing agent: `A2-UI` — Frontend and UI Component Manager
 - Implementation agent: `A3-UI` — temporary, task-scoped
@@ -299,6 +540,15 @@ documentation reconciliation. No implementation or Git publication action is
 implied.
 
 ## Historical bootstrap handoff — preserved
+
+**Historical record.** This handoff describes the state at the bootstrap
+baseline `9ac5a242bfbfad839dd41cd51171b4f81db1be85`, when the repository had 80
+tracked files and no frontend artefact at all. Every present-tense frontend
+statement in it — including "no frontend exists", the `apps/web` `ABSENT` row,
+the `NOT_STARTED` frontend rows, and the `UI-002`/`UI-003` `NOT_AUTHORIZED`
+classification — was true at that baseline and is **superseded** by `UI-DEC-027`
+and by the merged PR #26, PR #27 and PR #28 evidence in the current handoff
+above. None of it may be read as current state.
 
 - Managing agent: `A2-UI` — Frontend and UI Component Manager
 - Implementation agent: `A3-UI` — temporary, task-scoped

@@ -1,22 +1,32 @@
 # UI Open Issues
 
-- Date: 2026-08-04
+- Date: 2026-08-08
 - Agent 2: `A2-UI`
-- Current task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
-- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
-- Branch: `agent2/ui-auth-dependency-reconciliation`
-- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
+- Current task: `UI-AUTH002-CONSUMER-CONFLICT-RECONCILIATION-001-A3`
+- Prompt type: `DOCUMENTATION_ONLY / CONFLICT_RESOLUTION / MERGED_FRONTEND_STATE_RECONCILIATION`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth002-conflict-reconciliation`
+- Branch: `agent2/ui-auth002-conflict-reconciliation`
+- Current evidence baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Historical API-reconciliation baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
-- Frontend implementation: `NOT_STARTED`
-- Frontend runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
+- Frontend foundation: `IMPLEMENTED` / `MERGED` / `PRODUCTION_BUILDABLE`
+- Frontend Auth behavior: `NOT_IMPLEMENTED` / `NOT_TESTED` / `NOT_AUTHORIZED`
+- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
+- Provider runtime: `NOT_PROVISIONED` / `NOT_TESTED`
 - `ASSUMED`: `NONE`
 
 Severity vocabulary is `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `INFORMATIONAL`.
 
 An absent feature is recorded as an absence, not as a vulnerability. At this
-commit the UI component has no runtime, so no issue below is an exploitable
-finding. Each issue records what is unresolved and who owns resolving it.
+commit the UI component has a merged, buildable frontend foundation but **no
+Auth runtime and no session behavior of any kind**, so no issue below is an
+exploitable finding. Each issue records what is unresolved and who owns
+resolving it.
+
+The merged frontend foundation resolves only those issues whose sole factual
+basis was the absence of `apps/web`, Next.js, MUI or a frontend test harness.
+It resolves no Auth, Security, Deployment, Backend, API, Workflow, Evidence,
+Evaluation or runtime blocker.
 
 ## `UI-ISSUE-001` — `AUTH-DEP-004` runtime remainder
 
@@ -99,9 +109,11 @@ finding. Each issue records what is unresolved and who owns resolving it.
 - Impact: Cookie names, `Secure` / `HttpOnly` / `SameSite` flags, cookie
   domain and path, session lifetime, refresh timing, and which side holds the
   session are all undefined. The UI-side custody rules are fixed (no token in
-  `localStorage`, no duplicate custom token store, refresh token never
-  forwarded, bearer `Authorization` transport), but they do not substitute for
-  the Auth-owned session semantics.
+  `localStorage`, no `sessionStorage`, no duplicate or shadow store, refresh
+  token never forwarded, bearer `Authorization` transport — see `UI-DEC-026`
+  for the current normative rule), but they do not substitute for the
+  Auth-owned session semantics. The cookie posture itself remains
+  A2-SECURITY-owned and unresolved under `AUTH-DEP-011`; see `UI-ISSUE-015`.
 - Blocks: `UI-004`, `UI-010`.
 - Resolution path: A2-AUTH publishes session semantics; A2-SECURITY with
   A2-AUTH accepts the posture. Tracked as `UI-DEP-AUTH-001` and
@@ -186,22 +198,64 @@ finding. Each issue records what is unresolved and who owns resolving it.
 - Blocks: `UI-004` verification, `UI-010`.
 - Resolution path: `UI-DEP-DEPLOY-001`.
 
-## `UI-ISSUE-010` — Runtime and end-to-end evidence is absent
+## `UI-ISSUE-010` — Frontend foundation absence
 
-- Classification: `OPEN` / absent feature
+- Classification: `RESOLVED_FOR_FOUNDATION` / previously absent feature
 - Severity: `INFORMATIONAL` (absence, not vulnerability)
 - Owner: `A2-UI`
-- Current evidence: `apps/web` is `ABSENT`; no frontend page, layout, route,
-  component, test, manifest, or lockfile exists. Frontend implementation is
-  `NOT_STARTED`.
-- `HISTORICAL BOOTSTRAP EVIDENCE AT BASELINE 9ac5a24`: the repository then
-  contained 80 tracked files and no frontend artefact listed above.
-- Impact: There is no build, no render, no accessibility audit, no end-to-end
-  run, and no screenshot. Frontend runtime is `NOT_IMPLEMENTED` /
-  `NOT_TESTED`, and frontend Auth tests are `NOT_STARTED` / `NOT_TESTED`. No
-  UI claim of "working" is admissible until this is resolved.
+- `HISTORICAL BOOTSTRAP EVIDENCE AT BASELINE 9ac5a24`: the repository contained
+  80 tracked files, `apps/web` was `ABSENT`, and no frontend page, layout,
+  route, component, test, manifest or lockfile existed.
+- Current evidence: `apps/web` is `PRESENT` with eighteen tracked files.
+  `UI-002` merged through PR #26 at `c5d4c8a462f6e76aa1dd4929e59012fb2823c999`,
+  `UI-003` through PR #27 at `e7de96fc96e665fc32163dc9f26986e0e56e5510`, and
+  the regression-test foundation through PR #28 at
+  `006cc885161ff49be582a9fa08f353a70c31c7b1`. Every `validate` check passed.
+  The foundation is `PRODUCTION_BUILDABLE` with merged automated tests.
+- Disposition: The foundation-absence basis for this issue is resolved. It is
+  closed **only** for that basis.
+- Still open under this issue: no accessibility audit has been accepted for
+  `UI-010`; no end-to-end run exists, because there is no API runtime and no
+  Auth runtime to run against; no Auth or session behavior has been rendered
+  or tested. Frontend Auth behavior remains `NOT_IMPLEMENTED / NOT_TESTED /
+  NOT_AUTHORIZED` and frontend Auth tests remain `NOT_STARTED / NOT_TESTED`.
 - Blocks: `UI-010`.
-- Resolution path: `UI-002` onward, after Agent 1 authorization.
+- Resolution path: `UI-004` onward after separate authorization, plus API and
+  Auth runtimes and A2-INTEGRATION acceptance.
+
+## `UI-ISSUE-015` — `AUTH-002` cookie-custody specification conflict
+
+- Classification: `CONFIRMED / UI_SIDE_CORRECTION_AUTHORIZED /
+  AUTH_SIDE_CORRECTION_REQUIRED / A2_UI_REREVIEW_REQUIRED`
+- Severity: `HIGH`
+- Owners: `A2-UI` (UI-owned correction — applied), `A2-AUTH` (Auth-owned
+  correction — outstanding), `A2-SECURITY` with `A2-AUTH` (final cookie
+  acceptance under `AUTH-DEP-011`)
+- Evidence: A2-UI's consumer review of `CONTRACT-AUTH-001@1.1.0-draft.1`, at
+  reviewed Auth PR #29 head `7abe17af8e212bd2127160338ea6ef409da02101`,
+  returned `SPECIFICATION_CONFLICT`. The merged `UI-DEC-013` prohibits "any
+  non-`HttpOnly` cookie written by UI code"; the Auth candidate contract adopts
+  the canonical browser-readable `@supabase/ssr` cookie-backed session and
+  states that `HttpOnly` is not achievable for it under the accepted
+  architecture. Agent 1 returned `PASS / UI_AUTH_COOKIE_CONFLICT_CONFIRMED /
+  UI_OWNED_CORRECTION_AUTHORIZED`.
+- UI-owned correction: applied by this task as `UI-DEC-026`, superseding only
+  the conflicting non-`HttpOnly`-cookie clause of `UI-DEC-013` and weakening no
+  storage prohibition.
+- Impact: `AUTH-DEP-012` cannot be `ACCEPTED` and `AUTH-002` cannot be accepted
+  while the conflict stands. `UI-004` remains `BLOCKED / NOT_AUTHORIZED`.
+- Blocks: `AUTH-DEP-012` acceptance; `AUTH-002` acceptance; `UI-004`.
+- **The conflict is not resolved.** It may be classified as resolved only after
+  all of the following have occurred:
+  1. this UI-owned correction package passes independent A2-UI review;
+  2. this UI-owned correction is merged;
+  3. the Auth-owned correction is pushed by A2-AUTH;
+  4. A2-UI rereviews the corrected Auth PR #29 head.
+- Out of scope for A2-UI and A3-UI: `HttpOnly` architecture policy, `SameSite`,
+  cookie lifetime, cookie domain, `Secure` exceptions, CSRF,
+  callback-correlation storage/integrity/duration, and intended-return-state
+  storage and integrity. All are A2-SECURITY-owned and unresolved under
+  `AUTH-DEP-011`.
 
 ## `UI-ISSUE-011` — `SPECIFICATION_INDEX.md` does not list `A2_UI_MANAGER.md`
 
@@ -269,9 +323,17 @@ finding. Each issue records what is unresolved and who owns resolving it.
 
 ## Summary
 
-Thirteen issues remain open or partially resolved; `UI-ISSUE-012` is resolved
-by PR #21. None is an exploitable UI finding because `apps/web` remains
-`ABSENT` and frontend runtime is `NOT_IMPLEMENTED / NOT_TESTED`.
+Fifteen issues are recorded. `UI-ISSUE-012` is resolved by PR #21.
+`UI-ISSUE-010` is resolved for its frontend-foundation basis only, by PR #26,
+PR #27 and PR #28, and remains open for accessibility acceptance and
+end-to-end evidence. `UI-ISSUE-015` is `CONFIRMED` and is **not** resolved.
+The remaining twelve stay open or partially resolved.
+
+None is an exploitable UI finding. The merged frontend foundation contains no
+Auth client, no session code, no provider client, no protected route and no
+`/auth/callback` handler; Auth runtime is `NOT_IMPLEMENTED / NOT_TESTED` and
+provider runtime is `NOT_PROVISIONED / NOT_TESTED`, so there is no session,
+token or credential in play anywhere in the repository.
 
 `AUTH-DEP-004` and `AUTH-DEP-010` are no longer pending. The controlling Auth
 blockers are the runtime remainders in `UI-ISSUE-001` through
