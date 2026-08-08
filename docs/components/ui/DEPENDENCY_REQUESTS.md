@@ -1,20 +1,26 @@
 # UI Dependency Requests
 
-- Date: 2026-08-04
+- Date: 2026-08-08
 - Agent 2: `A2-UI`
-- Current task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
-- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
-- Branch: `agent2/ui-auth-dependency-reconciliation`
-- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
+- Current task: `UI-AUTH002-CONSUMER-CONFLICT-RECONCILIATION-001-A3`
+- Prompt type: `DOCUMENTATION_ONLY / CONFLICT_RESOLUTION / MERGED_FRONTEND_STATE_RECONCILIATION`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth002-conflict-reconciliation`
+- Branch: `agent2/ui-auth002-conflict-reconciliation`
+- Current evidence baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Historical API-reconciliation baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - `ASSUMED`: `NONE`
 
-Every request below was opened by A2-UI. A2-UI records owning-manager evidence
-without substituting its own acceptance: `UI-DEP-DEPLOY-001` is partially
-satisfied by A2-DEPLOYMENT's merged decision, and `UI-DEP-BACKEND-001` is
-partially satisfied by the published API draft. The Auth and Security requests
-remain pending.
+Every `UI-DEP-*` request below was opened by A2-UI. A2-UI records owning-manager
+evidence without substituting its own acceptance: `UI-DEP-DEPLOY-001` is
+partially satisfied by A2-DEPLOYMENT's merged decision, and
+`UI-DEP-BACKEND-001` is partially satisfied by the published API draft. The
+Auth and Security requests remain pending.
+
+This file also carries the **UI-owned mirror** of `AUTH-DEP-012`, the inbound
+A2-AUTH request that A2-UI owns as a consumer. The authoritative Auth-side
+record lives in `docs/components/auth/DEPENDENCY_REQUESTS.md`, which is
+Auth-owned and was not modified by this task.
 
 No request below authorizes A3-UI to modify another component's files, and none
 authorizes UI code, tests, manifests, lockfiles, or configuration.
@@ -43,7 +49,13 @@ authorizes UI code, tests, manifests, lockfiles, or configuration.
   for each of session establishment, refresh, sign-out, `state`, and PKCE, the
   component that owns it and the storage location; plus an explicit
   confirmation that the UI must never receive or forward a refresh token.
-- Current status: `PENDING` — opened by A2-UI, awaiting A2-AUTH.
+- Current status: `PENDING / DRAFT_RESPONSE_UNDER_CONSUMER_REVIEW`.
+  `CONTRACT-AUTH-001@1.1.0-draft.1` on Auth PR #29, at reviewed head
+  `7abe17af8e212bd2127160338ea6ef409da02101`, is A2-AUTH's draft response to
+  this request. It is `OPEN / DRAFT / NOT_MERGED` and A2-UI's consumer review
+  returned `SPECIFICATION_CONFLICT` — see the `AUTH-DEP-012` mirror below. The
+  request stays `PENDING` because the responding contract is neither corrected
+  nor accepted.
 
 ## `UI-DEP-DEPLOY-001` — Provider, callback registration, domain, TLS, and Auth environment variables
 
@@ -177,6 +189,69 @@ API runtime remains `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`.
 - Current status: `PENDING` — opened by A2-UI, awaiting A2-SECURITY with
   A2-AUTH.
 
+## `AUTH-DEP-012` — A2-UI consumer review of the session contract (UI-owned mirror)
+
+- Request ID: `AUTH-DEP-012`
+- Requesting manager: `A2-AUTH`
+- Owning manager: `A2-UI` — this record is A2-UI's own mirror of its consumer
+  response. The authoritative Auth-side copy is Auth-owned and unmodified.
+- Affected contract: `CONTRACT-AUTH-001@1.1.0-draft.1` and a future UI contract
+- Affected task: `AUTH-002` acceptance; `UI-004`
+- Reviewed Auth PR: #29 — `docs(auth): define dashboard sign-in and session
+  contract`, branch `agent2/auth-002-session-contract`, reviewed head
+  `7abe17af8e212bd2127160338ea6ef409da02101`, state `OPEN / DRAFT / NOT_MERGED`
+- **Current disposition: `SPECIFICATION_CONFLICT`**
+- Agent 1 decision on that disposition:
+  `PASS / UI_AUTH_COOKIE_CONFLICT_CONFIRMED / UI_OWNED_CORRECTION_AUTHORIZED`
+
+### Confirmed conflict
+
+The merged `UI-DEC-013` prohibits "any non-`HttpOnly` cookie written by UI
+code". The reviewed Auth contract candidate adopts the canonical
+browser-readable `@supabase/ssr` cookie-backed session and states that
+`HttpOnly` is not achievable for that session under the accepted architecture.
+
+### UI-owned correction, applied by this task
+
+`UI-DEC-026` supersedes **only** the conflicting non-`HttpOnly`-cookie clause of
+`UI-DEC-013`. It preserves the `localStorage` prohibition, the `sessionStorage`
+prohibition, `UI-DEC-014`'s no-duplicate-store rule, and `UI-DEC-015`'s Bearer
+transport and refresh-token boundary. The only potentially permitted
+browser-readable session store is the canonical Auth-owned cookie-backed
+session, operated exclusively through the approved `@supabase/ssr` adapter, and
+that exception is `CONDITIONAL` on A2-SECURITY accepting the final cookie
+posture.
+
+### Routes A2-UI accepts
+
+| Item | A2-UI position |
+|---|---|
+| Default post-sign-in destination candidate | `/` |
+| Safe callback-error recovery route, used when a callback attempt is rejected while a session established independently before that callback remains known-valid | `/` |
+
+Both are proposals from the consumer side. A2-UI records, and requires, that:
+
+- A2-AUTH must record both routes in its own contract package; A2-UI does not
+  define them unilaterally and Auth remains the owner of the semantics;
+- a rejected callback's intended-return destination must **never** be used as
+  the recovery destination;
+- a preserved, independently valid session must never be presented as
+  "sign-in succeeded"; the callback reports no success and no callback-directed
+  destination is used;
+- the intended return path A2-UI supplies to `beginSignIn` is a **candidate
+  only** — Auth creates, binds, expires and consumes the return state, and the
+  UI must accept a silent fallback to the default destination whenever the
+  return state is missing, expired, tampered, replayed or unbound;
+- A2-SECURITY acceptance of the cookie, CSRF and OAuth-state posture remains
+  **pending** under `AUTH-DEP-011`;
+- **A2-UI rereview remains required** after the Auth-owned correction is pushed.
+
+### Not yet granted
+
+`AUTH-DEP-012` is **not** `ACCEPTED`. A2-UI's consumer review has **not**
+passed. The UI-owned correction does not by itself make Auth PR #29 acceptable,
+and this record is not A2-SECURITY acceptance of a browser-readable cookie.
+
 ## Future dependencies — not yet opened
 
 These are recorded as **pending** future needs. They are not yet formal
@@ -194,9 +269,9 @@ them prematurely would freeze another owner's contract against guessed needs.
 
 ## Summary
 
-Four formal UI requests remain open. `UI-DEP-AUTH-001` remains `PENDING`
-because the Auth records do not yet provide the complete requested
-session/callback, refresh, sign-out, PKCE, OAuth-state, and error semantics.
+Four formal UI requests remain open. `UI-DEP-AUTH-001` remains `PENDING`; its
+draft response, `CONTRACT-AUTH-001@1.1.0-draft.1` on Auth PR #29, is under
+consumer review and A2-UI returned `SPECIFICATION_CONFLICT` on it.
 `UI-DEP-DEPLOY-001` is
 `PARTIALLY_SATISFIED_FOR_CONTRACT_AND_DESIGN`; its runtime and test-provider
 remainders stay pending. `UI-DEP-BACKEND-001` is
@@ -206,6 +281,13 @@ fixtures, endpoint models, CORS, and runtime remain pending.
 Evaluation dependencies remain pending and not yet opened;
 `UI-DEP-API-002` has partial shared-transport draft input but is not yet
 formally opened.
+
+The inbound `AUTH-DEP-012` mirror is `SPECIFICATION_CONFLICT`. It is not
+`ACCEPTED`, A2-UI's consumer review has not passed, and A2-UI rereview of the
+corrected Auth PR #29 head remains required. A2-UI accepts `/` as both the
+default post-sign-in destination candidate and the safe callback-error recovery
+route, subject to A2-AUTH recording them in its own contract package and to
+pending A2-SECURITY acceptance under `AUTH-DEP-011`.
 
 `AUTH-DEP-004` is `ACCEPTED_WITH_CONSTRAINTS / MERGED_VIA_PR_20 /
 SATISFIED_FOR_AUTH_CONTRACT_AND_DESIGN`. `AUTH-DEP-010` is

@@ -1,31 +1,42 @@
 # UI Decision Log
 
-- Date: 2026-08-04
+- Date: 2026-08-08
 - Agent 2: `A2-UI`
-- Current task: `UI-API-DEPENDENCY-RECONCILIATION-001-A3`
-- Prompt type: `REBASE_THEN_FOCUSED_DOCUMENTATION_REPAIR_ONLY`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth-dependency-reconciliation`
-- Branch: `agent2/ui-auth-dependency-reconciliation`
-- Current evidence baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
+- Current task: `UI-AUTH002-CONSUMER-CONFLICT-RECONCILIATION-001-A3`
+- Prompt type: `DOCUMENTATION_ONLY / CONFLICT_RESOLUTION / MERGED_FRONTEND_STATE_RECONCILIATION`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth002-conflict-reconciliation`
+- Branch: `agent2/ui-auth002-conflict-reconciliation`
+- Current evidence baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Historical API-reconciliation baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
-- Frontend implementation: `NOT_STARTED`
-- Frontend runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
+- Frontend foundation: `IMPLEMENTED` / `MERGED` / `PRODUCTION_BUILDABLE`
+- Frontend Auth behavior: `NOT_IMPLEMENTED` / `NOT_TESTED` / `NOT_AUTHORIZED`
+- Auth runtime: `NOT_IMPLEMENTED` / `NOT_TESTED`
+- Provider runtime: `NOT_PROVISIONED` / `NOT_TESTED`
 - `ASSUMED`: `NONE`
 
 `UI-DEC-001` through `UI-DEC-019` are the founding UI decisions recorded by
-this bootstrap. Each is a decision about intent, ownership, or constraint.
-**None of them is evidence that anything is implemented.** No decision below
-alters another owner's contract.
+the bootstrap at baseline `9ac5a24`. Each is a decision about intent,
+ownership, or constraint. **None of them is evidence that anything is
+implemented.** No decision below alters another owner's contract.
+
+The current normative reading of any historical decision is whatever the
+**Post-merge supersession map** and the later `UI-DEC-020` onward decisions
+say it is. Where the two differ, the later decision governs.
 
 ## `UI-DEC-001` — `apps/web` is the frontend root
 
 The first-party TestGap Miner dashboard lives at `apps/web`, as a sibling of
 the existing `apps/api` FastAPI service.
 
-State: `apps/web` is `ABSENT` at the evidence baseline — `ls apps/` returns
-exactly `api`, and `find . -type d -name web` (excluding `.git`) returns
-nothing. This decision reserves the path; it does not create it.
-`UI-DOC-BOOTSTRAP-001` did not create `apps/web`.
+Historical state at the bootstrap baseline `9ac5a24`, **superseded by
+`UI-DEC-027`**: `apps/web` was `ABSENT` — `ls apps/` returned exactly `api`, and
+`find . -type d -name web` (excluding `.git`) returned nothing. That decision
+reserved the path; it did not create it, and `UI-DOC-BOOTSTRAP-001` did not
+create `apps/web`.
+
+Current state: `apps/web` is `PRESENT`, created by the separately authorized
+`UI-002` and merged through PR #26.
 
 ## `UI-DEC-002` — A2-UI owns the frontend
 
@@ -56,30 +67,42 @@ under any circumstance.
 
 ## `UI-DEC-004` — Next.js
 
-The dashboard framework is Next.js. `NOT_IMPLEMENTED`.
+The dashboard framework is Next.js. Recorded as `NOT_IMPLEMENTED` at the
+bootstrap baseline; **now `IMPLEMENTED` per `UI-DEC-027`**.
 
 ## `UI-DEC-005` — App Router
 
-Routing uses the Next.js App Router, not the Pages Router. `NOT_IMPLEMENTED`.
+Routing uses the Next.js App Router, not the Pages Router. Recorded as
+`NOT_IMPLEMENTED` at the bootstrap baseline; **now `IMPLEMENTED` per
+`UI-DEC-027`**.
 
 ## `UI-DEC-006` — TypeScript
 
-The frontend is written in TypeScript. `NOT_IMPLEMENTED`.
+The frontend is written in TypeScript. Recorded as `NOT_IMPLEMENTED` at the
+bootstrap baseline; **now `IMPLEMENTED` per `UI-DEC-027`**.
 
 ## `UI-DEC-007` — MUI
 
-MUI is the component library and theming system. `NOT_IMPLEMENTED`. This does
+MUI is the component library and theming system. Recorded as `NOT_IMPLEMENTED`
+at the bootstrap baseline; **now `IMPLEMENTED` per `UI-DEC-027`**. This does
 not waive the accessibility gate: component-library defaults are not
-accessibility evidence.
+accessibility evidence, and `UI-010` accessibility acceptance remains
+outstanding.
 
 ## `UI-DEC-008` — npm
 
 `npm` is the frontend package manager, with `package.json` and
 `package-lock.json` scoped to `apps/web`.
 
-State: no `package.json`, `package-lock.json`, `tsconfig.json`, or
-`next.config.*` exists anywhere in `git ls-files` at the evidence baseline, and
-`UI-DOC-BOOTSTRAP-001` created none. The backend's `uv` tooling is unaffected.
+Historical state at the bootstrap baseline `9ac5a24`, **superseded by
+`UI-DEC-027`**: no `package.json`, `package-lock.json`, `tsconfig.json`, or
+`next.config.*` existed anywhere in `git ls-files`, and `UI-DOC-BOOTSTRAP-001`
+created none.
+
+Current state: `apps/web/package.json`, `apps/web/package-lock.json`,
+`apps/web/tsconfig.json` and `apps/web/next.config.ts` are tracked, created by
+`UI-002` and merged through PR #26. The backend's `uv` tooling is unaffected,
+and no root manifest or root lockfile was introduced.
 
 ## `UI-DEC-009` — Separate FastAPI backend
 
@@ -129,10 +152,20 @@ classification. Provider provisioning is `NOT_PROVEN` / `NOT_TESTED`.
 
 ## `UI-DEC-013` — No access or refresh token in `localStorage`
 
+**Historical text, partially superseded. See `UI-DEC-026` for the current
+normative custody rule.** The clause reading "any non-`HttpOnly` cookie written
+by UI code" below is **superseded and is not current**. Everything else in this
+decision remains binding.
+
 The UI stores no access token and no refresh token in `localStorage`. The same
 prohibition covers `sessionStorage` and any non-`HttpOnly` cookie written by UI
 code. Once implementation exists, this must be proven by an automated test, not
 by inspection.
+
+The `localStorage` and `sessionStorage` prohibitions are **not** weakened by
+that supersession. They remain fully current and binding under `UI-DEC-026`, as
+does the requirement that they be proven by an automated test rather than by
+inspection.
 
 ## `UI-DEC-014` — No duplicate custom token store
 
@@ -208,19 +241,42 @@ not unblock `AUTH-002`.
 
 ## `UI-DEC-019` — Implementation remains unauthorized
 
-No frontend implementation is authorized by this bootstrap. Specifically, the
-following remain unauthorized until Agent 1 authorizes them explicitly:
-creating `apps/web/**`; any application code, page, layout, route, component,
-middleware, provider, browser or server Auth client, or API client; any test;
-any `package.json`, `package-lock.json`, root manifest, or root lockfile; any
-`.env*`, environment file, or environment schema; any CI workflow, container,
-or infrastructure change.
+No frontend implementation was authorized by the bootstrap itself. The
+prohibition list below is the bootstrap-era text; **the `apps/web`, manifest,
+lockfile and test entries in it are superseded by `UI-DEC-027`** because Agent 1
+separately authorized `UI-002`, `UI-003` and the test foundation, which are now
+merged. Every other entry remains unauthorized until Agent 1 authorizes it
+explicitly.
 
-`UI-001` is `PENDING_DOCUMENTATION_BOOTSTRAP`. `UI-002` and `UI-003` are
-`NOT_AUTHORIZED`. `UI-004` through `UI-010` are `BLOCKED`.
+Bootstrap-era list: creating `apps/web/**`; any application code, page, layout,
+route, component, middleware, provider, browser or server Auth client, or API
+client; any test; any `package.json`, `package-lock.json`, root manifest, or
+root lockfile; any `.env*`, environment file, or environment schema; any CI
+workflow, container, or infrastructure change.
 
-Recording a working architecture in `UI-DEC-004` through `UI-DEC-010` is a
-decision about intent. It is not authorization to build it.
+Still unauthorized today: any `/auth/callback` route or handler; any browser or
+server Auth client; any session, PKCE or OAuth-state code; any provider client;
+any API client; any `.env*`, environment file, or environment schema; any root
+manifest or root lockfile; and any CI workflow, container, or infrastructure
+change.
+
+Historical classification at the bootstrap baseline `9ac5a24`, **partially
+superseded by `UI-DEC-027`**: `UI-001` was `PENDING_DOCUMENTATION_BOOTSTRAP`;
+`UI-002` and `UI-003` were `NOT_AUTHORIZED`; `UI-004` through `UI-010` were
+`BLOCKED`.
+
+Current classification: `UI-002` and `UI-003` were subsequently authorized by
+Agent 1, implemented, and merged through PR #26, PR #27 and PR #28, so their
+`NOT_AUTHORIZED` classification and the corresponding `apps/web`, manifest,
+lockfile and test prohibitions above are superseded. `UI-001` remains
+`NOT_STARTED` and requires separate authorization. `UI-004` through `UI-010`
+remain `BLOCKED / NOT_AUTHORIZED`, and every other prohibition in this decision
+— `/auth/callback`, Auth clients, session code, API clients, `.env*`, CI,
+containers and infrastructure — remains binding.
+
+Recording a working architecture in `UI-DEC-004` through `UI-DEC-010` was a
+decision about intent, not authorization to build it. The frontend foundation
+was built only after Agent 1 separately authorized it.
 
 ## Post-merge supersession map
 
@@ -231,9 +287,15 @@ not been rewritten.
 | Historical decision | Current treatment |
 |---|---|
 | `UI-DEC-012` | Its `CONDITIONAL / PENDING AUTH-DEP-004` conclusion is historical and superseded by `UI-DEC-021` for contract/design only. Its warning that design evidence is not runtime evidence remains binding. |
+| `UI-DEC-013` | **Partially superseded by `UI-DEC-026`.** Only the clause prohibiting "any non-`HttpOnly` cookie written by UI code" is superseded. The `localStorage` prohibition, the `sessionStorage` prohibition, and the automated-test proof requirement remain fully current and binding. |
 | `UI-DEC-016` | UI acceptance remains binding; its stale statement that the Auth-side record was pending is superseded by `UI-DEC-022`. |
 | `UI-DEC-018` | Its `AUTH-002 NOT_READY / BLOCKED` conclusion is historical and superseded by `UI-DEC-023` for contract/design readiness only. Its statement that no implementation began remains true. |
-| `UI-DEC-019` | Remains binding and is reaffirmed by `UI-DEC-024`; dependency acceptance does not authorize implementation. |
+| `UI-DEC-019` | Remains binding **except** for its `UI-002` and `UI-003` `NOT_AUTHORIZED` classification and its `apps/web` / manifest / lockfile / test prohibitions, which Agent 1 separately authorized and which PR #26, PR #27 and PR #28 have merged — see `UI-DEC-027`. Every other prohibition in it, including `/auth/callback`, Auth clients, session code, API clients, `.env*`, CI and infrastructure, remains binding and is reaffirmed by `UI-DEC-024`. |
+| `UI-DEC-023` | **`HISTORICAL READINESS MILESTONE`.** Its `READY_FOR_AUTH_002_CONTRACT_AND_DESIGN` conclusion, and its "contract/design may begin only as a separate, newly authorized A2-AUTH task" clause, are historical and `SATISFIED`: that readiness was consumed by the `AUTH-002` contract drafting work, in which A2-AUTH performed the separately authorized contract/design task and produced `CONTRACT-AUTH-001@1.1.0-draft.1` on Auth PR #29. The current contract state is governed by the PR #29 consumer-review evidence and `UI-DEC-026` — `OPEN / DRAFT / SPECIFICATION_CONFLICT / NOT_IMPLEMENTATION_READY`, not `READY_TO_BEGIN`. Its no-implementation-authorization rule remains fully binding, as do `UI-004` `BLOCKED / NOT_AUTHORIZED` and provider runtime `NOT_PROVISIONED / NOT_TESTED`. |
+
+`UI-DEC-023` is listed in this map as a later historical readiness milestone.
+It is not a bootstrap decision and its inclusion does not change the
+preservation statement above for `UI-DEC-001` through `UI-DEC-019`.
 
 ## `UI-DEC-020` — UI bootstrap is merged
 
@@ -293,30 +355,70 @@ The accepted ownership boundary remains:
   acceptance.
 
 All custody and enforcement constraints in `UI-DEC-013` through
-`UI-DEC-017` remain binding, including the cross-agent path boundaries.
+`UI-DEC-017` remain binding, including the cross-agent path boundaries — with
+the single exception of the non-`HttpOnly`-cookie clause of `UI-DEC-013`, which
+is superseded by `UI-DEC-026`. No storage prohibition is weakened by that
+exception.
 
-## `UI-DEC-023` — `AUTH-002` contract/design is ready
+## `UI-DEC-023` — `AUTH-002` contract/design readiness (HISTORICAL READINESS MILESTONE — READINESS CONSUMED)
 
-`AUTH-002` is `READY_FOR_AUTH_002_CONTRACT_AND_DESIGN` because
-`AUTH-DEP-004` is satisfied for contract/design and `AUTH-DEP-010` is
-satisfied for ownership/coordination. This supersedes `UI-DEC-018` only for
-the contract/design readiness conclusion.
+**This decision is a `HISTORICAL READINESS MILESTONE`. Its readiness
+conclusion has been consumed/satisfied and is no longer a current-state
+record. It is preserved, not deleted.**
 
-Contract/design may begin only as a separate, newly authorized A2-AUTH task.
-This decision does not begin the work and authorizes no implementation.
+Historical fact, preserved as recorded: at the time `UI-DEC-023` was made,
+`AUTH-002` was `READY_FOR_AUTH_002_CONTRACT_AND_DESIGN` because `AUTH-DEP-004`
+was satisfied for contract/design and `AUTH-DEP-010` was satisfied for
+ownership/coordination. That readiness superseded `UI-DEC-018` only for the
+contract/design readiness conclusion.
+
+Historical text, `SATISFIED` and no longer readable as current state:
+"Contract/design may begin only as a separate, newly authorized A2-AUTH task."
+That separate authorization was subsequently granted, A2-AUTH began and
+performed the authorized contract/design task, and drafted
+`CONTRACT-AUTH-001@1.1.0-draft.1` on Auth PR #29. The readiness recorded here
+was consumed by that drafting work.
+
+Current `AUTH-002` contract state is therefore
+`OPEN / DRAFT / SPECIFICATION_CONFLICT / NOT_IMPLEMENTATION_READY`, **not**
+`READY_TO_BEGIN`. The current state is governed by the PR #29 consumer-review
+evidence and by `UI-DEC-026`, not by this decision.
+
+What remains binding from this decision:
+
+- It began no work and authorizes no implementation of any kind.
+- `AUTH-002` frontend implementation and Auth runtime implementation remain
+  `NOT_AUTHORIZED`.
+- `UI-004` remains `BLOCKED / NOT_AUTHORIZED`; nothing here authorizes it.
+- Provider runtime remains `NOT_PROVISIONED / NOT_TESTED`.
 
 ## `UI-DEC-024` — Implementation and provider runtime remain unauthorized
 
+**The frontend-state bullets in this decision are superseded by `UI-DEC-027`.**
+The Auth and provider bullets remain fully current and binding.
+
+Current and binding:
+
 - `AUTH-002` frontend implementation: `NOT_AUTHORIZED`
 - `AUTH-002` runtime implementation: `NOT_AUTHORIZED`
+- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED`
 - Provider runtime: `NOT_PROVISIONED / NOT_TESTED`
-- `apps/web`: `ABSENT`
-- Frontend implementation: `NOT_STARTED`
-- Frontend runtime: `NOT_IMPLEMENTED / NOT_TESTED`
+- Frontend Auth behavior: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
 - Frontend Auth tests: `NOT_STARTED / NOT_TESTED`
 
-No decision in this log authorizes code, routes, components, tests, manifests,
-lockfiles, configuration, provisioning, staging, or publication.
+Recorded at the `ab60d45` API-reconciliation baseline and **superseded** by
+`UI-DEC-027` — these were true then and are not current:
+
+- `apps/web`: `ABSENT` — now `PRESENT`
+- Frontend implementation: `NOT_STARTED` — the foundation is now merged
+- Frontend runtime: `NOT_IMPLEMENTED / NOT_TESTED` — the foundation is now
+  `PRODUCTION_BUILDABLE` with merged automated regression tests
+
+No decision in this log authorizes Auth code, `/auth/callback`, session logic,
+a provider client, an API client, provisioning, staging, or publication. The
+separately authorized and merged `UI-002`, `UI-003` and test-foundation work is
+the only implementation authorization that has ever been granted, and it
+extends to nothing further.
 
 ## `UI-DEC-025` — API draft consumer review partially satisfies the UI dependency
 
@@ -348,7 +450,140 @@ The following remain unresolved and are not frozen by this UI decision:
   projections, unresolved Queue delivery, and unauthorized DB-003 inputs;
 - validating OpenAPI/client fixtures and complete endpoint models.
 
-API runtime is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`. Frontend
-runtime is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`. This consumer
+API runtime is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`. Frontend Auth
+behavior is `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`. This consumer
 review creates no API, frontend, Auth, Queue, Database, Evidence, Evaluation,
 Security, Deployment, or other implementation authorization.
+
+## `UI-DEC-026` — `AUTH-002` cookie-custody conflict resolved on the UI side
+
+A2-UI's consumer review of `CONTRACT-AUTH-001@1.1.0-draft.1`, at reviewed Auth
+PR #29 head `7abe17af8e212bd2127160338ea6ef409da02101`, returned
+`SPECIFICATION_CONFLICT`.
+
+The conflict: the merged `UI-DEC-013` prohibits "any non-`HttpOnly` cookie
+written by UI code", while the Auth candidate contract adopts the canonical
+browser-readable `@supabase/ssr` cookie-backed session and states that
+`HttpOnly` is not achievable for that session under the accepted architecture.
+
+Agent 1 returned
+`PASS / UI_AUTH_COOKIE_CONFLICT_CONFIRMED / UI_OWNED_CORRECTION_AUTHORIZED`,
+accepting the `SPECIFICATION_CONFLICT` disposition and directing that the
+UI-owned side of the conflict be reconciled. This decision performs that
+UI-owned reconciliation and nothing else.
+
+### Scope of supersession
+
+This decision supersedes **only** the conflicting non-`HttpOnly`-cookie
+interpretation of `UI-DEC-013`. It supersedes nothing else, and it weakens no
+prohibition. Specifically preserved and still binding:
+
+- `UI-DEC-013`'s `localStorage` prohibition;
+- `UI-DEC-013`'s `sessionStorage` prohibition;
+- `UI-DEC-014`'s no-duplicate-custom-token-store rule;
+- `UI-DEC-015`'s `Authorization: Bearer` transport rule and its absolute
+  prohibition on forwarding a refresh token to FastAPI;
+- `UI-DEC-017`'s rule that UI route protection is defense-in-depth only;
+- A2-SECURITY's ownership, jointly with A2-AUTH, of final cookie acceptance.
+
+### Current normative custody rule
+
+A2-UI must not directly persist an access token or refresh token in:
+
+- `localStorage`;
+- `sessionStorage`;
+- React component state;
+- React context;
+- Redux;
+- Zustand;
+- IndexedDB;
+- service-worker storage;
+- an in-memory custom token cache;
+- a custom cookie;
+- any duplicate or shadow session store.
+
+The only potentially permitted browser-readable session store is the canonical
+Auth-owned cookie-backed session, operated exclusively through the approved
+`@supabase/ssr` Auth adapter.
+
+That exception is **`CONDITIONAL`** on A2-SECURITY accepting the final cookie
+posture. Until A2-SECURITY acceptance:
+
+- the storage design remains a contract candidate;
+- browser Auth implementation is `NOT_AUTHORIZED`.
+
+A2-UI must never:
+
+- create the canonical session store itself;
+- copy the canonical session into another store;
+- manage a duplicate cookie;
+- shadow the provider session;
+- read or persist refresh tokens outside the Auth-owned adapter;
+- initialize an independent provider client;
+- weaken the `localStorage` prohibition;
+- weaken the `sessionStorage` prohibition.
+
+Refresh tokens remain prohibited from FastAPI. Access-token use remains
+immediate, single-request `Authorization: Bearer` transport through the future
+Auth/API boundary, with no cached copy.
+
+### What this decision is not
+
+This correction is **not** final Security approval for browser-readable
+cookies. `HttpOnly`, `SameSite`, cookie lifetime, cookie domain, `Secure`
+exceptions, CSRF, callback-correlation storage/integrity/duration, and
+intended-return-state storage and integrity are **A2-SECURITY-owned and
+unresolved** under `AUTH-DEP-011`. A2-UI and A3-UI decide none of them.
+
+This correction also does **not** by itself make Auth PR #29 acceptable. It
+resolves the UI-owned half only. The Auth-owned correction package remains
+outstanding, and **A2-UI rereview is still required** after both the UI-owned
+and the Auth-owned correction packages have been completed. Until that
+rereview, `AUTH-DEP-012` stays `SPECIFICATION_CONFLICT` and is not `ACCEPTED`.
+
+Any statement elsewhere in the UI records that all of the historical
+`UI-DEC-013` remains currently binding is qualified to exclude the superseded
+non-`HttpOnly`-cookie clause.
+
+## `UI-DEC-027` — Merged frontend implementation baseline reconciled
+
+The UI durable records are reconciled to the actual repository state at
+baseline `006cc885161ff49be582a9fa08f353a70c31c7b1`.
+
+| Item | Evidence |
+|---|---|
+| PR #26 — `feat(ui): add Next.js application scaffold` | Implementation commit `55fabbf452ed4a7429c8d2d075b218708db611e3`; merge commit `c5d4c8a462f6e76aa1dd4929e59012fb2823c999`; `validate` check `SUCCESS`. |
+| PR #27 — `feat(ui): add MUI application shell` | Implementation commit `cbd9e99287c7a7c11c65d8ac349e8356401fc2d3`; merge commit `e7de96fc96e665fc32163dc9f26986e0e56e5510`; `validate` check `SUCCESS`. |
+| PR #28 — `test(ui): add frontend regression foundation` | Implementation commit `7ad4334a5b0f7d1a6546b7c8140c359b8a5d3e6c`; merge commit `006cc885161ff49be582a9fa08f353a70c31c7b1`; `validate` check `SUCCESS`. |
+
+Reconciled current state:
+
+- `apps/web`: `PRESENT`
+- `UI-002`: `MERGED`
+- `UI-003`: `MERGED`
+- Frontend regression-test foundation: `MERGED`
+- Frontend foundation: `PRODUCTION_BUILDABLE`
+- Next.js App Router: `IMPLEMENTED`
+- TypeScript: `IMPLEMENTED`
+- MUI theme and shell: `IMPLEMENTED`
+- Frontend automated regression tests: `IMPLEMENTED`
+
+Unchanged and still binding:
+
+- Auth frontend: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED`
+- Provider runtime: `NOT_PROVISIONED / NOT_TESTED`
+- `UI-004`: `BLOCKED / NOT_AUTHORIZED`
+- `/auth/callback`: `RESERVED / NOT_IMPLEMENTED`
+
+`UI-DEC-001`'s reservation of `apps/web` as the frontend root is now satisfied
+rather than merely reserved; `UI-DEC-004` through `UI-DEC-008` — Next.js, App
+Router, TypeScript, MUI and npm — are now `IMPLEMENTED` rather than
+`NOT_IMPLEMENTED`. `UI-DEC-009`'s separation from the FastAPI backend, and
+`UI-DEC-010`'s `NOT_PROVEN / NOT_TESTED` Vercel deployment status, are
+unchanged.
+
+**A merged, buildable, tested frontend foundation is never evidence that Auth
+works.** No Auth client, session code, provider client, protected route, or
+`/auth/callback` handler exists in the merged `apps/web`, and none is
+authorized.
