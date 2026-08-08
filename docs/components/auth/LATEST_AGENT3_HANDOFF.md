@@ -1,328 +1,118 @@
-# Latest A3-AUTH Handoff
+# Agent 3 Hand-off Record: AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3
 
-## Task result — `AUTH-DEPENDENCY-RECONCILIATION-001-C1` (current)
-
-- Agent 2: `A2-AUTH`
-- Agent 3: `A3-AUTH`
-- Task: `AUTH-DEPENDENCY-RECONCILIATION-001-C1`
-- Parent: `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
-- Prompt type: `A2_AUTH_ACCEPTANCE_CORRECTION_COMMIT_AND_PUSH`
-- Scope: `AUTH_DOCUMENTATION_CORRECTION_FINALIZATION_COMMIT_AND_PUSH`
-- Date: 2026-08-03
-- A2-AUTH review: `PASS`
-- Package state: `PASS / VERIFIED_COMPLETE / A2_AUTH_ACCEPTED`
-- Commit authorization: `GRANTED`
-- Push authorization: `GRANTED`
-- Pull-request authorization: `NOT_YET_GRANTED`
-- Merge authorization: `NOT_GRANTED`
-- Starting baseline: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
-- Current `origin/main`: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-dependency-reconciliation`
-- Branch: `agent2/auth-dependency-reconciliation`
-
-A2-AUTH accepted the six-file reconciliation package with one semantic
-cross-reference correction: `AUTH-DEC-019` is superseded by the authoritative
-`AUTH-DEC-024` readiness decision, while `AUTH-DEC-023` remains the accepted UI
-ownership boundary.
-
-`AUTH-002` remains ready for contract/design only. Runtime implementation and
-frontend implementation remain `NOT_AUTHORIZED`; provider runtime remains
-`NOT_PROVISIONED / NOT_TESTED`. `AUTH-003` remains `NOT_AUTHORIZED`, and every
-later runtime task retains its existing prerequisites and blocked state.
-
-Next action: commit and push the accepted six-file package. Open a pull request
-only after A2-AUTH verifies the pushed commit. Merge remains `NOT_AUTHORIZED`
-by this task.
+- Task ID: `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`
+- Authorized manager task: `AUTH-002-FINAL-READINESS-RECONCILIATION-001`
+- Authorizing coordinator: `Agent 1`
+- Supervising manager: `A2-AUTH`
+- Date: 2026-08-09
+- Task Type: `FINAL_NON_NORMATIVE_COORDINATION_RECONCILIATION / AUTH_DURABLE_RECORDS_ONLY / NO_CONTRACT_SEMANTIC_CHANGE / NO_RUNTIME_IMPLEMENTATION`
+- Target Branch: `agent2/auth-002-session-contract`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-002-session-contract`
+- Reviewed HEAD: `84ad9e322d886f8963c34386f87074a444b3fa2b`
+- Current `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`
+- Merged PR #31: Implementation `a80145e2648596aef2254f4c3bd833c3a50be761`, Merge `1057ba727a4e825259c5f7772b6d428511a58a37`
+- Contract: `CONTRACT-AUTH-001@1.1.0-draft.1` — blob SHA `8ed2154561785566b4b17baa16535e1fad8e662c` (byte-identical and untouched)
+- Pull Request: #29 — `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`
+- Modified Files: Exactly 6 authorized Auth durable records under `docs/components/auth/`
+- Git Working Tree State: All modifications UNSTAGED and UNCOMMITTED
 
 ---
 
-## Historical pre-finalization evidence — `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
+## Executive Summary
 
-Superseded as the current handoff by
-`AUTH-DEPENDENCY-RECONCILIATION-001-C1` above. Retained as the reconciliation
-execution evidence accepted by A2-AUTH before finalization.
+`A3-AUTH` has executed the authorized non-normative readiness reconciliation for `AUTH-002`. This task reconciles status, provenance, and consumer review matrix state across all six authorized Auth durable records without changing any normative rule in `CONTRACT-AUTH-001.md`.
 
-- Agent 2: `A2-AUTH`
-- Agent 3: `A3-AUTH`
-- Task: `AUTH-DEPENDENCY-RECONCILIATION-001-A3`
-- Parent: `AUTH-001`
-- Prompt type: `POST_DEPENDENCY_MERGE_DURABLE_RECONCILIATION`
-- Scope: `AUTH_DOCUMENTATION_RECONCILIATION_ONLY`
-- Date: 2026-08-03
-- Result: `IMPLEMENTED / PENDING_A2_AUTH_REVIEW`
-- Primary repository: `/Users/omkar/Documents/TestGap Miner_App`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-dependency-reconciliation`
-- Branch: `agent2/auth-dependency-reconciliation`
-- Starting baseline: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76` (PR #20 merge
-  commit), matching the required baseline exactly
-- Current `origin/main`: `fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`
-- Commit authorization: `NOT_GRANTED`
-- Push authorization: `NOT_GRANTED`
-- Merge authorization: `NOT_GRANTED`
+All five current consumer domains (`A2-UI`, `A2-SECURITY`, `A2-BACKEND`, `A2-DEPLOYMENT`, `A2-INTEGRATION`) have reviewed `CONTRACT-AUTH-001@1.1.0-draft.1` at HEAD `84ad9e322d886f8963c34386f87074a444b3fa2b` and returned `ACCEPTED_WITH_CONSTRAINTS` with zero required normative Auth corrections.
 
-### Exact files changed
+The shared-contract registry in `docs/specifications/A2_DATABASE_MANAGER(1).md` was corrected and merged via PR #31 (`a80145e2` / `1057ba72`), resolving `AUTH-DEP-003` to `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED` and `AUTH-ISSUE-002` to `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`.
 
-1. `docs/components/auth/COMPONENT_STATUS.md`
-2. `docs/components/auth/TASK_LEDGER.md`
-3. `docs/components/auth/OPEN_ISSUES.md`
-4. `docs/components/auth/DECISION_LOG.md`
-5. `docs/components/auth/DEPENDENCY_REQUESTS.md`
-6. `docs/components/auth/LATEST_AGENT3_HANDOFF.md`
+Historical consumer responses against earlier HEAD `7abe17af8e212bd2127160338ea6ef409da02101` (`A2-UI` `SPECIFICATION_CONFLICT`, `A2-SECURITY` `REJECTED_WITH_REASON`, `A2-INTEGRATION` `ACCEPTED_WITH_CONSTRAINTS`) are preserved in full as immutable historical provenance (`HISTORICAL_STATE`).
 
-No other file changed. `AUTH-001_AUDIT.md` and `CONTRACT-AUTH-001.md` are
-unchanged. No Deployment-owned, UI-owned, Database-owned, Workflow-owned or
-Integration-owned record changed, and no application, test, manifest,
-lockfile, environment, Docker, Compose, CI, script, infrastructure, migration
-or model file changed.
-
-### Exact dependency transitions
-
-| Request | Before | After |
-|---|---|---|
-| `AUTH-DEP-004` | `PENDING` | `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH / MERGED_VIA_PR_20` |
-| `AUTH-DEP-010` | `PENDING` | `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH / UI_OWNERSHIP_ESTABLISHED_VIA_PR_19` |
-
-`AUTH-DEP-004` completion evidence: Deployment PR #20; merge commit
-`fc549fa1a4c77f4835acefbb4f937c35ad6e8f76`;
-`docs/components/deployment/DECISION_LOG.md`;
-`docs/components/deployment/ENVIRONMENT_VARIABLES.md`.
-
-`AUTH-DEP-010` completion evidence: UI PR #19;
-`docs/specifications/A2_UI_MANAGER.md`; the UI-owned durable records under
-`docs/components/ui/`.
-
-Both original request bodies are preserved as historical context.
-
-### `AUTH-002` design readiness
-
-- `AUTH-002` contract/design: `READY_FOR_AUTH_002_CONTRACT_AND_DESIGN`
-- `AUTH-DEP-004`: `SATISFIED_FOR_CONTRACT_AND_DESIGN`
-- `AUTH-DEP-010`: `SATISFIED_FOR_OWNERSHIP_AND_COORDINATION`
-- Contract and design work may begin only as a separate, newly authorized
-  A2-AUTH task. This handoff authorizes none.
-
-### Implementation prohibition
-
-- `AUTH-002` runtime implementation: `NOT_AUTHORIZED`
-- `AUTH-002` frontend implementation: `NOT_AUTHORIZED`
-- `AUTH-002` provider runtime: `NOT_PROVISIONED / NOT_TESTED`
-- `AUTH-003`: `NOT_AUTHORIZED`; still requires sequential `AUTH-002` design
-  work and Backend JWT/runtime coordination through `AUTH-DEP-006`
-- `AUTH-004`, `AUTH-005`, `AUTH-006`, `AUTH-007` and `AUTH-008` retain every
-  prior sequential, Security, Workflow, Backend and runtime prerequisite. No
-  runtime task was authorized by this reconciliation.
-
-Unresolved or untested, and not reversed by the accepted design status:
-Supabase project provisioning; GitHub OAuth provider configuration; the Vercel
-project; the production Dashboard hostname; TLS verification; production
-callback registration; secret injection; callback runtime behavior; JWT
-validation; cookie implementation; CSRF implementation; PKCE implementation;
-OAuth-state implementation; frontend Auth integration; and Auth-specific
-tests.
-
-### Validation results
-
-```text
-git rev-parse HEAD
-→ fc549fa1a4c77f4835acefbb4f937c35ad6e8f76   (matches required baseline)
-git diff --check
-→ no output; exit 0
-git status --porcelain
-→ exactly the six Auth-owned records above, all ` M` (modified, unstaged)
-git diff --stat
-→ 6 files changed; Auth-owned durable records only
-```
-
-- Only Auth-owned allowed durable records changed: `VERIFIED`.
-- `AUTH-001_AUDIT.md` unchanged: `VERIFIED`.
-- `CONTRACT-AUTH-001.md` unchanged: `VERIFIED`.
-- No Deployment or UI file changed: `VERIFIED`.
-- No application, test, manifest, lockfile, environment, Docker, CI, script or
-  infrastructure file changed: `VERIFIED`.
-- No real secret, hostname, Supabase project reference, credential, token or
-  deployment identifier added: `VERIFIED`. `<SUPABASE_PROJECT_REF>` and
-  `${DASHBOARD_ORIGIN}` remain unresolved placeholders, consistent with
-  `AUTH-DEC-018`.
-- `AUTH-002` contract/design ready: `VERIFIED`.
-- `AUTH-002` runtime and frontend implementation remain `NOT_AUTHORIZED`:
-  `VERIFIED`.
-- `AUTH-003` and later runtime tasks were not authorized: `VERIFIED`.
-
-### Commit state
-
-All changes remain `UNSTAGED / UNCOMMITTED`. Nothing was staged, committed,
-pushed, merged, rebased, reset or stashed; no pull request was opened; no
-branch or worktree was deleted. No authentication was implemented, no Supabase
-project was provisioned, no GitHub OAuth was configured, and no frontend or
-Backend code was created.
-
-### Explicit labels
-
-- `IMPLEMENTED`: Auth durable-record reconciliation only.
-- `TESTED`: repository, documentation, ownership and scope validation only.
-- `NOT_TESTED`: provider provisioning, callbacks, JWT validation, sessions,
-  cookies, CSRF, PKCE, OAuth state, frontend integration and Auth runtime.
-- `BLOCKED`: runtime and frontend implementation remain unauthorized.
-- `ASSUMED`: `NONE`.
-
-### Next action
-
-A2-AUTH review of this reconciliation. No further A3-AUTH work is authorized
-on this task.
+Decision `AUTH-DEC-053` has been recorded. `CONTRACT-AUTH-001.md` content remains byte-identical (`8ed2154561785566b4b17baa16535e1fad8e662c`). Runtime implementation remains strictly unauthorized (`NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`); release remains `NOT_READY`. PR #29 remains `OPEN / DRAFT / NOT_MERGED` pending the final Agent 1 readiness decision.
 
 ---
 
-## Historical — `AUTH-001-PR-PRECHECK-C1` task result
+## 1. Authoritative Final Coordination State (`CURRENT_FINAL_COORDINATION_STATE`)
 
-Superseded for current dependency readiness by
-`AUTH-DEPENDENCY-RECONCILIATION-001-C1` and the accepted
-`AUTH-DEPENDENCY-RECONCILIATION-001-A3` package above. Retained as the
-`AUTH-001` finalization record. Its `AUTH-002` blocking statements and the
-`PENDING` states of `AUTH-DEP-004` and `AUTH-DEP-010` reflect the
-pre-PR-#19/#20 baseline and are superseded by the transitions recorded above.
+| Consumer Domain | Task Reference | Reviewed Head | Final Disposition | Required Auth Corrections |
+|---|---|---|---|---|
+| `A2-UI` | `AUTH-002-CONSUMER-REREVIEW-A2-UI-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
+| `A2-SECURITY` | `AUTH-002-CONSUMER-REREVIEW-A2-SECURITY-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` (7 original corrections incorporated) |
+| `A2-BACKEND` | `AUTH-002-CORRECTED-HEAD-AFFECTED-REVIEW-A2-BACKEND-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
+| `A2-DEPLOYMENT` | `AUTH-002-CORRECTED-HEAD-AFFECTED-REVIEW-A2-DEPLOYMENT-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
+| `A2-INTEGRATION` | `AUTH-002-FINAL-CORRECTED-HEAD-REVIEW-A2-INTEGRATION-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
 
-### Task result
+---
 
-- Agent 2: `A2-AUTH`
-- Agent 3: `A3-AUTH`
-- Task: `AUTH-001-PR-PRECHECK-C1`
-- Parent: `AUTH-001-FINAL`
-- Previous continuations: `AUTH-001-C1`, `AUTH-001-C2`, and `AUTH-001-FINAL`
-- Prompt type: `POST_PUSH_CURRENT_MAIN_RECONCILIATION`
-- Scope: `DOCUMENTATION_ONLY_STALE_EVIDENCE_RECONCILIATION`
-- A2-AUTH final result: `PASS`
-- Result: `PASS / VERIFIED_COMPLETE / A2_AUTH_ACCEPTED`
-- Commit authorization: `APPROVED`
-- Push authorization: `APPROVED`
-- Normal commit and push: `AUTHORIZED`
-- Merge authorization: `NOT_GRANTED`
-- Date: 2026-08-02
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-001`
-- Branch: `agent2/auth-001-audit`
-- Audit baseline: `1511f474ee301651b631c8adfe406aeb775327aa`
-- Starting commit: `e9baf8ce02c3df802149880b9ddc1cffc8f73dcc`
-- Current `origin/main`: `110a90ca53058372677d53868977f74520bd3f80`
-- Current relation: Auth `HEAD` is 1 commit ahead / 6 commits behind
-  `origin/main`. At `AUTH-001` audit finalization, the audit baseline was
-  behind by four unrelated Database/Integration documentation commits.
-- Upstream Auth scope: no Auth-owned file changed between the audit baseline
-  and current `origin/main`.
+## 2. Immutable Historical Evidence (`HISTORICAL_STATE`)
 
-### Accepted audit findings and final transitions
+| Consumer Domain | Review Task | Reviewed Head | Historical Disposition | Provenance Status |
+|---|---|---|---|---|
+| `A2-UI` | `AUTH-002-CONSUMER-REVIEW-A2-UI-001` | `7abe17af8e212bd2127160338ea6ef409da02101` | `SPECIFICATION_CONFLICT` | `HISTORICAL_STATE / SUPERSEDED_BY_84AD9E32_REVIEW` |
+| `A2-SECURITY` | `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` | `7abe17af8e212bd2127160338ea6ef409da02101` | `REJECTED_WITH_REASON` | `HISTORICAL_STATE / SUPERSEDED_BY_84AD9E32_REVIEW` |
+| `A2-INTEGRATION` | `AUTH-002-CONSUMER-REVIEW-A2-INTEGRATION-001` | `7abe17af8e212bd2127160338ea6ef409da02101` | `ACCEPTED_WITH_CONSTRAINTS` | `HISTORICAL_STATE / SUPERSEDED_BY_84AD9E32_REVIEW` |
 
-A2-AUTH reviewed and accepted `AUTH-001`, `AUTH-001-C1`, and `AUTH-001-C2`.
-All `AUTH-001` acceptance criteria pass, and no further audit repair is
-required. The accepted substantive state is unchanged:
+---
 
-- complete repository inventory, 13 trust boundaries, 22 Auth paths, 15
-  risks, and five new `AUTH-001` dependency requests;
-- Auth runtime `NOT_STARTED / NOT_TESTED` and Auth-specific tests
-  `NOT_STARTED / NOT_TESTED`;
-- public and production exposure `NOT_TESTED`;
-- `AUTH-002` `NOT_READY / BLOCKED`, with direct remaining blocker
-  `AUTH-DEP-004` and `AUTH-DEP-010` retained as the protected-file/frontend
-  implementation and ownership constraint;
-- `AUTH-DEP-006` and `AUTH-DEP-009` do not directly block `AUTH-002`;
-- `AUTH-004` is blocked by sequential `AUTH-003` and `AUTH-DEP-009`;
-  `AUTH-DEP-008` blocks `AUTH-006` and `AUTH-008`, not `AUTH-004`;
-- `AUTH-005` is blocked by sequential `AUTH-004`, `AUTH-DEP-006`, and
-  `AUTH-DEP-009`; durable delivery-GUID persistence remains a downstream
-  integration gap rather than a direct `AUTH-005` prerequisite;
-- `DB-002` remains `PASS / VERIFIED_COMPLETE / MERGED`;
-- `CONTRACT-AUTH-001` remains unchanged;
-- `AUTH-ISSUE-011` remains open as a nonblocking contract-metadata
-  correction.
+## 3. Reconciled Shared-Registry Evidence
 
-No Auth implementation is authorized by this acceptance.
+- **Merged PR #31**: `docs(integration): reconcile Auth contract registry consumers`
+  - Implementation commit: `a80145e2648596aef2254f4c3bd833c3a50be761`
+  - Merge commit: `1057ba727a4e825259c5f7772b6d428511a58a37`
+  - Path: `docs/specifications/A2_DATABASE_MANAGER(1).md`
+- **Reconciled Packets**:
+  - `AUTH-DEP-003`: `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED`
+  - `AUTH-ISSUE-002`: `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`
+- **Version-Aware Registry Semantics**:
+  - `CONTRACT-AUTH-001@1.1.0-draft.1` current consumers: `A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND`, `A2-INTEGRATION`.
+  - `A2-DATABASE`: `HISTORICAL_CONSUMER / ACKNOWLEDGED_AND_IMPLEMENTED_FOR_EARLIER_IDENTITY_CONTRACT_BOUNDARY` (`CONTRACT-AUTH-001@1.0.0-draft.2`).
+  - Database is not classified as a current blocking consumer of the 1.1 browser/session additions.
 
-PR #16 subsequently reconciled `CONTRACT-WORKFLOW-001` metadata from the
-audit-baseline pending-merge observation to `ACKNOWLEDGED_AND_MERGED` without
-changing its normative semantic body. The old observation is now
-`HISTORICAL_OBSERVATION — RESOLVED_UPSTREAM_BY_PR_16`; it is not a current
-contradiction, blocker, risk, or Auth dependency. The separate typed
-machine-actor finding remains open.
+---
 
-### Exact files modified
+## 4. Contract Identity & Immutability
 
-1. `docs/components/auth/AUTH-001_AUDIT.md`
-2. `docs/components/auth/LATEST_AGENT3_HANDOFF.md`
+- `CONTRACT-AUTH-001.md` SHA-256 / Git Blob Hash: `8ed2154561785566b4b17baa16535e1fad8e662c` (Verified byte-identical before and after task execution).
+- Contract Version: `1.1.0-draft.1` (Unchanged).
+- Non-normative status-provenance supersession: Embedded non-normative consumer status provenance in `CONTRACT-AUTH-001.md` (e.g. "consumer review pending") is superseded for coordination purposes by this authoritative readiness reconciliation. No normative contract rule was changed.
 
-The other five accepted Auth audit records, `CONTRACT-AUTH-001.md`, and every
-file outside this two-file list remain unchanged.
+---
 
-### Exact PR-precheck commands and results
+## 5. Decision Summary: `AUTH-DEC-053`
 
-Pre-flight:
+`AUTH-DEC-053` (`AUTH-002_FINAL_CONSUMER_AND_REGISTRY_COORDINATION_RECONCILED`) records:
+1. Final owner review matrix (all five consumers `ACCEPTED_WITH_CONSTRAINTS` against `84ad9e32`).
+2. Preservation of historical consumer review dispositions against `7abe17af`.
+3. Version-aware shared-registry reconciliation via merged PR #31 (`a80145e2` / `1057ba72`).
+4. Non-normative contract status-provenance supersession for embedded status text in `CONTRACT-AUTH-001.md`.
+5. Explicit prohibition of runtime implementation or release readiness.
+6. PR #29 status as `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`.
 
-```text
-pwd
-→ /Users/omkar/Documents/TestGap-Miner-wt-auth-001
-git rev-parse --show-toplevel
-→ /Users/omkar/Documents/TestGap-Miner-wt-auth-001
-git branch --show-current
-→ agent2/auth-001-audit
-git rev-parse HEAD
-→ e9baf8ce02c3df802149880b9ddc1cffc8f73dcc
-git status --short --branch
-→ branch tracks origin/agent2/auth-001-audit; only three expected untracked
-  review ZIPs
-git status --short --untracked-files=no
-→ no output; tracked worktree clean
-git fetch origin
-→ exit 0
-git rev-parse origin/main
-→ 110a90ca53058372677d53868977f74520bd3f80
-git rev-list --left-right --count HEAD...origin/main
-→ 1 6
-git merge-base HEAD origin/main
-→ 1511f474ee301651b631c8adfe406aeb775327aa
-git log --oneline --decorate HEAD..origin/main
-→ six commits, including PR #16 merge `110a90c` and reconciliation commit
-  `4db0911`
-git diff --name-only HEAD..origin/main -- docs/components/auth
-→ the seven branch-only Auth package paths; endpoint comparison does not
-  identify which side changed them
-git diff --name-only 1511f474ee301651b631c8adfe406aeb775327aa..origin/main -- docs/components/auth
-→ no output; current main contains no Auth-owned change since the audit
-  baseline
-git log --oneline 1511f474ee301651b631c8adfe406aeb775327aa..origin/main -- docs/components/auth
-→ no output
-```
+---
 
-The literal endpoint diff lists the branch-only Auth package because it is not
-yet on main. The upstream-only merge-base comparison proves that main changed
-no Auth-owned file, so no `SPECIFICATION_CONFLICT` applies.
+## 6. Preserved Implementation & Release Boundaries
 
-### Scope confirmation
+- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Frontend Auth (`apps/web`): `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Backend JWT/JWKS (`apps/api`): `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Provider runtime: `NOT_PROVISIONED / NOT_TESTED`
+- `UI-004`: `NOT_AUTHORIZED`
+- `AUTH-003`: `NOT_AUTHORIZED`
+- Release readiness: `NOT_READY`
 
-- No Auth implementation, configuration, migration, model, route, middleware,
-  frontend code, or test was created or modified.
-- No accepted audit finding, dependency relationship, risk, classification,
-  evidence count, trust boundary, Auth path, test result, or contract
-  interpretation changed.
-- PR #16 changed only stale Workflow-owned metadata; the normative Workflow
-  semantic body and the open typed machine-actor gap remain unchanged.
-- No forbidden file changed.
-- `auth-001-audit-review.zip`, `auth-001-c1-review.zip`, and
-  `auth-001-c2-review.zip` are
-  `EXPECTED_UNTRACKED_REVIEW_ARTIFACT — NOT_MODIFIED — NOT_COMMITTED`.
-- Nothing was merged, rebased, reset, stashed, force-pushed, or deleted.
+---
 
-### Explicit labels
+## 7. Modified Files Summary (Six Authorized Durable Records)
 
-- `IMPLEMENTED`: `AUTH-001-PR-PRECHECK-C1` documentation-only stale-evidence
-  reconciliation.
-- `TESTED`: current-main provenance, upstream Auth-scope, documentation diff,
-  staged-content, and post-commit validation; accepted schema/settings test
-  evidence is unchanged.
-- `NOT_TESTED`: all Auth runtime behavior, Auth-specific tests, and actual
-  public/production exposure remain `NOT_STARTED / NOT_TESTED`.
-- `BLOCKED`: `AUTH-002` remains `NOT_READY / BLOCKED` by `AUTH-DEP-004`;
-  `AUTH-DEP-010` remains the frontend implementation/ownership constraint.
-- `ASSUMED`: no deployed environment, persistence owner, or runtime behavior
-  is assumed.
+1. `docs/components/auth/COMPONENT_STATUS.md` — Updated header metadata, current state table, final owner matrix, non-normative supersession text, and PR #29 status.
+2. `docs/components/auth/DECISION_LOG.md` — Updated header metadata, preamble, and recorded decision `AUTH-DEC-053`.
+3. `docs/components/auth/DEPENDENCY_REQUESTS.md` — Updated header metadata, `AUTH-DEP-003` to `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED`, `AUTH-DEP-011`..`015` status matrix, and summary section.
+4. `docs/components/auth/OPEN_ISSUES.md` — Updated header metadata, `AUTH-ISSUE-002` to `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`, `AUTH-ISSUE-027` and `AUTH-ISSUE-028` substate, and summary section.
+5. `docs/components/auth/TASK_LEDGER.md` — Updated header metadata and added entry for task `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`.
+6. `docs/components/auth/LATEST_AGENT3_HANDOFF.md` — Overwritten to summarize ONLY this task (`AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`).
 
-### Recommended next action
+---
 
-Open a pull request for the accepted `AUTH-001` documentation package. Do not
-merge without separate A2-AUTH review of the pull-request scope.
+## 8. Next Action
+
+`A2-AUTH` independent review of this non-normative readiness reconciliation package across all six modified files. On approval, `A2-AUTH` and the user handle staging, committing, and pushing to `agent2/auth-002-session-contract`.
