@@ -1,5 +1,19 @@
 # Queue Decision Log
 
+## 2026-08-09 — Perform latest origin/main freshness reconciliation (QUEUE-004-C4B)
+
+- Task: `QUEUE-004-C4B-LATEST-MAIN-FRESHNESS-RECONCILIATION-001`.
+- Status: `COMPLETE / FRESHNESS_RECONCILED / AFFECTED_OWNER_REREVIEW_NEXT`.
+- Latest `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`.
+- Queue contract SHA-256: `106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327` (unchanged across reconciliation).
+- Findings:
+  - No Queue semantic conflict found.
+  - Newer merged UI/frontend work (PRs #28, #30, #31) does not alter Queue semantics.
+  - Shared Auth registry change observed in `docs/specifications/A2_DATABASE_MANAGER(1).md` referencing `CONTRACT-AUTH-001@1.1.0-draft.1`. `CONTRACT-AUTH-001@1.1.0-draft.1` remains draft context, and Auth PR #29 remains separate and unmerged.
+- Affected-owner re-review remains `NOT_BEGUN` (next step: `QUEUE-004-C5-AFFECTED-OWNER-DRAFT2-REREVIEW-DISPATCH-001`).
+- PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`.
+- Provider remains `UNSELECTED`; Queue runtime remains `NOT_AUTHORIZED`; DB-003 remains `NOT_STARTED / UNAUTHORIZED`.
+
 ## 2026-08-04 — Record draft.2 approval and current-main reconciliation
 
 - A2-QUEUE final source review: `PASS`.

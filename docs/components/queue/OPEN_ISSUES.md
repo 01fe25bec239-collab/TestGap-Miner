@@ -26,7 +26,7 @@
 | Issue | State / owner boundary |
 |---|---|
 | Affected-owner re-review | `PENDING / NOT_BEGUN`; required from A2-AGENT-WORKFLOW, A2-DATABASE, A2-EVIDENCE, A2-EXECUTION, A2-SECURITY, A2-AUTH, A2-DEPLOYMENT, A2-INTEGRATION, and A2-EVALUATION. A2-BACKEND is not reopened because no Backend/API-owned normative boundary changed. |
-| Current-main reconciliation | `COMPLETE / NO_QUEUE_SEMANTIC_CONFLICT_FOUND`; reviewed correction commit `16a396f03b2de7b1bf2c8a0380e6463fb7f42773` was reconciled with `origin/main` `e7de96fc96e665fc32163dc9f26986e0e56e5510` by merge commit `8d7606ed6a68e5b98579245b5f4944e40cc8e37e`. |
+| Current-main freshness reconciliation | `COMPLETE / FRESHNESS_RECONCILED / NO_QUEUE_SEMANTIC_CONFLICT_FOUND`; reconciled with latest `origin/main` `1057ba727a4e825259c5f7772b6d428511a58a37` under task `QUEUE-004-C4B-LATEST-MAIN-FRESHNESS-RECONCILIATION-001`. Queue contract SHA-256 remains unchanged (`106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327`). Observed Auth registry update in `A2_DATABASE_MANAGER(1).md` referencing `CONTRACT-AUTH-001@1.1.0-draft.1` (`CONTRACT-AUTH-001@1.1.0-draft.1` remains draft context; Auth PR #29 remains unmerged). |
 | A2-QUEUE final source review | `PASS`; `QUEUE-004-C3-C2-CONSTRAINT-REGISTER-SOURCE-FIDELITY-CORRECTION` is `COMPLETE / ACCEPTED_BY_A2_QUEUE`. |
 | PR #24 ready/merge decision | `OPEN / DRAFT / NOT_READY / NOT_MERGED`. |
 | Provider selection | `CONFIGURATION_VALUE_NOT_YET_SELECTED`. |
