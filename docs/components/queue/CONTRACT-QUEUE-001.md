@@ -6,7 +6,7 @@
 |---|---|
 | Contract ID | `CONTRACT-QUEUE-001` |
 | Version | `1.0.0-draft.2` |
-| Status | `DRAFT / A2_QUEUE_REVIEW_PASSED / AFFECTED_OWNER_REREVIEW_PENDING` |
+| Status | `DRAFT / A2_QUEUE_REVIEW_PASSED / AFFECTED_OWNER_REREVIEW_COMPLETE / READY_FOR_COORDINATING_MANAGER_READINESS_TRANSITION` |
 | Owner | `A2-QUEUE — Queue and Asynchronous Execution Component Manager` |
 | Authorized baseline | `ab60d4573d398fb610bc2ebb813f76d0c95b33d7` |
 | Historical consumer-review draft | `CONTRACT-QUEUE-001@1.0.0-draft.1` at `ed66cd39e5648c496552a3a160f0a7ef8ba7ba8a`; review completed, not accepted |
@@ -657,14 +657,41 @@ boundary requires another review cycle for affected consumers.
 All ten reviews of `CONTRACT-QUEUE-001@1.0.0-draft.1` were received. Draft.1
 remains historical review evidence and was not accepted: two
 `SPECIFICATION_CONFLICT` and two `REJECTED_WITH_REASON` dispositions blocked
-merge. This `1.0.0-draft.2` correction changes normative identity, ownership,
-retry, heartbeat, checkpoint, adapter, and result-boundary wording without
-changing the major/minor/patch version. A2-QUEUE's final source review passed.
+merge.
+
+This `1.0.0-draft.2` revision updated normative identity, ownership, retry,
+heartbeat, checkpoint, adapter, and result-boundary wording without changing
+the major/minor/patch version. A2-QUEUE's final source review passed (`PASS`).
 The branch was reconciled with `origin/main` at
-`e7de96fc96e665fc32163dc9f26986e0e56e5510` with no Queue semantic conflict.
-Focused draft.2 re-review by the nine affected owners is pending and has not
-begun. PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`. Draft.2 remains
-unaccepted and is not implementation-ready.
+`9a28d72eb08303b6701bf7db6df622006991196a` with zero Queue semantic conflicts.
+
+The affected-owner draft.2 re-review cycle is `COMPLETE / 9_OF_9`:
+
+| Reviewer | Disposition |
+|---|---|
+| `A2-AGENT-WORKFLOW` | `ACCEPTED_WITH_CONSTRAINTS` |
+| `A2-DATABASE` | `ACCEPTED_WITH_CONSTRAINTS` |
+| `A2-EVIDENCE` | `ACCEPTED_WITH_CONSTRAINTS` |
+| `A2-EXECUTION` | `ACCEPTED` |
+| `A2-SECURITY` | `ACCEPTED_WITH_CONSTRAINTS` |
+| `A2-AUTH` | `ACCEPTED_WITH_CONSTRAINTS` |
+| `A2-DEPLOYMENT` | `ACCEPTED_WITH_CONSTRAINTS` |
+| `A2-INTEGRATION` | `ACCEPTED_WITH_CONSTRAINTS` |
+| `A2-EVALUATION` | `ACCEPTED_WITH_CONSTRAINTS` |
+
+Summary totals:
+- 9 / 9 responses received
+- 1 `ACCEPTED`
+- 8 `ACCEPTED_WITH_CONSTRAINTS`
+- 0 `REJECTED_WITH_REASON`
+- 0 `SPECIFICATION_CONFLICT`
+
+Status records:
+- `NORMATIVE_QUEUE_CORRECTIONS_REMAINING = NONE`
+- `AFFECTED_OWNER_SEMANTIC_MERGE_BLOCKERS = NONE`
+- Reconciled current main: `9a28d72eb08303b6701bf7db6df622006991196a`
+- PR #24 state: `OPEN / DRAFT / NOT_READY / NOT_MERGED`
+- Contract-layer status: `LOGICALLY_ACCEPTED_AT_CONTRACT_LAYER / CONSTRAINED_ACCEPTANCES_REMAIN_BINDING / PENDING_COORDINATING_MANAGER_PR_READINESS_TRANSITION`
 
 This draft authorizes no Queue runtime, provider selection, DB-003 work,
 application change, test, dependency, migration, worker, sandbox, or
