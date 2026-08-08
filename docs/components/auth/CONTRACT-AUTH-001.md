@@ -54,8 +54,67 @@ established, known-valid session is invalid. Neither correction relaxes
 correlation, replay resistance, single-use codes, or fail-closed behavior under
 uncertainty.
 
+`A2-UI` has since returned the first consumer response to this draft, under
+review task `AUTH-002-CONSUMER-REVIEW-A2-UI-001` against reviewed head
+`7abe17af8e212bd2127160338ea6ef409da02101`, with the disposition
+`SPECIFICATION_CONFLICT`. That disposition stands for that head and is not
+converted here. Two corrections follow from it, one owned by each side. The
+UI-owned correction — superseding the conflicting current meaning of `UI-DEC-013`
+so that the merged UI custody rule stops prohibiting the browser-readable
+`@supabase/ssr` cookie this contract depends on, while its `localStorage`,
+`sessionStorage` and duplicate-store prohibitions all remain — is `A2-UI`-owned
+and is not performed by this contract. It has since been performed and merged by
+its owner as `UI-DEC-026` and `UI-DEC-027` in pull request #30 (implementation
+commit `30deb92000a20d3837b2423b6bdee3ea3335a7f1`, merge commit
+`63093f22c37a0fc6affe168f7d5230107b05cdf3`), which changed UI durable records
+only and no Auth path; the merged UI custody rule is now compatible with the
+canonical Auth-owned `@supabase/ssr` session this contract requires, and the
+merged text states that the browser-readable exception remains conditional on
+A2-SECURITY acceptance of the final cookie posture and that browser Auth
+implementation stays `NOT_AUTHORIZED`. The Auth-owned correction is applied in
+this text and recorded as `AUTH-DEC-042` and `AUTH-DEC-043`: the concrete default
+post-sign-in destination is frozen as `/`, and `/` is also frozen as the safe
+recovery destination when a callback attempt is rejected while an independently
+established pre-existing session remains known-valid. Neither correction changes
+custody architecture, callback correlation, redirect validation, or any Security
+posture that was, at that stage — before the subsequent `A2-SECURITY` consumer
+response — still `PENDING_A2_SECURITY_ACCEPTANCE`. Those Security questions were
+pending at the time of the `A2-UI` response and were subsequently resolved as
+policy by `AUTH-DEC-045` through `AUTH-DEC-051`, recorded immediately below.
+`AUTH-DEP-012` remains open — the merged UI-owned half does not accept this
+draft — and `A2-UI` rereview of the corrected Auth head is required. The merged
+UI correction is recorded as `AUTH-DEC-052`.
+
+`A2-SECURITY` then returned the second consumer response, under review task
+`AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` against the same reviewed head
+`7abe17af8e212bd2127160338ea6ef409da02101`, with the disposition
+`REJECTED_WITH_REASON` and **seven** required normative corrections. That
+disposition also stands for that head and is not converted here. In rejecting
+the head, `A2-SECURITY` explicitly **accepted the selected architecture**:
+`SUPABASE_AUTH_WITH_GITHUB_OAUTH`, `@supabase/ssr`, `createBrowserClient` and
+`createServerClient`, one provider-owned cookie-backed session as the only
+canonical session source, a browser-readable provider-session cookie, and
+required PKCE. The response itself is recorded as `AUTH-DEC-044`, and the seven
+corrections are applied in this text and recorded as `AUTH-DEC-045` through
+`AUTH-DEC-051`: the frozen provider-session cookie
+posture; the CSRF and credential-transport boundary; `local` sign-out scope with
+the production access-token lifetime bound; the public `SIGN_IN_FAILED`
+failure-oracle boundary; the server-side ephemeral callback-correlation
+mechanism with its two frozen lifetimes; the server-side intended-return state;
+and the live-provider proof required before a pre-existing session may be
+treated as known-valid. Both `AUTH-DEP-011` and `AUTH-DEP-012` remain open, and
+both `A2-UI` and `A2-SECURITY` rereview of the corrected head are required.
+`A2-BACKEND` and `A2-DEPLOYMENT` compatibility confirmations remain outstanding
+and are not claimed anywhere in this text.
+
 The version identifier is unchanged because the draft was never accepted, and
 the classification remains `ADDITIVE_COMPATIBLE_MINOR` over `1.0.0-draft.2`.
+`A2-SECURITY` classified its own corrections as pre-acceptance contract changes
+that require no version increase, which this contract independently verified
+against its own versioning rules below: no error classification is removed and
+none has its retry, reauthentication or Backend-eligibility meaning changed; the
+prohibited-storage list is only extended; and no other listed breaking item is
+touched.
 
 ## Authentication domains and human-control boundary
 
@@ -387,14 +446,45 @@ Auth-owned artefact with its own binding rules.
 | Attempt binding | Bound to exactly one sign-in attempt. A return state that cannot be correlated to the sign-in attempt actually being completed is unbound and must be discarded. |
 | Expiry | Has a defined expiry. An expired return state is discarded. |
 | Single use | Consumed exactly once. A second presentation of the same return state is a replay and is discarded. |
-| Integrity | Integrity-protected, or held in Auth-controlled same-origin state that cannot be presented from another origin. The exact storage and integrity mechanism is `PENDING_A2_SECURITY_ACCEPTANCE` under `AUTH-DEP-011`; this draft does not invent it and does not record it as an accepted final Security decision. |
-| Removal | Removed after callback success and after callback failure alike. No return state survives a completed or abandoned flow. |
+| Integrity | Held server-side inside the `PENDING_ATTEMPT_CORRELATION` record. It cannot be presented from another origin because it never leaves the server. Frozen by `A2-SECURITY`; see `Frozen intended-return mechanism` below. |
+| Removal | Removed after callback success, callback failure, abandonment and expiry alike. No return state survives a completed or abandoned flow. |
 | Syntax is not sufficiency | A syntactically safe relative path is never accepted merely because it is syntactically safe. Satisfying the `Safe redirect contract` format rules does not make an unbound, expired, replayed, tampered or missing return state usable. |
 | Provider `state` reuse | The provider OAuth `state` parameter must not be reused as an application return-path container unless current official provider documentation explicitly supports that design **and** `A2-SECURITY` accepts it. No such documented support is recorded at this baseline, so the reuse is prohibited by this draft. |
 
 Missing, expired, tampered, replayed or unbound return state falls back to the
 default post-sign-in destination. The fallback is not a user-facing error and
 never blocks an otherwise successful sign-in.
+
+#### Frozen intended-return mechanism
+
+`A2-SECURITY` has decided this mechanism. The intended return path exists
+**only** inside the server-side `PENDING_ATTEMPT_CORRELATION` record. The
+browser carries only the `OPAQUE_CORRELATION_HANDLE` described under
+`Frozen correlation mechanism`.
+
+The return path must be:
+
+- validated before storage;
+- bound to exactly one sign-in attempt;
+- expiry-limited to at most 10 minutes after initiation;
+- atomically single-use; and
+- removed on success, on failure, on abandonment and on expiry.
+
+The return path is **never**: copied into provider OAuth `state`; stored in the
+browser-readable provider cookie; stored in the correlation-handle cookie;
+placed in a URL; stored in `localStorage`; stored in `sessionStorage`; stored in
+IndexedDB; or stored in any other custom browser persistence mechanism.
+
+| Condition | Behavior |
+|---|---|
+| Missing server-side record | Fall back to `/`. |
+| Integrity failure | Fall back to `/`. |
+| Replay | Fall back to `/`. |
+| Store failure | Fall back to `/`. |
+
+These fallbacks relax **no** callback validation. A fallback destination is not
+callback success: the callback's own outcome is decided independently by OAuth
+state, PKCE, correlation, the exact callback destination and attempt binding.
 
 Behavior requirements:
 
@@ -440,7 +530,7 @@ Required callback behavior:
 | Expired callback | Rejected. The authorization code has a short provider-side validity, so a late exchange must fail closed rather than retry. | `INVALID_CALLBACK` |
 | Session-exchange failure | Rejected. Session state becomes `TERMINAL_SESSION_ERROR` unless the failure is explicitly transient. | `SESSION_EXCHANGE_FAILED` or `TEMPORARY_PROVIDER_FAILURE` |
 | Unsafe, unbound, expired, replayed or tampered return state | The session outcome is unaffected, but navigation falls back to the default post-sign-in destination. A tampered or replayed return state is additionally security-relevant. | success with fallback |
-| Terminal failure | All partial session state **created by the rejected attempt** is cleared, callback parameters are removed from the URL, and the intended-return state associated with the rejected attempt is removed. Where no independently valid pre-existing session exists, the user is returned to an unauthenticated surface. A pre-existing session that was independently established and remains known-valid is preserved rather than cleared; a session whose validity is unknown fails closed. | terminal for the callback attempt |
+| Terminal failure | All partial session state **created by the rejected attempt** is cleared, callback parameters are removed from the URL, and the intended-return state associated with the rejected attempt is removed. Where no independently valid pre-existing session exists, the user is returned to an unauthenticated surface. A pre-existing session that was independently established and remains known-valid is preserved rather than cleared, and safe route recovery navigates to `/` under `Preserved-session safe route recovery`; a session whose validity is unknown fails closed. | terminal for the callback attempt |
 
 ### Callback-completion correlation
 
@@ -506,12 +596,50 @@ reusable successful-callback correlation evidence at all. Only a callback flow
 that actually completed successfully may produce a `COMPLETED_CALLBACK_CORRELATION`
 record, and a rejected attempt must never be able to manufacture one.
 
-The exact storage mechanism, integrity mechanism, record representation,
-retention duration and cleanup implementation are
-`PENDING_A2_SECURITY_ACCEPTANCE` under `AUTH-DEP-011` and are not invented by
-this draft. No concrete duration and no concrete Security mechanism is stated
-here. Where correlation cannot be proven, the callback attempt fails closed; this
-never weakens the single-use authorization-code rule or the replay-resistance
+#### Frozen correlation mechanism
+
+`A2-SECURITY` has decided the mechanism. It is stated semantically; no vendor,
+product or physical technology is selected.
+
+| Property | Frozen value |
+|---|---|
+| Mechanism class | `AUTH_CONTROLLED / PROVIDER_NEUTRAL / SERVER_SIDE / EPHEMERAL` |
+| Required capabilities | Atomic state transitions; atomic single-use behavior; expiry; concurrent independent sign-in attempts; shared availability where multiple application runtime instances may process callbacks. |
+| Browser-carried material | A cryptographically random **opaque correlation handle** only, in a separate Auth-owned cookie. |
+| `PENDING_ATTEMPT_CORRELATION` maximum lifetime | 10 minutes from sign-in initiation. |
+| `COMPLETED_CALLBACK_CORRELATION` lifetime | Exactly 120 seconds from successful completion. |
+| Pending → completed transition | `ATOMIC`. |
+| Store unavailable, or handle unverifiable | `FAIL_CLOSED`. |
+| Concurrent tabs | Separate records. One attempt never overwrites another. |
+
+No database vendor, cache vendor, storage provider, cloud service or physical
+implementation technology is selected here. Physical storage technology and
+deployment topology remain `PENDING_A2_DEPLOYMENT_CONFIRMATION`, classified
+`SECURITY_REQUIRED / PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`.
+
+The correlation-handle cookie is a separate Auth-owned cookie, distinct from the
+provider-session cookie, and in every non-local environment is:
+
+- `HttpOnly`;
+- `Secure`;
+- `SameSite=Lax`;
+- host-only; and
+- restricted to the callback path.
+
+The handle cookie contains no authorization code, no access token, no refresh
+token, no PKCE verifier, no return path, no provider payload, and no provider
+session. It is an opaque lookup handle and nothing else.
+
+The server-side correlation record binds exactly: one sign-in attempt; one
+callback flow; the lifecycle state; the creation time; the expiry; one
+completed-outcome reference; and the Security policy version.
+
+Failure, abandonment, a malformed callback, an expired flow and a rejected flow
+must **never** create a `COMPLETED_CALLBACK_CORRELATION` record.
+
+Where correlation cannot be proven — including where the store is unavailable or
+the handle cannot be verified — the callback attempt fails closed. This never
+weakens the single-use authorization-code rule or the replay-resistance
 requirement, both of which continue to apply independently.
 
 #### Callback-attempt failure versus session validity
@@ -530,7 +658,7 @@ determined by the pre-existing session alone:
 | Pre-existing session at the moment of rejection | Resulting session state | Required behavior |
 |---|---|---|
 | None, or none independently established before the rejected callback | `TERMINAL_SESSION_ERROR`, presenting as `UNAUTHENTICATED` | Reauthentication is required. |
-| Independently established before the rejected callback and still known-valid | Preserved as `AUTHENTICATED` | The callback attempt fails, no callback success is reported, no callback-directed destination is used, and the UI presents a safe callback-error outcome or safe route recovery. FastAPI authorization remains authoritative for anything that session is used for. |
+| Independently established before the rejected callback and still known-valid | Preserved as `AUTHENTICATED` | The callback attempt fails, no callback success is reported, no callback-directed destination is used, and the UI presents a safe callback-error outcome or safe route recovery whose final navigation is `/` under `Preserved-session safe route recovery`. The rejected attempt's intended-return destination is never used. FastAPI authorization remains authoritative for anything that session is used for. |
 | Present but of unknown or unprovable validity | `TERMINAL_SESSION_ERROR` | Fail closed: protected content is removed and protected requests are prohibited, unless the session is later independently proven valid through an authorized session-restoration path. |
 
 An existing session remains insufficient callback correlation in every one of
@@ -544,6 +672,50 @@ A malformed, unrelated or replayed callback must never revoke, sign out, or
 otherwise invalidate a separately valid provider session merely because the
 callback itself was invalid. Session invalidation requires an independent
 session-validity failure, which is classified under its own error code.
+
+#### `INDEPENDENTLY_ESTABLISHED_AND_KNOWN_VALID_SESSION`
+
+Frozen by `A2-SECURITY`. The earlier text used "independently established and
+still known-valid" without defining what proves it, which let cookie presence
+masquerade as proof. A pre-existing session qualifies only when **all four** are
+true:
+
+1. its session identity existed before the rejected callback was processed;
+2. callback processing performed no successful code exchange that created or
+   replaced that session;
+3. after callback rejection, authoritative server-side **live provider
+   validation** succeeds; and
+4. the validated session identity equals the pre-callback session identity.
+
+Requirement 3 is normative as `LIVE_PROVIDER_SESSION_VALIDATION`: an
+authoritative server-side call to the provider that validates the session as it
+stands now. `getUser()` may be referenced as the currently supported provider
+example, but this contract does not permanently depend on one SDK method name;
+any equivalent authoritative provider operation satisfies the requirement, and
+the requirement is the authority, not the method name.
+
+Each of the following is **insufficient on its own** to prove validity:
+
+- cookie presence;
+- `getSession()`;
+- a decoded JWT;
+- local signature or expiry validation;
+- `getClaims()`;
+- frontend state;
+- a subscription event; or
+- the existence of an access token.
+
+If live validation is unavailable, times out, fails, returns a different
+session, or cannot establish session-identity equality, then session validity is
+`UNPROVEN` and the result is `FAIL_CLOSED`: `TERMINAL_SESSION_ERROR`, protected
+content removed, protected requests prohibited.
+
+A rejected callback that preserves a session must emit an internal Security
+event carrying at least these semantic fields:
+
+- `session_preserved=true`
+- `callback_success=false`
+- `rejected_callback_destination_used=false`
 
 Callback cleanup is mandatory. Authorization codes and tokens must never be
 placed in durable UI state, must never remain in the URL, query string, or
@@ -618,7 +790,9 @@ Binding session rules:
 10. Rule 9 never relaxes correlation. A preserved session is never treated as
     proof that the callback succeeded: no callback success is reported, no
     callback-directed destination is used, and no return state is consumed on
-    the strength of an existing session.
+    the strength of an existing session. Where rule 9 preserves the session,
+    safe route recovery navigates to `/` and never to the rejected attempt's
+    intended-return destination. See `Preserved-session safe route recovery`.
 
 ## `AUTH-002` token-custody decision
 
@@ -639,9 +813,9 @@ and client factories below are mandated rather than assumed.
 | Session storage medium | Cookies, named by the provider integration as `sb-<project_ref>-auth-token` by default. |
 | Flow type | PKCE. The `@supabase/ssr` clients are initiated to use the PKCE flow by default; the contract requires PKCE regardless of default. |
 | Browser-readable versus server-only | Browser-readable. The official integration requires the browser side to read the session, including the refresh token, to maintain the browser session. |
-| `HttpOnly` | **Not achievable** for the browser-readable session cookie under the accepted architecture, and **not required** by any accepted constraint. Supabase's official guidance states `HttpOnly` cookies are not necessary and that the browser side needs access to the refresh token. Final cookie posture is an unresolved `A2-SECURITY` decision recorded as `AUTH-DEP-011`. |
-| `Secure` | `REQUIRED` on every non-local environment. Deployment-owned registration. |
-| `SameSite` | `Lax` is the documented provider recommendation and the Auth-proposed default, because the callback is reached by a top-level cross-site redirect. Final value is an `A2-SECURITY` decision under `AUTH-DEP-011`. |
+| `HttpOnly` | **Not** `HttpOnly`, and not achievable as `HttpOnly` under the selected browser-readable architecture. `A2-SECURITY` has accepted the browser-readable provider session as policy. See `Frozen provider-session cookie posture` below. |
+| `Secure` | `REQUIRED` in every non-local environment, with exactly one exception. See `Frozen provider-session cookie posture` below. |
+| `SameSite` | `Lax`, frozen by `A2-SECURITY` policy acceptance. See `Frozen provider-session cookie posture` below. |
 | Refresh-token custody | The provider integration's cookie store only. Never `localStorage`, never `sessionStorage`, never a custom store, never forwarded to FastAPI. |
 | Access-token availability to the API transport layer | Available. The API transport layer obtains it through the Auth-owned adapter immediately before a request, and never caches a copy. |
 | Page reload and session restoration | The cookie-backed session survives reload. Because Server Components cannot write cookies, refreshed tokens must be persisted by the framework proxy/middleware layer the official integration requires. |
@@ -675,6 +849,88 @@ prohibited instead.
 
 No custom storage mechanism is invented by this contract. No accepted storage
 constraint is weakened by it.
+
+### Frozen provider-session cookie posture
+
+`A2-SECURITY` reviewed this contract under
+`AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001`, returned `REJECTED_WITH_REASON`
+against head `7abe17a`, and in doing so **accepted the selected Auth
+architecture**: `SUPABASE_AUTH_WITH_GITHUB_OAUTH`, the `@supabase/ssr`
+integration, `createBrowserClient` and `createServerClient`, one
+provider-owned cookie-backed session as the only canonical session source, a
+browser-readable provider-session cookie, and required PKCE. The posture below
+is the accepted policy, not an Auth proposal.
+
+| Attribute | Frozen value |
+|---|---|
+| Session | The official `@supabase/ssr` provider session. |
+| Readability | `BROWSER_READABLE`. |
+| `SameSite` | `Lax`. |
+| `Secure` | `true` in every non-local environment. |
+| Host scope | Host-only. |
+| `Domain` attribute | Absent. No `Domain` attribute is set. |
+| `Path` | `/`. |
+| `HttpOnly` | Not `HttpOnly`, under the selected browser-readable architecture. |
+| Lifetime and rotation | Provider-managed. |
+| Duplicate copies | None. No custom token copy of any kind. |
+
+The only permitted `Secure=false` case is `http://localhost:3000`. That
+exception does **not** extend to preview environments, LAN hostnames, public
+tunnels, alternate HTTP hosts, staging over HTTP, or production over HTTP. In
+every one of those, `Secure=true` is required.
+
+| Owner | Role in this posture |
+|---|---|
+| `A2-SECURITY` | `POLICY_ACCEPTANCE`. |
+| `A2-AUTH` | `AUTH_SEMANTICS`. |
+| `A2-DEPLOYMENT` | `RUNTIME_AND_CONFIGURATION_CONFIRMATION` — **not yet given**. |
+
+`A2-DEPLOYMENT` has not confirmed that it can configure or guarantee this
+posture. That confirmation is `SECURITY_REQUIRED /
+PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`. Nothing here claims the posture is
+implemented, deployed, or verified; Auth runtime and provider runtime remain
+`NOT_IMPLEMENTED / NOT_TESTED` and `NOT_PROVISIONED / NOT_TESTED`.
+
+The provider session is not redesigned as `HttpOnly`-only, and browser
+persistence is not reverted to a `createClient` `localStorage` model. Every
+prohibited-storage rule above stands unchanged.
+
+### `AUTH-002` CSRF and credential-transport boundary
+
+Frozen by `A2-SECURITY` policy acceptance.
+
+| Boundary | Rule |
+|---|---|
+| Protected FastAPI credential | `Authorization: Bearer <access-token>` only. |
+| Provider-session cookie as an API credential | `PROHIBITED`. FastAPI never accepts the provider-session cookie as a credential. |
+| Application anti-CSRF token on Bearer-authenticated FastAPI requests | `NOT_REQUIRED`. A Bearer-authenticated API request does not require an application anti-CSRF token merely because it is a FastAPI request. |
+| CORS origin | The exact approved Dashboard origin. No wildcard origin. |
+| CORS headers and methods | Only those required. |
+| CORS implementation ownership | `A2-BACKEND`. |
+
+Every same-origin Auth or session operation that **mutates** session state must:
+
+- use a non-`GET` method;
+- validate the exact `Origin`;
+- apply Fetch Metadata checks where the browser supports them; and
+- validate an Auth-owned anti-CSRF value bound either to the current session or
+  to the anonymous sign-in attempt.
+
+Sign-out is a state-changing operation: it is same-origin, non-`GET`, and
+CSRF-validated. `GET`, `HEAD` and `OPTIONS` Auth or session endpoints remain
+`SIDE_EFFECT_FREE`.
+
+The OAuth callback is the one deliberate exception. It arrives as a top-level
+cross-site navigation and therefore does **not** carry the ordinary same-origin
+anti-CSRF token. Before any protected effect, it must instead validate all of:
+provider OAuth `state`; PKCE; callback correlation; the exact callback
+destination against the exact-match approved set; and intended-return binding.
+The exception narrows nothing else — replay resistance, single-use codes and
+fail-closed behavior all continue to apply.
+
+`A2-BACKEND` has not confirmed compatibility with Bearer-only transport, the
+cookie-is-not-a-credential rule, or exact-origin CORS. Those confirmations are
+`SECURITY_REQUIRED / PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`.
 
 ## `AUTH-002` refresh contract
 
@@ -717,7 +973,7 @@ work.
 |---|---|
 | Request | A2-UI presents the control and calls the Auth-owned sign-out operation. |
 | Local invalidation | Mandatory and first-class. Local authenticated state is cleared whether or not the remote call succeeds. |
-| Provider-session scope | Auth-proposed default is current-session scope, not all devices. The official integration defaults to a global scope that signs the user out of every device, so the scope must be passed explicitly rather than defaulted. Final scope is an `A2-SECURITY` decision under `AUTH-DEP-011`. |
+| Provider-session scope | `local`, meaning `CURRENT_SESSION_ONLY`. Frozen by `A2-SECURITY`. The official integration defaults to a broader global scope that signs the user out of every device; that default must **not** be inherited or used. The scope is passed explicitly. |
 | Outstanding requests | In-flight protected requests are abandoned. Their responses must not restore protected content or authenticated state. |
 | Route transition | Navigate to the default post-sign-out destination under the `Safe redirect contract`. |
 | Cross-tab synchronization | Other tabs observe the session change through the Auth-owned subscription and leave `AUTHENTICATED`. Delivery is a synchronization signal, not a serialization guarantee: a tab that has a refresh in flight when sign-out occurs elsewhere must fail closed rather than let that refresh restore authenticated state. |
@@ -730,9 +986,35 @@ work.
 
 Sign-out does not revoke already-issued Backend access tokens. The accepted
 provider and Backend design proves no such revocation, so no record may claim
-it. A previously issued access token may remain accepted by FastAPI until it
-expires. Reducing that window is an unresolved joint `A2-SECURITY` and
-`A2-BACKEND` decision recorded as `AUTH-DEP-011` and `AUTH-DEP-014`.
+it. A previously issued access token may remain accepted by FastAPI until its
+`exp`.
+
+### Production access-token lifetime policy
+
+`A2-SECURITY` bounds that residual window instead of leaving it unresolved.
+
+| Item | Value |
+|---|---|
+| Production Supabase access-token lifetime | `<= 900 seconds` |
+| Classification | `PRODUCTION_SECURITY_REQUIREMENT / PENDING_BACKEND_AND_DEPLOYMENT_CONSUMER_CONFIRMATION` |
+
+Required semantics:
+
+- the production access-token lifetime is at most 900 seconds;
+- local authenticated UI state clears immediately on sign-out;
+- an already-issued access token may remain accepted by FastAPI until its `exp`;
+- no baseline denial list, revocation list or token blocklist is required; and
+- neither Auth nor UI may claim immediate JWT revocation.
+
+This is **not** recorded as already configured. No repository evidence proves
+any JWT lifetime, and none is claimed. Confirmation is required from both
+`A2-BACKEND` and `A2-DEPLOYMENT`, and remains `SECURITY_REQUIRED /
+PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW` under `AUTH-DEP-011`,
+`AUTH-DEP-013` and `AUTH-DEP-014`.
+
+A future especially sensitive operation may require an explicit live
+session-liveness check, but only where `A2-SECURITY` specifically classifies
+that operation. No such operation is classified at this version.
 
 The UI fails closed after local sign-out state is established.
 
@@ -740,7 +1022,9 @@ The UI fails closed after local sign-out state is established.
 
 | Item | Decision |
 |---|---|
-| Default post-sign-in destination | An Auth-approved default application path, resolved by Auth-owned code. The concrete path is `A2-UI`-proposed and Auth-approved; it is not user-controlled. |
+| Default post-sign-in destination | `/`. Frozen: `A2_UI_PROPOSED / A2_AUTH_APPROVED`. Resolved by Auth-owned code, never user-controlled, and never taken from a request, a referrer, or provider-returned data. |
+| Default post-sign-in rationale | `/` already exists as the implemented Overview destination, is same-origin, depends on no Runs, Evidence, Benchmarks, API-runtime or Auth-specific feature route, and is therefore safe when intended-return state is missing or rejected. |
+| Preserved-session rejected-callback safe recovery destination | `/`. Used only for the condition defined under `Preserved-session safe route recovery` below. It is independent of the rejected attempt's return candidate. |
 | Default post-sign-out destination | The public application root. |
 | Allowed return-path format | A single relative path beginning with exactly one `/`, optionally followed by a query string and fragment. |
 | Same-origin requirement | Mandatory. The final navigation target is always same-origin by construction, because only a relative path is ever accepted. |
@@ -784,6 +1068,35 @@ The intended-return state is removed after callback success and after callback
 failure alike, so a return path can never outlive the single sign-in attempt it
 was created for.
 
+### Preserved-session safe route recovery
+
+This subsection governs exactly one condition, and no other:
+
+- a callback attempt is rejected;
+- a session that was independently established before that callback remains
+  known-valid;
+- the callback itself reports failure; and
+- that independently established session remains `AUTHENTICATED` under the
+  `Callback-attempt failure versus session validity` rules.
+
+| Requirement | Rule |
+|---|---|
+| Safe recovery destination | `/`. |
+| Callback outcome | The callback attempt remains failed. Callback success is **not** reported, and "sign-in succeeded" is **not** shown. |
+| Rejected return candidate | `NEVER_USED`. The rejected callback's intended-return destination is never used, however safe it looks. It remains rejected and is removed under the existing intended-return state semantics. |
+| Correlation | The preserved session is not callback correlation and is not proof that this callback succeeded. Recovery navigation is not a correlated resolution of the callback. |
+| Authorization | Backend authorization remains authoritative for anything the preserved session is subsequently used for. |
+| Presentation | `A2-UI` may show a safe callback-error outcome or a safe route-recovery message. The detail stays generic under the error vocabulary. |
+| Final navigation | `/`. No destination derived from the rejected attempt controls the recovery. |
+
+The safe recovery route is independent of the rejected return candidate by
+construction: it is a fixed Auth-owned destination, not a validated candidate.
+Nothing in this subsection weakens callback replay resistance,
+callback-completion correlation, the separation of callback outcome from session
+validity, or fail-closed behavior where a pre-existing session's validity is
+unknown — in that case the session is `TERMINAL_SESSION_ERROR` and this
+subsection does not apply.
+
 ## `AUTH-002` Auth-owned UI adapter interface
 
 This is the minimum semantic interface a future, separately authorized `UI-004`
@@ -798,6 +1111,16 @@ no operation accepts or returns a provider secret; no operation logs a token,
 an `Authorization` header, an authorization code, or a PKCE verifier; and no
 caller may cache a returned access token beyond the single request it is
 attached to.
+
+Error-surface rule, frozen by `A2-SECURITY`: where an operation's error list
+below names `INVALID_CALLBACK`, `STATE_VALIDATION_FAILED`,
+`PKCE_VALIDATION_FAILED` or `SESSION_EXCHANGE_FAILED`, those are the
+**internal** classifications. Across the browser boundary the adapter surfaces
+the single public classification `SIGN_IN_FAILED`, with one safe response shape
+and equivalent status behavior, carrying no internal validation-stage
+identifier and no field from which the failed stage can be inferred. Browser
+code never receives the four internal codes, and `A2-UI` must not attempt to
+distinguish them. Every other classification is surfaced unchanged.
 
 ### `beginSignIn`
 
@@ -821,8 +1144,11 @@ attached to.
   attempt with a new correlation record and a new return state.
 - Return-state handling: the caller's candidate path is never stored verbatim
   as an authorization to navigate. It is bound, expiry-limited and single-use;
-  the storage and integrity mechanism is `PENDING_A2_SECURITY_ACCEPTANCE`. The
-  provider OAuth `state` parameter is never used to carry it.
+  the storage mechanism is frozen by `AUTH-DEC-050` — it is held only inside the
+  server-side `PENDING_ATTEMPT_CORRELATION` record, never in any browser
+  persistence — with only the physical storage substrate and topology pending
+  `A2-DEPLOYMENT` confirmation. The provider OAuth `state` parameter is never
+  used to carry it.
 - Prohibited caller behavior: constructing a provider URL, supplying a callback
   destination, supplying an absolute return URL, supplying or reading the
   provider OAuth `state`, creating or persisting its own return state, calling
@@ -844,11 +1170,22 @@ attached to.
   resulting session state is `RECOVERABLE_ERROR` or `TERMINAL_SESSION_ERROR`
   where no independently established, known-valid session pre-existed the
   callback; where such a session did pre-exist and remains known-valid, it is
-  preserved as `AUTHENTICATED` and only the callback attempt fails; where its
-  validity is unknown, the session fails closed to `TERMINAL_SESSION_ERROR`.
-- Errors: `INVALID_CALLBACK`, `STATE_VALIDATION_FAILED`,
+  preserved as `AUTHENTICATED`, only the callback attempt fails, and the
+  destination returned for safe route recovery is `/` rather than the rejected
+  attempt's intended-return destination; where its validity is unknown, the
+  session fails closed to `TERMINAL_SESSION_ERROR`. Qualifying a pre-existing
+  session as preserved requires the full
+  `INDEPENDENTLY_ESTABLISHED_AND_KNOWN_VALID_SESSION` test, including
+  authoritative server-side `LIVE_PROVIDER_SESSION_VALIDATION` and
+  session-identity equality; anything short of that is `UNPROVEN` and fails
+  closed.
+- Errors, internal: `INVALID_CALLBACK`, `STATE_VALIDATION_FAILED`,
   `PKCE_VALIDATION_FAILED`, `SESSION_EXCHANGE_FAILED`, `PROVIDER_DENIED`,
   `USER_CANCELLED`, `TEMPORARY_PROVIDER_FAILURE`.
+- Errors, browser-visible: the first four collapse to the single public
+  classification `SIGN_IN_FAILED` under the `Public failure-oracle boundary`.
+  `PROVIDER_DENIED`, `USER_CANCELLED` and `TEMPORARY_PROVIDER_FAILURE` are
+  surfaced unchanged.
 - Cancellation: not cancellable once the code exchange is in flight.
 - Concurrency: single-flight per callback flow. A duplicate invocation resolves
   to the existing outcome **only** when correlation to the same sign-in
@@ -866,7 +1203,8 @@ attached to.
   callback attempt, never the invalidation of an independently established
   session. `processCallback` must not revoke or sign out a separately valid
   provider session because the callback was invalid, and must not report success
-  because one exists.
+  because one exists. Where a known-valid session is preserved, the destination
+  supplied for safe route recovery is `/`.
 - Return-state handling: an intended-return state is honored only when bound to
   this sign-in attempt, unexpired, unconsumed, integrity-intact and
   format-valid. Any other return state falls back to the default post-sign-in
@@ -1002,10 +1340,50 @@ Every classification must redact: authorization codes, PKCE verifiers, access
 tokens, refresh tokens, raw provider payloads, raw headers, cookie values, the
 Supabase project reference, hostnames, secrets, stack traces, internal
 identifiers not approved for disclosure, and any detail that distinguishes
-which validation step failed beyond the class itself. `STATE_VALIDATION_FAILED`,
-`PKCE_VALIDATION_FAILED`, `INVALID_CALLBACK`, and `SESSION_EXCHANGE_FAILED`
-must present the same user-facing generic sign-in failure, so that the UI
-creates no oracle distinguishing them.
+which validation step failed beyond the class itself.
+
+### Public failure-oracle boundary
+
+Frozen by `A2-SECURITY`. The earlier requirement that four classifications
+merely "present the same user-facing message" was insufficient: identical copy
+still leaks the stage through the classification itself.
+
+These four internal classifications must be **indistinguishable through every
+untrusted browser-observable channel**:
+
+- `INVALID_CALLBACK`
+- `STATE_VALIDATION_FAILED`
+- `PKCE_VALIDATION_FAILED`
+- `SESSION_EXCHANGE_FAILED`
+
+| Boundary | Rule |
+|---|---|
+| Public browser/UI classification | `SIGN_IN_FAILED` — one code for all four. |
+| Response shape | One safe shape, identical across all four. |
+| Status behavior | Equivalent across all four. |
+| Internal validation-stage identifier | Never crosses to the browser. |
+| Provider detail | Never crosses to the browser. |
+| Any inference-enabling field | Prohibited. No field may allow inference of which internal validation stage failed. |
+| Response timing | `SHOULD` be normalized where practical, and `MUST NOT` intentionally reveal the failed validation stage. |
+
+The four internal classifications remain valid and unchanged in meaning. They
+are retained for server-side Security events and restricted operational
+diagnostics only, and each keeps its existing retry, reauthentication,
+resulting-state and Backend-eligibility semantics exactly as tabulated above.
+Nothing is removed from the vocabulary.
+
+`A2-UI` is **not** required to distinguish `INVALID_CALLBACK`,
+`STATE_VALIDATION_FAILED`, `PKCE_VALIDATION_FAILED` or `SESSION_EXCHANGE_FAILED`
+through browser-visible behavior, and must not attempt to. The Auth-owned UI
+adapter surfaces `SIGN_IN_FAILED` for all four; `processCallback` and the other
+adapter operations return the internal classification only across the
+server-side boundary, never to browser code.
+
+The remaining classifications — `USER_CANCELLED`, `PROVIDER_DENIED`,
+`SESSION_EXPIRED`, `REFRESH_FAILED`, `SIGN_OUT_FAILED`,
+`CONFIGURATION_UNAVAILABLE` and `TEMPORARY_PROVIDER_FAILURE` — are unchanged and
+remain individually observable, because none of them discloses which internal
+sign-in validation stage failed.
 
 ## `AUTH-002` Backend boundary
 
@@ -1085,24 +1463,175 @@ The following are required by this draft:
     bound to one sign-in attempt, expiry-limited, single-use,
     integrity-protected or held in Auth-controlled same-origin state, removed
     after success and failure, and never accepted on syntactic safety alone.
-    Provider OAuth `state` is not reused as a return-path container. The exact
-    mechanism remains `PENDING_A2_SECURITY_ACCEPTANCE`.
+    Provider OAuth `state` is not reused as a return-path container. The
+    mechanism is frozen by `AUTH-DEC-050` and stated in requirement 28 below;
+    only the physical storage substrate and topology remain pending
+    `A2-DEPLOYMENT` confirmation.
 21. Callback-attempt and session-validity separation: an `INVALID_CALLBACK`
     result never itself invalidates, revokes or signs out a session that was
     independently established before the rejected callback and remains
     known-valid, and never permits that session to be read as proof that the
     callback succeeded. A pre-existing session of unknown validity fails closed.
+22. Frozen provider-session cookie posture: browser-readable `@supabase/ssr`
+    session, `SameSite=Lax`, `Secure=true` in every non-local environment with
+    `http://localhost:3000` as the only exception, host-only, no `Domain`
+    attribute, `Path=/`, not `HttpOnly`, provider-managed lifetime and rotation,
+    and no custom token copy.
+23. CSRF and credential transport: protected FastAPI routes accept credentials
+    only through `Authorization: Bearer`; the provider-session cookie is never
+    an API credential; no application anti-CSRF token is required merely because
+    a FastAPI request is Bearer-authenticated; CORS uses the exact approved
+    Dashboard origin with no wildcard and only required headers and methods.
+    Every same-origin session-mutating Auth operation is non-`GET`, validates
+    the exact `Origin`, applies Fetch Metadata checks where available, and
+    validates an Auth-owned anti-CSRF value bound to the current session or to
+    the anonymous sign-in attempt. Sign-out is state-changing and CSRF-validated.
+    `GET`/`HEAD`/`OPTIONS` Auth endpoints remain side-effect-free. The OAuth
+    callback is exempt from the ordinary same-origin anti-CSRF token and instead
+    validates OAuth `state`, PKCE, correlation, the exact callback destination
+    and intended-return binding before any protected effect.
+24. Sign-out scope is `local` — current session only. The broader provider
+    default scope is never inherited or used.
+25. Production access-token lifetime is at most 900 seconds, and no record
+    claims immediate JWT revocation after sign-out.
+26. Public failure-oracle boundary: `INVALID_CALLBACK`,
+    `STATE_VALIDATION_FAILED`, `PKCE_VALIDATION_FAILED` and
+    `SESSION_EXCHANGE_FAILED` are indistinguishable through every untrusted
+    browser-observable channel. The browser receives the single public
+    classification `SIGN_IN_FAILED`, one safe response shape, equivalent status
+    behavior, no internal validation-stage identifier and no field permitting
+    inference of the failed stage. Timing should be normalized where practical
+    and must never intentionally reveal the stage. The four internal
+    classifications survive unchanged for server-side Security events and
+    restricted operational diagnostics.
+27. Callback-correlation mechanism: Auth-controlled, provider-neutral,
+    server-side and ephemeral, supporting atomic transitions, atomic single use,
+    expiry, concurrent independent attempts and shared availability across
+    runtime instances. The browser carries only a cryptographically random
+    opaque handle in a separate Auth-owned cookie that is `HttpOnly`, `Secure`,
+    `SameSite=Lax`, host-only and callback-path restricted in every non-local
+    environment, and that carries no code, token, verifier, return path,
+    provider payload or session. `PENDING_ATTEMPT_CORRELATION` lives at most 10
+    minutes from initiation; `COMPLETED_CALLBACK_CORRELATION` lives exactly 120
+    seconds from successful completion; the transition is atomic; an unavailable
+    store or unverifiable handle fails closed; concurrent tabs get separate
+    records that never overwrite one another.
+28. Intended-return state is held only in the server-side
+    `PENDING_ATTEMPT_CORRELATION` record: validated before storage, bound to one
+    attempt, expiring within 10 minutes of initiation, atomically single-use,
+    removed on success, failure, abandonment and expiry, and never placed in
+    provider OAuth `state`, the provider cookie, the handle cookie, a URL,
+    `localStorage`, `sessionStorage`, IndexedDB or any other browser
+    persistence. A missing record, integrity failure, replay or store failure
+    falls back to `/` without relaxing callback validation.
+29. A preserved pre-existing session qualifies as
+    `INDEPENDENTLY_ESTABLISHED_AND_KNOWN_VALID_SESSION` only on all four
+    conditions, including authoritative server-side
+    `LIVE_PROVIDER_SESSION_VALIDATION` and session-identity equality. Cookie
+    presence, `getSession()`, a decoded JWT, local signature or expiry checks,
+    `getClaims()`, frontend state, a subscription event and the existence of an
+    access token are each insufficient alone. Unproven validity fails closed.
+30. Auth response cache boundary, XSS and runtime hardening, the Security-event
+    boundary and key-custody handling as specified in the four subsections
+    below.
 
-Deliberately **not** decided here, because they belong to `A2-SECURITY`: the
-final cookie policy including `SameSite` and any `HttpOnly` position, the final
-CSRF policy, retention periods, the Security-event schema, event severity, the
-disclosure policy, key custody, production monitoring thresholds, the exact
-storage and integrity mechanism for the intended-return state, and the required
-strength, representation, retention duration and cleanup of the
-callback-completion correlation record, including the length of its bounded
-post-completion correlation window. Each is raised as an
-explicit review question in `DEPENDENCY_REQUESTS.md` under `AUTH-DEP-011`. None
-of them is recorded here as an accepted final Security decision.
+### Auth response cache boundary
+
+Classification: `IMPLEMENTATION_REQUIREMENT / NOT_RUNTIME_EVIDENCE`.
+
+Any response that handles authentication, refreshes a session, sets a session
+cookie, or processes a callback must be served with:
+
+`Cache-Control: private, no-store`
+
+Authenticated and session-refresh routes must not be served through shared
+caches, through ISR-generated shared session responses, or through a shared CDN
+cache that contains `Set-Cookie`.
+
+None of this is claimed to be implemented. No repository evidence proves any
+cache header, and no runtime is asserted.
+
+### XSS and runtime security requirements
+
+Classification: `IMPLEMENTATION_AND_RELEASE_REQUIREMENTS /
+NOT_CURRENT_RUNTIME_EVIDENCE`.
+
+- a strict Content Security Policy;
+- no `unsafe-eval`;
+- no unrestricted `unsafe-inline`;
+- a nonce- or hash-based script policy;
+- Trusted Types where the browser supports them;
+- no unreviewed third-party scripts on authenticated surfaces;
+- dependency and supply-chain scanning;
+- no token exposure in the DOM;
+- no token exposure to analytics;
+- no token exposure to client logs; and
+- callback and session route security testing.
+
+These are release requirements, not current runtime evidence. They do **not**
+alter the accepted browser-readable provider-session architecture.
+
+### Security-event boundary
+
+Security-required event metadata is `BOUNDED / SECRET_FREE / ATTRIBUTABLE`.
+
+Required semantic fields: `event_id`; `event_version`; `event_name`;
+`occurred_at`; `severity`; `environment_class`; `source_component`; `outcome`;
+`blocking_effect`; `actor_type`; an approved opaque `actor_reference` or
+`UNAUTHENTICATED`; an opaque `sign_in_attempt_reference`; an opaque
+`callback_flow_reference`; an opaque `request_reference`; an opaque
+`correlation_reference`; `policy_version`; `session_preserved`; a bounded reason
+code; and `redaction_status`.
+
+An event must **never** include: an access token; a refresh token; an
+authorization code; a PKCE verifier; a cookie; a raw header; a provider payload;
+the project reference; a hostname; a full URL; a stack trace; a raw exception;
+an email address; a mutable display name; a secret; or a signing key.
+
+Event names, severities and retention classes are recorded where the
+authoritative `A2-SECURITY` response supplies them; nothing beyond that is
+invented here. The Security-event pipeline is **not** represented as
+implemented: no repository runtime evidence proves it, and none is claimed.
+
+### Key-custody implementation requirements
+
+Classification: `IMPLEMENTATION_REQUIREMENT / NOT_RUNTIME_EVIDENCE`.
+
+Opaque-handle integrity requires:
+
+- an approved cryptographic handle-integrity mechanism;
+- a server-controlled signing and verification key;
+- a randomly generated server key of at least 256 bits where an HMAC-based
+  implementation is selected;
+- secret-manager custody;
+- no `NEXT_PUBLIC` exposure;
+- no source-control exposure;
+- no logging;
+- no browser exposure;
+- key rotation supporting both the current and the previous verification key;
+- the previous verification key accepted for at most 15 minutes; and
+- the previous key never minting new handles.
+
+No key is generated or created here, no secret manager is selected, no runtime
+is configured, and no infrastructure is provisioned.
+
+Resolved by `A2-SECURITY` and no longer open: the provider-session cookie
+policy including `SameSite` and the `HttpOnly` position, the CSRF policy, the
+sign-out scope, the production access-token lifetime bound, the public
+failure-oracle boundary, the callback-correlation mechanism and both of its
+lifetimes, the intended-return storage and integrity mechanism, and the proof
+required for a preserved pre-existing session.
+
+Still **not** decided here: retention periods beyond those stated, event
+severities and retention classes not supplied by the authoritative Security
+response, the disclosure policy, and production monitoring thresholds. These
+remain `A2-SECURITY`-owned review items under `AUTH-DEP-011`. Separately, the
+physical storage technology and deployment topology for the correlation store,
+the runtime configuration of the cookie posture and the JWT lifetime, the CORS
+implementation and the Backend denial behavior are **owner-compatibility**
+questions for `A2-DEPLOYMENT` and `A2-BACKEND`, classified
+`SECURITY_REQUIRED / PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`. None of them
+is recorded as confirmed.
 
 ## `AUTH-002` conceptual acceptance fixtures
 
@@ -1114,17 +1643,17 @@ where the fixture adds a specific obligation.
 
 | # | Fixture | Initial state | Actor | Operation | Expected transitions | Permitted UI | Prohibited UI | Backend eligible | Classification | Attribution | Owner dependencies |
 |---:|---|---|---|---|---|---|---|:-:|---|---|---|
-| 1 | Successful sign-in | `UNAUTHENTICATED` | `HUMAN_USER` | `beginSignIn` then `processCallback` | `SIGN_IN_PENDING` → `CALLBACK_PROCESSING` → `AUTHENTICATED` | protected content after success; navigation to the bound, unexpired, single-use return destination, else the default | protected content before success; navigating on a return state that is unbound, expired or already consumed; retaining the return state after completion | yes, after `AUTHENTICATED` | success | canonical user | Deployment provisioning; intended-return state mechanism pending `A2-SECURITY` |
+| 1 | Successful sign-in | `UNAUTHENTICATED` | `HUMAN_USER` | `beginSignIn` then `processCallback` | `SIGN_IN_PENDING` → `CALLBACK_PROCESSING` → `AUTHENTICATED` | protected content after success; navigation to the bound, unexpired, single-use return destination, else the default | protected content before success; navigating on a return state that is unbound, expired or already consumed; retaining the return state after completion | yes, after `AUTHENTICATED` | success | canonical user | Deployment provisioning; intended-return state mechanism frozen by `AUTH-DEC-050`, with only the physical storage substrate pending `A2-DEPLOYMENT` |
 | 2 | User cancellation | `SIGN_IN_PENDING` | `HUMAN_USER` | abandon at provider | → `UNAUTHENTICATED` | neutral message | error implying system fault | no | `USER_CANCELLED` | `UNAUTHENTICATED` | none |
 | 3 | Provider denial | `SIGN_IN_PENDING` | Provider | denial returned | → `UNAUTHENTICATED` | denial without cause | naming the provider reason | no | `PROVIDER_DENIED` | `UNAUTHENTICATED` | Security event shape |
-| 4 | Valid callback | `CALLBACK_PROCESSING` | `A2-AUTH` | `processCallback` | → `AUTHENTICATED`; the attempt's `PENDING_ATTEMPT_CORRELATION` state becomes a `COMPLETED_CALLBACK_CORRELATION` record for this exact flow, which remains available for its bounded post-completion window; the return state is consumed and removed | success UX, then validated navigation | leaving the code in the URL; treating a session as proof of completion; retaining a consumed return state; discarding the completed correlation record at the instant of success | yes | success | canonical user | correlation-record mechanism, representation and window length pending `A2-SECURITY` |
-| 4a | Duplicate callback invocation, correlated, inside the post-completion window | `AUTHENTICATED` after fixture 4, same flow re-entered | `HUMAN_USER` | `processCallback` | no state change; the completed correlation record is matched and the previously completed outcome is reused | the already-established session | a second code exchange; a second session; reporting a new sign-in; requiring a re-exchange because the record was removed at completion | yes | success | canonical user | correlation-record mechanism, representation and window length pending `A2-SECURITY` |
-| 4b | Duplicate or unrelated callback invocation, uncorrelated, with an independently established, known-valid session present | `AUTHENTICATED` | Attacker or unrelated navigation | `processCallback` | callback attempt fails; no session created; no exchange; callback parameters cleared; rejected attempt's return state removed; the pre-existing known-valid session is preserved and remains `AUTHENTICATED` | safe callback-error outcome or safe route recovery | resolving the invocation because a session exists; any code exchange; any callback-directed navigation; reporting callback success; revoking or signing out the pre-existing session because the callback was invalid | unchanged for the preserved session, with FastAPI authoritative | `INVALID_CALLBACK` | canonical user of the preserved session | Security event shape |
+| 4 | Valid callback | `CALLBACK_PROCESSING` | `A2-AUTH` | `processCallback` | → `AUTHENTICATED`; the attempt's `PENDING_ATTEMPT_CORRELATION` state becomes a `COMPLETED_CALLBACK_CORRELATION` record for this exact flow, which remains available for its bounded post-completion window; the return state is consumed and removed | success UX, then validated navigation | leaving the code in the URL; treating a session as proof of completion; retaining a consumed return state; discarding the completed correlation record at the instant of success | yes | success | canonical user | correlation-record mechanism, representation and lifetimes frozen by `AUTH-DEC-049`; physical storage substrate and topology pending `A2-DEPLOYMENT` |
+| 4a | Duplicate callback invocation, correlated, inside the post-completion window | `AUTHENTICATED` after fixture 4, same flow re-entered | `HUMAN_USER` | `processCallback` | no state change; the completed correlation record is matched and the previously completed outcome is reused | the already-established session | a second code exchange; a second session; reporting a new sign-in; requiring a re-exchange because the record was removed at completion | yes | success | canonical user | correlation-record mechanism, representation and lifetimes frozen by `AUTH-DEC-049`; physical storage substrate and topology pending `A2-DEPLOYMENT` |
+| 4b | Duplicate or unrelated callback invocation, uncorrelated, with an independently established, known-valid session present | `AUTHENTICATED` | Attacker or unrelated navigation | `processCallback` | callback attempt fails; no session created; no exchange; callback parameters cleared; rejected attempt's return state removed; the pre-existing known-valid session is preserved and remains `AUTHENTICATED`; safe route recovery navigates to `/` | safe callback-error outcome or safe route recovery to `/` | resolving the invocation because a session exists; navigating to the rejected attempt's intended-return destination; any code exchange; any callback-directed navigation; reporting callback success; revoking or signing out the pre-existing session because the callback was invalid | unchanged for the preserved session, with FastAPI authoritative | `INVALID_CALLBACK` | canonical user of the preserved session | Security event shape |
 | 4b-i | Uncorrelated callback with no independently valid pre-existing session, or one whose validity cannot be proven | `UNAUTHENTICATED`, or a session of unknown validity | Attacker or unrelated navigation | `processCallback` | callback attempt fails; no session created; no exchange; callback parameters cleared; → `TERMINAL_SESSION_ERROR` | generic sign-in failure | any protected content; treating unknown validity as valid | no | `INVALID_CALLBACK` | `UNAUTHENTICATED` | Security event shape |
-| 4c | Reload after successful callback processing | `AUTHENTICATED`, callback URL reloaded | `HUMAN_USER` | `processCallback` | resolves to the established session while the `COMPLETED_CALLBACK_CORRELATION` record for that exact flow is still inside its bounded post-completion window; once that window has expired or the record is gone, the callback attempt fails with no exchange and no callback-directed navigation, and the session outcome follows fixtures 4b and 4b-i | protected content only on matched correlation | assuming completion from session existence alone; re-exchanging the consumed code; treating the expired window as authorization to retry | conditional | success while correlated, otherwise `INVALID_CALLBACK` | canonical user, or `UNAUTHENTICATED` where no valid session is preserved | correlation-record mechanism, representation and window length pending `A2-SECURITY` |
+| 4c | Reload after successful callback processing | `AUTHENTICATED`, callback URL reloaded | `HUMAN_USER` | `processCallback` | resolves to the established session while the `COMPLETED_CALLBACK_CORRELATION` record for that exact flow is still inside its bounded post-completion window; once that window has expired or the record is gone, the callback attempt fails with no exchange and no callback-directed navigation, and the session outcome follows fixtures 4b and 4b-i | protected content only on matched correlation | assuming completion from session existence alone; re-exchanging the consumed code; treating the expired window as authorization to retry | conditional | success while correlated, otherwise `INVALID_CALLBACK` | canonical user, or `UNAUTHENTICATED` where no valid session is preserved | correlation-record mechanism, representation and lifetimes frozen by `AUTH-DEC-049`; physical storage substrate and topology pending `A2-DEPLOYMENT` |
 | 5 | Invalid state | `CALLBACK_PROCESSING` | Attacker or corruption | `processCallback` | → `TERMINAL_SESSION_ERROR` | generic sign-in failure | distinguishing this from fixture 6 | no | `STATE_VALIDATION_FAILED` | `UNAUTHENTICATED` | Security event shape |
 | 6 | Invalid or missing PKCE proof | `CALLBACK_PROCESSING` | Attacker, or a different device | `processCallback` | → `TERMINAL_SESSION_ERROR` | generic sign-in failure | distinguishing this from fixture 5 | no | `PKCE_VALIDATION_FAILED` | `UNAUTHENTICATED` | Security event shape |
-| 7 | Callback replay | `AUTHENTICATED` or `UNAUTHENTICATED` | Attacker | replay a consumed code | no new session; no new code exchange; no callback-directed navigation; callback parameters cleared; Security event produced; an independently established, known-valid session is preserved as `AUTHENTICATED`, while an absent or unprovable one resolves to `TERMINAL_SESSION_ERROR` | generic sign-in failure, or safe route recovery where a session is preserved | reporting a new sign-in; resolving successfully because a valid session already exists; re-exchanging the consumed code; revoking or signing out a separately valid session because the replay was rejected | no while `TERMINAL_SESSION_ERROR`; unchanged for a preserved session | `INVALID_CALLBACK` | `UNAUTHENTICATED`, or the canonical user of a preserved session | Security event shape |
+| 7 | Callback replay | `AUTHENTICATED` or `UNAUTHENTICATED` | Attacker | replay a consumed code | no new session; no new code exchange; no callback-directed navigation; callback parameters cleared; Security event produced; an independently established, known-valid session is preserved as `AUTHENTICATED` with safe route recovery to `/`, while an absent or unprovable one resolves to `TERMINAL_SESSION_ERROR` | generic sign-in failure, or safe route recovery to `/` where a session is preserved | reporting a new sign-in; navigating to the replayed attempt's intended-return destination; resolving successfully because a valid session already exists; re-exchanging the consumed code; revoking or signing out a separately valid session because the replay was rejected | no while `TERMINAL_SESSION_ERROR`; unchanged for a preserved session | `INVALID_CALLBACK` | `UNAUTHENTICATED`, or the canonical user of a preserved session | Security event shape |
 | 8 | Expired callback | `CALLBACK_PROCESSING`, entered from a sign-in that began at `UNAUTHENTICATED` or `RECOVERABLE_ERROR`, so no independently established session pre-exists | `HUMAN_USER` | late `processCallback` | → `TERMINAL_SESSION_ERROR`, by the no-pre-existing-session row of the conditional rule rather than by an unconditional one | generic sign-in failure with a sign-in affordance | automatic retry of the exchange | no | `INVALID_CALLBACK` | `UNAUTHENTICATED` | none |
 | 9 | Session restoration after reload | `AUTHENTICATED`, page reloaded on a non-callback route | `HUMAN_USER` | application start | `INITIALIZING` → `AUTHENTICATED` | protected content after resolution | protected content while `INITIALIZING`; treating the restored session as proof that any callback completed | yes, after resolution | success | canonical user | framework proxy/middleware layer |
 | 10 | Proactive refresh while the credential remains provable | `AUTHENTICATED`, token near expiry but still valid | system | protected request | → `REFRESH_PENDING` mode `PROVEN_CREDENTIAL` | existing protected content may remain visible | sending a token known to be expired; beginning a new privileged effect on an expired token | deferred — new protected requests wait for the outcome | none if refresh succeeds | canonical user | none |
@@ -1133,10 +1662,10 @@ where the fixture adds a specific obligation.
 | 12 | Refresh failure | `REFRESH_PENDING`, either mode | `A2-AUTH` | `refreshSession` | → `TERMINAL_SESSION_ERROR` | "sign in again" | any protected request; any retry; leaving mode-`PROVEN_CREDENTIAL` content on screen after the failure | no | `REFRESH_FAILED` | canonical user | Security event shape |
 | 13 | Concurrent refresh requests within one context | `AUTHENTICATED`, several protected requests in flight in one browsing context | system | several `getAccessTokenForApiRequest` | one refresh, one shared outcome within that context | one pending affordance | two independent exchanges from the same context | deferred then yes or no | shared outcome | canonical user | none |
 | 13a | Concurrent refresh across contexts | `AUTHENTICATED` in two tabs, or a tab plus a parallel server request | system | refresh in each context | not serialized; outcomes may include a stale cookie, a temporarily null session, or one success plus one rejection | one pending affordance per context; at most one bounded retry after a newer valid session is observed | claiming global single-flight; restoring stale authenticated state; speculative retry; any automatic refresh loop | no while unresolved | shared outcome where observable, otherwise fail closed | canonical user | provider cookie synchronization behavior; `A2-SECURITY` and `A2-INTEGRATION` confirmation |
-| 14 | Sign-out | `AUTHENTICATED` | `HUMAN_USER` | `signOut` | → `SIGN_OUT_PENDING` → `UNAUTHENTICATED` | public surfaces | any stale protected content | no | success | canonical user | Security scope decision |
+| 14 | Sign-out | `AUTHENTICATED` | `HUMAN_USER` | `signOut` | → `SIGN_OUT_PENDING` → `UNAUTHENTICATED` | public surfaces | any stale protected content | no | success | canonical user | sign-out scope frozen as `local` by `AUTH-DEC-047`; `A2-BACKEND` and `A2-DEPLOYMENT` confirmation outstanding |
 | 15 | Sign-out failure | `SIGN_OUT_PENDING` | provider or network | remote failure | → `UNAUTHENTICATED` regardless | "signed out on this device" | claiming the session persists; claiming issued tokens were revoked | no | `SIGN_OUT_FAILED` | canonical user | Security event shape |
 | 16 | Unsafe return URL | `CALLBACK_PROCESSING` with a hostile return path | Attacker | `processCallback` | → `AUTHENTICATED` | navigation to the default destination | navigation to the supplied path | yes | success with fallback | canonical user | Security event shape |
-| 16a | Unbound, expired or replayed return state that is syntactically safe | `CALLBACK_PROCESSING` with a well-formed relative path that is not bound to this attempt, has expired, or was already consumed | Attacker or stale state | `processCallback` | → `AUTHENTICATED`; the return state is discarded and removed | navigation to the default post-sign-in destination | accepting the path because it is syntactically safe; reusing a consumed return state; retaining it after completion | yes | success with fallback | canonical user | intended-return state mechanism pending `A2-SECURITY` |
+| 16a | Unbound, expired or replayed return state that is syntactically safe | `CALLBACK_PROCESSING` with a well-formed relative path that is not bound to this attempt, has expired, or was already consumed | Attacker or stale state | `processCallback` | → `AUTHENTICATED`; the return state is discarded and removed | navigation to the default post-sign-in destination | accepting the path because it is syntactically safe; reusing a consumed return state; retaining it after completion | yes | success with fallback | canonical user | intended-return state mechanism frozen by `AUTH-DEC-050`, with only the physical storage substrate pending `A2-DEPLOYMENT` |
 | 17 | Backend `401` while UI believed it was authenticated | `AUTHENTICATED` | FastAPI | protected request denied | → `REFRESH_PENDING` mode `UNPROVEN_CREDENTIAL`, then `AUTHENTICATED` or `TERMINAL_SESSION_ERROR` | one bounded refresh and one retry; protected content removed for the duration | unbounded refresh-and-retry; ignoring the denial; keeping protected content visible while the credential is unproven | at most one retry, and none until the refresh resolves | none, or `REFRESH_FAILED` | canonical user | Backend `401` semantics |
 | 18 | Suspended or deprovisioned canonical user | `AUTHENTICATED` at the provider | FastAPI | protected request | → `TERMINAL_SESSION_ERROR` on denial | denial without cause | treating a valid provider session as authorization | denied | Backend denial, not an Auth error class | canonical user retained for attribution | Backend denial policy; `403`/`404` disclosure |
 | 19 | Revoked external subject | `AUTHENTICATED` at the provider | FastAPI | protected request | → `TERMINAL_SESSION_ERROR` on denial | denial without cause | reauthenticating into access | denied | Backend denial | subject retained for attribution | Backend denial policy |
@@ -1158,6 +1687,21 @@ same behavior, and neither must fixtures 4a and 4b. Fixtures 4b and 4b-i must
 never be satisfiable by the same behavior either: the callback fails identically
 in both, and only the pre-existing session's independently established validity
 distinguishes the resulting session state.
+
+Two `A2-SECURITY` corrections apply across every fixture above and are not
+restated per row. First, wherever a fixture records a "generic sign-in failure"
+arising from `INVALID_CALLBACK`, `STATE_VALIDATION_FAILED`,
+`PKCE_VALIDATION_FAILED` or `SESSION_EXCHANGE_FAILED`, the browser-observable
+outcome is the single public classification `SIGN_IN_FAILED` with one safe
+response shape and equivalent status behavior; the internal classification named
+in the fixture is the server-side one. A fixture is not satisfied if any
+browser-observable difference distinguishes those four. Second, wherever a
+fixture preserves a pre-existing session — 4b and 7 in particular — preservation
+is satisfied only when the full
+`INDEPENDENTLY_ESTABLISHED_AND_KNOWN_VALID_SESSION` test passes, including
+authoritative server-side `LIVE_PROVIDER_SESSION_VALIDATION` and
+session-identity equality. Cookie presence or a decoded token satisfies neither
+fixture, and an unproven session resolves to 4b-i instead.
 
 ## Compatibility and versioning
 
@@ -1218,7 +1762,38 @@ Compatibility impact: existing consumers of `1.0.0-draft.2` require no change.
 Consumer-review consequence: the additions introduce new obligations for
 `A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND`, and `A2-INTEGRATION`, so
 each must review this version before it can be treated as accepted. Silence is
-not acceptance.
+not acceptance. `A2-UI` has responded with `SPECIFICATION_CONFLICT` and
+`A2-SECURITY` with `REJECTED_WITH_REASON`; a response is not an acceptance, and
+the corrected text requires rereview by both. `A2-INTEGRATION` responded
+`ACCEPTED_WITH_CONSTRAINTS` at head `7abe17a`, with its final review still
+pending. `A2-DEPLOYMENT` and `A2-BACKEND` have no reconciled response.
+
+Freezing the default post-sign-in destination as `/` and the preserved-session
+safe recovery destination as `/` does not change this classification. Both fill
+an explicitly open slot in an unaccepted draft, no accepted consumer implemented
+against a prior value, and neither touches identity semantics, custody
+architecture, callback correlation, or any listed breaking item.
+
+The seven `A2-SECURITY` corrections likewise do not change it, verified item by
+item against the breaking list above. The prohibited-storage list is extended,
+never weakened. No refresh token reaches FastAPI. `Authorization: Bearer`
+remains the only protected-request credential transport, and the frozen CSRF
+boundary reinforces it. PKCE and OAuth-state requirements are retained and
+strengthened. The exact-match callback policy is unchanged and now also gates
+the callback's CSRF exemption. Provider-returned data still controls no
+navigation without Auth-owned validation. No loading state becomes
+authenticated; the live-provider-validation requirement makes preservation
+stricter, not looser. Frontend session state still never overrides a Backend
+decision. And **no error classification is removed, nor is any existing
+classification's retry, reauthentication or Backend-eligibility meaning
+changed**: the four internal codes keep their tabulated semantics in full, and
+`SIGN_IN_FAILED` is an added public presentation boundary over them, not a
+replacement of them. Every Security correction restricts behavior or resolves an
+explicitly open slot in an unaccepted draft.
+
+The version identifier and the `ADDITIVE_COMPATIBLE_MINOR` classification
+therefore stand unchanged, independently verified against this section's own
+rules.
 
 ## Conceptual acceptance fixture
 
@@ -1261,6 +1836,11 @@ Resolved since `1.0.0-draft.2`:
   implemented `DB-002` against it. `DB-002` is `MERGED` and is no longer
   blocked on `CONTRACT-WORKFLOW-001`. No Database rereview is outstanding, and
   version `1.1.0-draft.1` creates no new Database obligation.
+- The concrete default post-sign-in destination is frozen as `/`
+  (`A2_UI_PROPOSED / A2_AUTH_APPROVED`), and `/` is likewise frozen as the
+  preserved-session rejected-callback safe recovery destination. See
+  `AUTH-DEC-043`. Freezing these two destinations does not accept the contract
+  and does not close `AUTH-DEP-012`.
 
 Open:
 
@@ -1269,23 +1849,24 @@ Open:
   hostname, TLS verification, production callback registration, or injected
   secret is proven by this repository.
 - JWT runtime validation is not implemented or tested.
-- The final cookie policy, `SameSite` value, any `HttpOnly` position, the CSRF
-  policy, the Security-event schema and severity, retention periods, the
-  disclosure policy, key custody, and monitoring thresholds are unresolved
-  `A2-SECURITY` decisions. See `AUTH-DEP-011`.
-- The exact storage and integrity mechanism for the Auth-owned intended-return
-  state is unresolved and `PENDING_A2_SECURITY_ACCEPTANCE`. This contract states
-  the binding properties it must have; it does not invent the mechanism and
-  records no accepted Security decision for it. See `AUTH-DEP-011` and
-  `AUTH-ISSUE-025`.
-- The exact storage mechanism, integrity mechanism, record representation,
-  required strength, retention duration and cleanup of the callback-completion
-  correlation record — including the length of the bounded post-completion
-  correlation window during which a `COMPLETED_CALLBACK_CORRELATION` record
-  stays reusable — are unresolved and `PENDING_A2_SECURITY_ACCEPTANCE`. This
-  contract states the lifecycle and the properties the record must have, and
-  deliberately states no duration and no mechanism. See `AUTH-DEP-011` and
-  `AUTH-ISSUE-025`.
+- Retention periods beyond those frozen, event severities and retention classes
+  not supplied by the authoritative Security response, the disclosure policy and
+  production monitoring thresholds remain unresolved `A2-SECURITY` decisions.
+  See `AUTH-DEP-011`. The cookie policy, `SameSite` value, `HttpOnly` position,
+  CSRF policy, sign-out scope, production access-token lifetime bound, public
+  failure-oracle boundary, callback-correlation mechanism and lifetimes,
+  intended-return mechanism and preserved-session proof are **no longer** open:
+  `A2-SECURITY` decided them, and they are recorded above as frozen policy.
+- The physical storage technology and the deployment topology for the
+  server-side ephemeral correlation store are `SECURITY_REQUIRED /
+  PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW` by `A2-DEPLOYMENT`. The mechanism
+  class, capabilities and lifetimes are frozen; no vendor, product or physical
+  technology is selected by this contract. See `AUTH-DEP-011`, `AUTH-DEP-013`
+  and `AUTH-ISSUE-025`.
+- The cache-control boundary, the XSS and runtime hardening requirements, the
+  Security-event boundary and the key-custody requirements are recorded as
+  implementation and release requirements, **not** as runtime evidence. Nothing
+  in this repository proves any of them is implemented, and none is claimed.
 - Refresh serialization across browser tabs, parallel server requests and
   separate runtime instances is **not** guaranteed by the accepted provider
   design and is not claimed anywhere in this contract. The observable behavior
@@ -1295,12 +1876,36 @@ Open:
 - The Backend authenticated-context handoff, the exact `403` versus
   concealed-`404` policy, CORS, and the Backend token-verification retry policy
   are unresolved. See `AUTH-DEP-006` and `AUTH-DEP-014`.
-- The provider sign-out scope and the residual validity window of an
-  already-issued access token after sign-out are unresolved joint
-  `A2-SECURITY` and `A2-BACKEND` decisions.
+- The provider sign-out scope is frozen as `local` and the production
+  access-token lifetime bound is frozen at `<= 900 seconds`. Both require
+  `A2-BACKEND` and `A2-DEPLOYMENT` compatibility confirmation, which has **not**
+  been given: `SECURITY_REQUIRED / PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`.
+  Neither is claimed to be configured.
 - GitHub access-verification freshness is not frozen.
-- The concrete default post-sign-in destination path is `A2-UI`-proposed and
-  Auth-approved, and is not yet fixed.
+- `A2-UI` has responded to this draft with `SPECIFICATION_CONFLICT` under
+  `AUTH-002-CONSUMER-REVIEW-A2-UI-001` against head `7abe17a`. The response is
+  received, not accepted: `AUTH-DEP-012` remains `OPEN`. Two corrections were
+  authorized, one per owner. The Auth-owned correction — the frozen `/` default
+  and the frozen `/` preserved-session safe recovery — is applied in this text.
+  The UI-owned correction to the merged `UI-DEC-013` custody meaning is
+  `A2-UI`-owned and is not performed here. Closure requires `A2-UI` rereview of
+  the corrected head and an acceptable disposition.
+- `A2-SECURITY` has responded to this draft with `REJECTED_WITH_REASON` under
+  `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` against head `7abe17a`, requiring
+  seven normative corrections. All seven are applied above. The response is
+  received, not accepted: `AUTH-DEP-011` remains `OPEN`, and `A2-SECURITY`
+  rereview of the corrected head is required. Applying a required correction is
+  not the correcting party's acceptance of it.
+- `A2-BACKEND` compatibility is unconfirmed for Bearer-only credential
+  transport, the provider cookie not being an API credential, exact-origin CORS,
+  the `<= 900`-second production access-token lifetime, post-sign-out residual
+  JWT validity, the one-refresh-plus-one-retry boundary and Backend denial
+  behavior. `A2-DEPLOYMENT` compatibility is unconfirmed for `Secure` provider
+  cookies, host-only configuration, `Path=/`, the exact `localhost` `Secure`
+  exception, the production JWT lifetime, callback infrastructure, the
+  server-side ephemeral correlation-store capability, secret injection, key
+  rotation, cache safety and deployment topology. All are
+  `SECURITY_REQUIRED / PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`.
 - This contract is documentation, not Auth runtime implementation. Auth
   runtime, frontend Auth behavior, provider runtime, and Backend JWT behavior
   are `NOT_IMPLEMENTED / NOT_TESTED`.

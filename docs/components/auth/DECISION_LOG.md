@@ -1,9 +1,25 @@
 # Auth Decision Log
 
-- Date: 2026-08-06
+- Date: 2026-08-08
 - Current task:
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`
-- Prior correction task:
+  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3-PR30`
+- Continuation of:
+  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3`
+- Authorized manager task:
+  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001`
+- Current `origin/main`: `63093f22c37a0fc6affe168f7d5230107b05cdf3`
+- Merged external evidence: PR #30 — UI-owned correction `CORRECTED_AND_MERGED`
+- Supersedes the narrower task:
+  `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001`, whose uncommitted
+  Auth-side corrections are preserved and reconciled into this package
+- Consumer reviews reconciled:
+  `AUTH-002-CONSUMER-REVIEW-A2-UI-001` — `A2-UI` — `SPECIFICATION_CONFLICT`;
+  `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` — `A2-SECURITY` —
+  `REJECTED_WITH_REASON`, seven required normative corrections
+- Reviewed head for both: `7abe17af8e212bd2127160338ea6ef409da02101`
+- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED`
+- Prior correction tasks:
+  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`,
   `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1`
 - Originating task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
 - Parent task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
@@ -57,6 +73,63 @@ uncertainty. The contract version identifier remains `1.1.0-draft.1` and the
 classification remains `ADDITIVE_COMPATIBLE_MINOR`, for the same reason: the
 draft is still unaccepted. These decisions authorize no Auth code, test, or
 configuration either.
+
+`AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001-A3` adds `AUTH-DEC-042` and
+`AUTH-DEC-043`, reconciling the first consumer response this contract has ever
+received. `AUTH-DEC-042` records that response — `A2-UI`,
+`AUTH-002-CONSUMER-REVIEW-A2-UI-001`, reviewed head `7abe17a`, disposition
+`SPECIFICATION_CONFLICT` — and its two owner-split corrections. `AUTH-DEC-043`
+applies the Auth-owned half by freezing `/` as the default post-sign-in
+destination and as the preserved-session rejected-callback safe recovery
+destination. Neither decision accepts the contract, closes `AUTH-DEP-012`,
+converts the A2-UI disposition, performs or completes the UI-owned correction,
+or authorizes any implementation. The contract version identifier remains
+`1.1.0-draft.1` and the classification remains `ADDITIVE_COMPATIBLE_MINOR`,
+again because the draft is unaccepted and no accepted consumer implemented
+against a prior default value.
+
+`AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3` supersedes that narrower task
+and consolidates it with the `A2-SECURITY` response. `AUTH-DEC-042` and
+`AUTH-DEC-043` are **preserved unchanged** and are not duplicated or rewritten.
+The consolidated task adds `AUTH-DEC-044` through `AUTH-DEC-051`:
+`AUTH-DEC-044` records the `A2-SECURITY` response — reviewed head `7abe17a`,
+disposition `REJECTED_WITH_REASON`, seven required normative corrections — and
+`AUTH-DEC-045` through `AUTH-DEC-051` apply those seven corrections in order:
+the frozen provider-session cookie posture; the CSRF and credential-transport
+boundary; `local` sign-out scope with the `<= 900`-second production
+access-token bound; the public `SIGN_IN_FAILED` failure-oracle boundary; the
+server-side ephemeral callback-correlation mechanism with its two frozen
+lifetimes; the server-side intended-return state; and the live-provider proof
+required before a pre-existing session counts as known-valid.
+
+Every one of the eight restricts behavior or resolves a slot the draft left
+explicitly open. None removes an error classification, none changes an existing
+classification's retry, reauthentication or Backend-eligibility meaning, and
+none weakens the prohibited-storage list — which is extended instead. The
+contract version identifier remains `1.1.0-draft.1` and the classification
+remains `ADDITIVE_COMPATIBLE_MINOR`, independently verified against the
+contract's own versioning rules and consistent with `A2-SECURITY`'s own
+classification of its corrections as pre-acceptance changes requiring no version
+increase. No previously merged historical decision is rewritten. These decisions
+authorize no Auth code, test, configuration, `UI-004`, Backend work, Deployment
+work or provider provisioning.
+
+`AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3-PR30` adds `AUTH-DEC-052` and
+rewrites no decision from `AUTH-DEC-001` through `AUTH-DEC-051`. It records
+external merged evidence only: the UI-owned half of the `A2-UI` conflict is
+`CORRECTED_AND_MERGED` as `UI-DEC-026` and `UI-DEC-027` via pull request #30 —
+implementation commit `30deb92000a20d3837b2423b6bdee3ea3335a7f1`, merge commit
+`63093f22c37a0fc6affe168f7d5230107b05cdf3`, the current `origin/main`. PR #30
+changed six UI durable-record files and no `docs/components/auth/**` path, so no
+rebase, merge, cherry-pick or other history reconciliation was performed on the
+Auth branch. The historical `SPECIFICATION_CONFLICT` disposition against Auth
+head `7abe17af` is unchanged and still stands against that head. `AUTH-DEP-012`
+stays `OPEN` and `NOT_ACCEPTED`, `AUTH-ISSUE-027` stays `OPEN`, `A2-UI` and
+`A2-SECURITY` rereviews of the corrected Auth head remain required, `UI-004`
+remains `NOT_AUTHORIZED`, and no Backend or Deployment acceptance is created.
+The contract version identifier remains `1.1.0-draft.1`, the classification
+remains `ADDITIVE_COMPATIBLE_MINOR`, and this decision authorizes no code, test,
+configuration, implementation or provisioning.
 
 ## `AUTH-DEC-001` — Contract-first dependency bridge
 
@@ -608,6 +681,13 @@ also implied that an uncorrelated callback invalidates the browser session;
 `AUTH-DEC-041` supersedes that, and the requirement that an existing session is
 never correlation is unchanged by both amendments.
 
+**Superseded pending-state note — historical, not current.** The
+`PENDING_A2_SECURITY_ACCEPTANCE` statement above records the state at the time
+this decision was written. It is not the current state: `A2-SECURITY` has since
+frozen the correlation mechanism, its required strength and both of its
+lifetimes as policy in `AUTH-DEC-049`. The decision meaning above is unchanged;
+only its then-pending Security residue is superseded.
+
 ## `AUTH-DEC-038` — Single-flight refresh is scoped, not global
 
 Corrects any reading of the draft under which provider behavior guarantees
@@ -654,6 +734,16 @@ container unless current official provider documentation explicitly supports
 that design and A2-SECURITY accepts it; no such documented support is recorded
 at this baseline, so the reuse is prohibited. Recorded as `AUTH-ISSUE-025`.
 
+**Superseded pending-state note — historical, not current.** The
+`PENDING_A2_SECURITY_ACCEPTANCE` statement above records the state at the time
+this decision was written. It is not the current state: `A2-SECURITY` has since
+frozen the intended-return storage and integrity mechanism as policy in
+`AUTH-DEC-050` — the return path is held only inside the server-side
+`PENDING_ATTEMPT_CORRELATION` record and never in any browser persistence — and
+the provider OAuth `state` prohibition stands unchanged. Only the physical
+storage substrate and topology remain pending, and they are `A2-DEPLOYMENT`'s,
+not `A2-SECURITY`'s. The decision meaning above is unchanged.
+
 ## `AUTH-DEC-040` — The callback-correlation record has a two-phase bounded lifecycle
 
 Resolves the internal contradiction in `AUTH-DEC-037` as first drafted: it
@@ -699,6 +789,17 @@ bounded post-completion window — remain `PENDING_A2_SECURITY_ACCEPTANCE` under
 `AUTH-DEP-011`. No duration and no Security mechanism is invented here.
 Recorded as `AUTH-ISSUE-025`.
 
+**Superseded pending-state note — historical, not current.** The
+`PENDING_A2_SECURITY_ACCEPTANCE` statement above records the state at the time
+this decision was written. It is not the current state: `A2-SECURITY` has since
+frozen the mechanism, the representation and both lifetimes as policy in
+`AUTH-DEC-049` — `PENDING_ATTEMPT_CORRELATION` at most 10 minutes from sign-in
+initiation, `COMPLETED_CALLBACK_CORRELATION` exactly 120 seconds from successful
+completion, an atomic transition, and fail-closed behavior on an unavailable
+store or an unverifiable handle. Only the physical storage substrate and
+topology remain pending, and they are `A2-DEPLOYMENT`'s, not `A2-SECURITY`'s.
+The two-phase lifecycle meaning above is unchanged.
+
 ## `AUTH-DEC-041` — An invalid callback does not invalidate an independent session
 
 Corrects the drafted treatment of `INVALID_CALLBACK` as proof that the entire
@@ -738,3 +839,431 @@ classified under its own error code.
 The `INVALID_CALLBACK` error vocabulary now expresses this conditional resulting
 session state instead of always forcing `TERMINAL_SESSION_ERROR`. This narrows
 no fail-closed rule: uncertainty still resolves against access.
+
+## `AUTH-DEC-042` — The A2-UI consumer response is `SPECIFICATION_CONFLICT`
+
+Records the first consumer response ever returned against
+`CONTRACT-AUTH-001@1.1.0-draft.1`.
+
+| Field | Value |
+|---|---|
+| Consumer | `A2-UI` |
+| Review task | `AUTH-002-CONSUMER-REVIEW-A2-UI-001` |
+| Reviewed head | `7abe17af8e212bd2127160338ea6ef409da02101` |
+| Pull request | #29 — `OPEN / DRAFT / NOT_MERGED` |
+| Disposition | `SPECIFICATION_CONFLICT` |
+| Agent 1 decision | `PASS / A2_UI_SPECIFICATION_CONFLICT_ACCEPTED / AUTH_OWNED_CORRECTIONS_AUTHORIZED` |
+
+The disposition is authoritative for the head it was returned against. It is not
+restated here, or anywhere else in the Auth records, as `ACCEPTED` or
+`ACCEPTED_WITH_CONSTRAINTS`. Head `7abe17a` was rejected.
+
+A2-UI reported the draft otherwise substantially consumable and accepted these
+UI-facing contract areas: callback ownership; the nine-state session model; the
+two `REFRESH_PENDING` modes; the `processCallback` abstraction with atomic
+final-session observability; the `getAccessTokenForApiRequest` boundary; the
+eleven Auth error classifications; indistinguishable presentation of the four
+protected sign-in failures; relative-path-only redirects; fail-closed
+protected-content handling; callback reload semantics; bounded callback
+correlation; preserved-session callback-failure separation; UI route protection
+as defense-in-depth; and no UI authorization authority.
+
+Two blocking corrections were recognized, and ownership is split.
+
+**Cookie conflict — UI-owned.** The merged `UI-DEC-013` prohibition on
+non-`HttpOnly` cookies conflicts with the canonical browser-readable
+`@supabase/ssr` session architecture this contract requires. `A2-UI` is
+separately authorized by Agent 1 to supersede that conflicting current meaning
+while preserving `UI-DEC-013`'s `localStorage` prohibition, its `sessionStorage`
+prohibition and its duplicate-store prohibition. That work is not owned by Auth,
+is not performed by this decision, and is not recorded as complete. No UI file
+was modified. The browser-readable cookie posture itself remains
+`PENDING_A2_SECURITY_ACCEPTANCE`; no A2-SECURITY acceptance is claimed.
+
+**Frozen default and recovery route — Auth-owned.** Auth had not frozen the
+concrete route A2-UI proposed. `AUTH-DEC-043` freezes it.
+
+Every Auth custody requirement stands unchanged: the canonical Auth-owned
+`@supabase/ssr` cookie-backed session; `createBrowserClient` as the approved
+browser adapter; no access token and no refresh token in `localStorage`; no
+access token and no refresh token in `sessionStorage`; no duplicate custom
+token or session store; and no refresh token ever sent to FastAPI.
+
+`AUTH-DEP-012` remains `OPEN` and `NOT_ACCEPTED`. Authorizing both owners to
+correct is not closure. Closure requires the A2-UI correction to pass its own
+manager review and merge, this Auth correction to pass A2-AUTH review and be
+pushed, and `A2-UI` to rereview the corrected PR #29 head and return an
+acceptable disposition. This decision authorizes no implementation, no `UI-004`,
+and no runtime work.
+
+> **Later state — recorded, not rewritten.** The text of `AUTH-DEC-042` above is
+> the record as of the `A2-UI` response and is unchanged. Two of its statements
+> have since been overtaken by external merged evidence and are read as
+> historical: the UI-owned correction, described above as not performed and not
+> complete, has since been merged by its owner as `UI-DEC-026`/`UI-DEC-027` via
+> PR #30; and the browser-readable cookie posture, described above as
+> `PENDING_A2_SECURITY_ACCEPTANCE`, was subsequently frozen as policy by
+> `AUTH-DEC-045`. See `AUTH-DEC-052`. The `SPECIFICATION_CONFLICT` disposition
+> against head `7abe17af` is **not** affected by either and still stands.
+
+## `AUTH-DEC-043` — Default and preserved-session safe-recovery destination frozen to `/`
+
+Freezes the concrete route left open by the earlier draft.
+
+| Item | Value | Classification |
+|---|---|---|
+| Default post-sign-in destination | `/` | `A2_UI_PROPOSED / A2_AUTH_APPROVED` |
+| Preserved-session rejected-callback safe recovery destination | `/` | `A2_UI_PROPOSED / A2_AUTH_APPROVED` |
+| Rejected intended-return destination | `NEVER_USED` | unchanged prohibition, now explicit |
+
+Rationale for `/`: it already exists; it is the implemented Overview
+destination; it is same-origin; it depends on no Runs, Evidence, Benchmarks,
+API-runtime or Auth-specific feature route; and it is therefore safe when
+intended-return state is missing or rejected.
+
+`/` is the fallback, not a replacement for intended-return validation. A valid
+intended-return state may still select an allowed route under the existing
+contract rules, which are unchanged: attempt binding, expiry, single use,
+integrity, the disallowed-route rule, and the relative-path format rules all
+continue to apply exactly as before. `/` is used when no usable intended-return
+destination exists.
+
+The second half of this decision governs one narrow condition: a callback
+attempt is rejected, a session independently established before that callback
+remains known-valid, the callback itself reports failure, and that session
+remains `AUTHENTICATED`. In that condition:
+
+- the safe recovery destination is `/`;
+- callback success is **not** reported and "sign-in succeeded" is **not** shown;
+- the rejected callback's intended-return destination is **never** used;
+- the rejected intended-return state remains rejected and is removed under the
+  existing contract semantics;
+- the preserved session is **not** callback correlation and is **not** proof
+  that this callback succeeded;
+- Backend authorization remains authoritative;
+- `A2-UI` may display a safe callback-error outcome or a safe route-recovery
+  message; and
+- final recovery navigation is `/`, controlled by no destination carried by the
+  rejected attempt.
+
+The safe recovery route is independent of the rejected return candidate by
+construction, because it is a fixed Auth-owned destination rather than a
+validated candidate.
+
+Nothing here weakens callback replay resistance, callback-completion
+correlation, the separation of callback outcome from session validity, or
+fail-closed behavior where a pre-existing session's validity is unknown — that
+case remains `TERMINAL_SESSION_ERROR` and this recovery does not apply to it.
+Open-redirect protections, session-validity semantics and FastAPI authority are
+unchanged. No Security mechanism is chosen here: `SameSite`, the CSRF
+mechanism, callback-correlation storage and duration, intended-return storage
+and integrity, sign-out scope and residual access-token lifetime all remain
+pending their owning components.
+
+## `AUTH-DEC-044` — The A2-SECURITY consumer response is `REJECTED_WITH_REASON`
+
+Records the second consumer response returned against
+`CONTRACT-AUTH-001@1.1.0-draft.1`.
+
+| Field | Value |
+|---|---|
+| Consumer | `A2-SECURITY` |
+| Review task | `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` |
+| Reviewed head | `7abe17af8e212bd2127160338ea6ef409da02101` |
+| Pull request | #29 — `OPEN / DRAFT / NOT_MERGED` |
+| Disposition | `REJECTED_WITH_REASON` |
+| Required normative corrections | seven |
+| Agent 1 decision | `PASS / A2_SECURITY_REJECTION_ACCEPTED / CONSOLIDATED_AUTH_CORRECTION_AUTHORIZED` |
+
+The disposition is authoritative for the head it was returned against and is not
+restated anywhere as acceptance. Head `7abe17a` was rejected.
+
+In rejecting that head, `A2-SECURITY` explicitly **accepted the selected
+architecture**: `SUPABASE_AUTH_WITH_GITHUB_OAUTH`; the `@supabase/ssr`
+integration; `createBrowserClient` and `createServerClient`; one provider-owned
+cookie-backed session as the sole canonical session source; a browser-readable
+provider-session cookie; and required PKCE. The provider session is therefore
+not redesigned as `HttpOnly`-only, and browser persistence is not reverted to a
+`createClient` `localStorage` model. Every prohibited-storage rule stands and is
+extended, never weakened: no access or refresh token in `localStorage` or
+`sessionStorage`; no React, context, Redux, Zustand, IndexedDB, service-worker
+or custom-cookie token store; no duplicate session store; and no refresh token
+forwarded to FastAPI.
+
+The seven required corrections are recorded as `AUTH-DEC-045` through
+`AUTH-DEC-051`. All seven are applied. Applying a required correction is not the
+requiring consumer's acceptance of it: `AUTH-DEP-011` remains `OPEN` and
+`NOT_ACCEPTED`, and `A2-SECURITY` rereview of the corrected PR #29 head is
+required. This decision authorizes no implementation, no `UI-004`, no
+`AUTH-003`, no Backend work, no Deployment work and no provider provisioning.
+
+## `AUTH-DEC-045` — Provider-session cookie posture frozen
+
+Security correction 1. The cookie posture was previously an Auth proposal with
+`SameSite` and the `HttpOnly` position left to Security. It is now frozen
+policy.
+
+| Attribute | Frozen value |
+|---|---|
+| Session | official `@supabase/ssr` provider session |
+| Readability | `BROWSER_READABLE` |
+| `SameSite` | `Lax` |
+| `Secure` | `true` in every non-local environment |
+| Host scope | host-only |
+| `Domain` | absent |
+| `Path` | `/` |
+| `HttpOnly` | not `HttpOnly` under the selected browser-readable architecture |
+| Lifetime and rotation | provider-managed |
+| Duplicate copies | none |
+
+The only permitted `Secure=false` case is `http://localhost:3000`. It does not
+extend to preview environments, LAN hostnames, public tunnels, alternate HTTP
+hosts, staging over HTTP or production over HTTP.
+
+Ownership: `A2-SECURITY` holds `POLICY_ACCEPTANCE`; `A2-AUTH` holds
+`AUTH_SEMANTICS`; `A2-DEPLOYMENT` holds
+`RUNTIME_AND_CONFIGURATION_CONFIRMATION`, which has **not** been given. That
+confirmation is `SECURITY_REQUIRED /
+PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`. Nothing here claims the posture is
+configured, deployed or verified.
+
+## `AUTH-DEC-046` — CSRF and credential-transport boundary frozen
+
+Security correction 2.
+
+Protected FastAPI routes accept credentials only through
+`Authorization: Bearer`. The provider-session cookie is never an API credential.
+No application anti-CSRF token is required merely because a FastAPI request is
+Bearer-authenticated. CORS uses the exact approved Dashboard origin, with no
+wildcard and only the required headers and methods; CORS implementation remains
+`A2-BACKEND`-owned.
+
+Every same-origin Auth or session operation that mutates session state must use
+a non-`GET` method, validate the exact `Origin`, apply Fetch Metadata checks
+where available, and validate an Auth-owned anti-CSRF value bound either to the
+current session or to the anonymous sign-in attempt. Sign-out is state-changing,
+same-origin and CSRF-validated. `GET`, `HEAD` and `OPTIONS` Auth and session
+endpoints remain side-effect-free.
+
+The OAuth callback does **not** require the ordinary same-origin anti-CSRF token,
+because it arrives as a top-level cross-site navigation. It must instead
+validate provider OAuth `state`, PKCE, callback correlation, the exact callback
+destination and intended-return binding before any protected effect. The
+exemption narrows nothing else.
+
+`A2-BACKEND` compatibility is unconfirmed: `SECURITY_REQUIRED /
+PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW`.
+
+## `AUTH-DEC-047` — Sign-out scope `local` and production access-token lifetime `<= 900s`
+
+Security corrections 3 and 3B.
+
+Provider sign-out scope is `local`, meaning `CURRENT_SESSION_ONLY`. The broader
+provider default scope is never inherited or used, and the scope is passed
+explicitly rather than defaulted.
+
+The production Supabase access-token lifetime is at most 900 seconds.
+Classification: `PRODUCTION_SECURITY_REQUIREMENT /
+PENDING_BACKEND_AND_DEPLOYMENT_CONSUMER_CONFIRMATION`.
+
+Required semantics: local authenticated UI state clears immediately on sign-out;
+an already-issued access token may remain accepted by FastAPI until its `exp`;
+no baseline denial list, revocation list or token blocklist is required; and
+neither Auth nor UI may claim immediate JWT revocation.
+
+This is **not** recorded as already configured — no repository evidence proves
+any JWT lifetime. Confirmation is required from `A2-BACKEND` and
+`A2-DEPLOYMENT`. A future especially sensitive operation may require an explicit
+live session-liveness check, but only where `A2-SECURITY` specifically
+classifies that operation; none is classified at this version.
+
+## `AUTH-DEC-048` — Public `SIGN_IN_FAILED` failure-oracle boundary
+
+Security correction 4. Requiring four classifications to share a user-facing
+message was insufficient, because the classification itself still crossed to the
+browser and leaked the failed validation stage.
+
+`INVALID_CALLBACK`, `STATE_VALIDATION_FAILED`, `PKCE_VALIDATION_FAILED` and
+`SESSION_EXCHANGE_FAILED` must be indistinguishable through every untrusted
+browser-observable channel. The browser and UI receive one public
+classification, `SIGN_IN_FAILED`; one safe response shape; equivalent status
+behavior; no internal validation-stage identifier; no provider detail; and no
+field permitting inference of which stage failed. Response timing should be
+normalized where practical and must never intentionally reveal the stage.
+
+The four internal classifications remain valid, retained for server-side
+Security events and restricted operational diagnostics, and keep their existing
+retry, reauthentication, resulting-state and Backend-eligibility semantics
+unchanged. No classification is removed and no classification's meaning is
+altered, so this remains an additive, non-breaking change under the contract's
+own versioning rules.
+
+`A2-UI` is not required to distinguish the four through browser-visible
+behavior, and must not attempt to. The Auth-owned UI adapter surfaces
+`SIGN_IN_FAILED` for all four across the browser boundary. `USER_CANCELLED`,
+`PROVIDER_DENIED`, `SESSION_EXPIRED`, `REFRESH_FAILED`, `SIGN_OUT_FAILED`,
+`CONFIGURATION_UNAVAILABLE` and `TEMPORARY_PROVIDER_FAILURE` are unchanged and
+remain individually observable.
+
+## `AUTH-DEC-049` — Server-side ephemeral callback-correlation mechanism
+
+Security correction 5. `AUTH-DEC-040` defined the correlation lifecycle but
+deliberately left the mechanism and both durations open. Security has now
+decided them, semantically and without selecting a technology.
+
+Mechanism class: `AUTH_CONTROLLED / PROVIDER_NEUTRAL / SERVER_SIDE /
+EPHEMERAL`. It must support atomic state transitions, atomic single-use
+behavior, expiry, concurrent independent sign-in attempts, and shared
+availability where multiple application runtime instances may process callbacks.
+
+No database vendor, cache vendor, storage provider, cloud service or physical
+implementation technology is selected. Physical storage technology and
+deployment topology remain `PENDING_A2_DEPLOYMENT_CONFIRMATION`.
+
+The browser carries only a cryptographically random opaque correlation handle,
+in a separate Auth-owned cookie that in every non-local environment is
+`HttpOnly`, `Secure`, `SameSite=Lax`, host-only and callback-path restricted.
+That cookie carries no authorization code, access token, refresh token, PKCE
+verifier, return path, provider payload or provider session.
+
+The server-side record binds one sign-in attempt, one callback flow, the
+lifecycle state, the creation time, the expiry, one completed-outcome reference
+and the Security policy version.
+
+| Lifecycle state | Frozen lifetime |
+|---|---|
+| `PENDING_ATTEMPT_CORRELATION` | at most 10 minutes from sign-in initiation |
+| `COMPLETED_CALLBACK_CORRELATION` | exactly 120 seconds from successful completion |
+
+The pending-to-completed transition is atomic. Failure, abandonment, a malformed
+callback, an expired flow and a rejected flow must never create completed
+correlation. An unavailable store or an unverifiable handle fails closed.
+Concurrent tabs hold separate records and never overwrite one another.
+
+## `AUTH-DEC-050` — Intended-return state is server-side only
+
+Security correction 6. `AUTH-DEC-039` required the return state to be
+attempt-bound, expiry-limited and single-use but left its storage open. It is
+now frozen as server-side.
+
+The intended return path exists only inside the server-side
+`PENDING_ATTEMPT_CORRELATION` record. The browser carries only the opaque
+correlation handle.
+
+The return path must be validated before storage, bound to exactly one sign-in
+attempt, expire within 10 minutes of initiation, be atomically single-use, and
+be removed on success, on failure, on abandonment and on expiry.
+
+It is never copied into provider OAuth `state`, never stored in the
+browser-readable provider cookie, never stored in the correlation-handle cookie,
+never placed in a URL, and never stored in `localStorage`, `sessionStorage`,
+IndexedDB or any other custom browser persistence mechanism.
+
+A missing server-side record, an integrity failure, a replay or a store failure
+each falls back to `/`. These fallbacks relax no callback validation, and a
+fallback destination is never callback success.
+
+## `AUTH-DEC-051` — A preserved session requires live provider validation
+
+Security correction 7. `AUTH-DEC-041` preserved an "independently established
+and still known-valid" session without defining what proves validity, which
+would have let cookie presence pass as proof.
+
+A pre-existing session qualifies as
+`INDEPENDENTLY_ESTABLISHED_AND_KNOWN_VALID_SESSION` only when all four hold:
+
+1. its session identity existed before the rejected callback was processed;
+2. callback processing performed no successful code exchange that created or
+   replaced that session;
+3. after callback rejection, authoritative server-side live provider validation
+   succeeds; and
+4. the validated session identity equals the pre-callback session identity.
+
+Requirement 3 is normative as `LIVE_PROVIDER_SESSION_VALIDATION`. The contract
+may reference `getUser()` as the currently supported provider example, but must
+not permanently depend on one SDK method name where an equivalent authoritative
+provider operation exists.
+
+Insufficient alone: cookie presence; `getSession()`; a decoded JWT; local
+signature or expiry validation; `getClaims()`; frontend state; a subscription
+event; an existing access token.
+
+Where live validation is unavailable, times out, fails, returns another session,
+or cannot establish session-identity equality, validity is `UNPROVEN` and the
+result is `FAIL_CLOSED`.
+
+A rejected callback that preserves a session must emit an internal Security
+event carrying at least `session_preserved=true`, `callback_success=false` and
+`rejected_callback_destination_used=false`.
+
+This tightens `AUTH-DEC-041` and `AUTH-DEC-043` without altering them: the
+preserved-session recovery destination remains `/`, the rejected
+intended-return destination remains `NEVER_USED`, no callback success is
+reported, and a preserved session is still never callback correlation and never
+proof that the callback succeeded.
+
+## `AUTH-DEC-052` — The A2-UI owner-side `AUTH-002` conflict correction merged via PR #30
+
+| Field | Value |
+|---|---|
+| Decision ID | `AUTH-DEC-052` |
+| Owner of the corrected records | `A2-UI` |
+| Recorded by | `A3-AUTH` — external merged evidence only |
+| Consumer review | `AUTH-002-CONSUMER-REVIEW-A2-UI-001` |
+| Reviewed Auth head | `7abe17af8e212bd2127160338ea6ef409da02101` |
+| Historical disposition at that head | `SPECIFICATION_CONFLICT` — unchanged |
+| Pull request | #30 — `docs(ui): reconcile Auth session custody and merged frontend state` |
+| Implementation commit | `30deb92000a20d3837b2423b6bdee3ea3335a7f1` |
+| Merge commit | `63093f22c37a0fc6affe168f7d5230107b05cdf3` — current `origin/main` |
+| Merged UI decisions | `UI-DEC-026`, `UI-DEC-027` |
+| Changed paths | six UI durable-record files; no `docs/components/auth/**` path |
+| Auth-side state | contract correction remains uncommitted in this package |
+
+**The historical disposition is not rewritten.** `A2-UI` returned
+`SPECIFICATION_CONFLICT` against Auth head `7abe17af`, and that response remains
+standing evidence against that head. This decision records only that the
+UI-owned half of that conflict has been corrected and merged by its owner.
+
+**What merged.** `UI-DEC-026` supersedes the conflicting non-`HttpOnly`-cookie
+interpretation of the merged `UI-DEC-013` and nothing else. It preserves and
+keeps binding: the `localStorage` prohibition; the `sessionStorage` prohibition;
+the no-duplicate-and-no-shadow-session-store rule; `Authorization: Bearer`
+transport with the absolute prohibition on forwarding a refresh token to
+FastAPI; UI route protection as defense-in-depth only; and A2-SECURITY's joint
+ownership of final cookie acceptance. The only browser-readable session store it
+permits is the canonical Auth-owned cookie-backed session operated exclusively
+through the approved `@supabase/ssr` Auth adapter, and it marks that permission
+`CONDITIONAL` on A2-SECURITY acceptance of the final cookie posture. `UI-DEC-027`
+reconciles the UI records to merged repository evidence — `apps/web` `PRESENT`,
+`UI-002` and `UI-003` `MERGED` — while keeping Auth frontend
+`NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`, Auth runtime
+`NOT_IMPLEMENTED / NOT_TESTED`, provider runtime `NOT_PROVISIONED / NOT_TESTED`,
+`UI-004` `BLOCKED / NOT_AUTHORIZED` and `/auth/callback`
+`RESERVED / NOT_IMPLEMENTED`.
+
+**Compatibility consequence.** The merged UI custody rule no longer prohibits
+the browser-readable provider cookie that the canonical Auth-owned
+`@supabase/ssr` session depends on. The custody conflict between the merged UI
+durable records and this contract's session architecture is therefore removed on
+the UI side. Auth's architecture is unchanged by this decision: it neither
+relaxes nor extends `AUTH-DEC-045`, and the merged UI text predates and does not
+evaluate `AUTH-DEC-045` through `AUTH-DEC-051`.
+
+**What this decision is not.**
+
+- It is **not** `A2-UI` acceptance of the corrected Auth head. The merged UI text
+  itself states that it does not make Auth PR #29 acceptable and that `A2-UI`
+  rereview is still required.
+- It does **not** convert `AUTH-DEP-012`, which stays `OPEN` and `NOT_ACCEPTED`.
+- It does **not** close `AUTH-ISSUE-027`.
+- It does **not** authorize `UI-004`, which remains `NOT_AUTHORIZED`.
+- It does **not** discharge the `A2-SECURITY` corrected-head rereview, the
+  `A2-BACKEND` or `A2-DEPLOYMENT` affected-boundary confirmations, or the final
+  `A2-INTEGRATION` review.
+- It is **not** implementation, provisioning or runtime evidence of any kind.
+
+**Auth-side state.** The Auth-owned correction package remains unstaged and
+uncommitted on branch `agent2/auth-002-session-contract` at head `7abe17af`,
+pending A2-AUTH acceptance and push. No history reconciliation with `origin/main`
+was performed or required: PR #30 touched no Auth path, so the branch and main
+do not overlap.

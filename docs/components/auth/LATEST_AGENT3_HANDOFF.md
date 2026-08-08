@@ -1,6 +1,348 @@
 # Latest A3-AUTH Handoff
 
-## Task result — `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2` (current)
+## Task result — `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3-PR30` (current)
+
+- Agent 2: `A2-AUTH`
+- Agent 3: `A3-AUTH` — **not** `A2-AUTH`, **not** `A2-UI`, **not** `A2-SECURITY`
+- Task: `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3-PR30`
+- Continuation of: `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3`
+- Authorized manager task: `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001`
+- Prompt type: `MERGED_STATE_RECONCILIATION / DOCUMENTATION_ONLY`
+- Date: 2026-08-08
+- Result: `RECONCILED / PENDING_A2_AUTH_REVIEW`
+- `ASSUMED`: `NONE`
+
+### Repository state
+
+| Item | Value |
+|---|---|
+| Current `origin/main` | `63093f22c37a0fc6affe168f7d5230107b05cdf3` |
+| Auth branch | `agent2/auth-002-session-contract` |
+| Auth branch `HEAD` (local and remote) | `7abe17af8e212bd2127160338ea6ef409da02101` |
+| Merge base with `origin/main` | `006cc885161ff49be582a9fa08f353a70c31c7b1` |
+| Main divergence | `UI_DOCUMENTATION_ONLY / NO_AUTH_PATH_OVERLAP / NO_REBASE_OR_BRANCH_MERGE_REQUIRED` |
+| Pull request | #29 — `OPEN / DRAFT / NOT_MERGED` |
+| Worktree | `/Users/omkar/Documents/TestGap-Miner-wt-auth-002-session-contract` |
+
+Newer-main delta from the merge base is exactly six UI durable-record files —
+`docs/components/ui/COMPONENT_STATUS.md`, `DECISION_LOG.md`,
+`DEPENDENCY_REQUESTS.md`, `LATEST_AGENT3_HANDOFF.md`, `OPEN_ISSUES.md`,
+`TASK_LEDGER.md`. Zero `docs/components/auth/**` paths changed on main, so the
+Auth branch requires no rebase and no branch merge, and none was performed.
+
+### Merged external dependency evidence — PR #30
+
+| Item | Value |
+|---|---|
+| Pull request | #30 — `docs(ui): reconcile Auth session custody and merged frontend state` |
+| Implementation commit | `30deb92000a20d3837b2423b6bdee3ea3335a7f1` |
+| Merge commit | `63093f22c37a0fc6affe168f7d5230107b05cdf3` |
+| Merged UI decisions | `UI-DEC-026`, `UI-DEC-027` |
+| UI owner correction | `MERGED` |
+| Auth correction | `UNSTAGED / UNCOMMITTED / PENDING_A2_AUTH_REVIEW` |
+
+The merged UI correction preserves the `localStorage` prohibition, the
+`sessionStorage` prohibition and the no-duplicate/shadow-session-store rule;
+permits only the canonical Auth-owned `@supabase/ssr` session, conditionally on
+A2-SECURITY acceptance of the final cookie posture; proposes `/` as the UI
+default route and safe recovery route; and keeps `UI-004` `NOT_AUTHORIZED`.
+
+### What this task did
+
+Recorded merged external state in the Auth durable records and removed
+current-state wording that still described the UI-owned correction as
+outstanding or unmerged. The historical `A2-UI` disposition
+`SPECIFICATION_CONFLICT` against Auth head `7abe17af` is preserved verbatim and
+is **not** rewritten; PR #30 is not treated as acceptance of any Auth head.
+Added `AUTH-DEC-052`. `AUTH-DEC-042` through `AUTH-DEC-051` are unchanged.
+`AUTH-ISSUE-023` is resolved by `UI-DEC-027`; `AUTH-ISSUE-027` stays `OPEN`.
+
+The pre-existing uncommitted seven-file Auth package was preserved, not
+discarded and not recreated. No merge, rebase, cherry-pick, reset, amend or
+force-push was performed. No UI file was modified.
+
+### Status after this reconciliation
+
+| Item | State |
+|---|---|
+| `CONTRACT-AUTH-001@1.1.0-draft.1` | `DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY` |
+| Contract version and classification | unchanged: `1.1.0-draft.1`, `ADDITIVE_COMPATIBLE_MINOR` |
+| `AUTH-DEP-011` | `OPEN / RESPONSE_RECEIVED / REJECTED_WITH_REASON / CORRECTION_IN_PROGRESS / REREVIEW_REQUIRED / NOT_ACCEPTED` |
+| `AUTH-DEP-012` | `OPEN / RESPONSE_RECEIVED / SPECIFICATION_CONFLICT_AT_7ABE17AF / UI_OWNER_CORRECTION_MERGED_VIA_PR_30 / AUTH_OWNER_CORRECTION_IN_PROGRESS / CORRECTED_HEAD_REREVIEW_REQUIRED / NOT_ACCEPTED` |
+| `A2-UI` | `SPECIFICATION_CONFLICT_AT_7ABE17AF / UI_SIDE_CORRECTION_MERGED / AUTH_CORRECTION_IN_PROGRESS / REREVIEW_REQUIRED` |
+| `A2-SECURITY` | `REJECTED_WITH_REASON_AT_7ABE17AF / SEVEN_CORRECTIONS_APPLIED / REREVIEW_REQUIRED / NOT_ACCEPTED` |
+| `A2-INTEGRATION` | `ACCEPTED_WITH_CONSTRAINTS_AT_7ABE17AF / FINAL_REREVIEW_REQUIRED` |
+| `A2-BACKEND` | `CONSUMER_RESPONSE_OR_AFFECTED_BOUNDARY_CONFIRMATION_STILL_REQUIRED` |
+| `A2-DEPLOYMENT` | `CONSUMER_RESPONSE_OR_AFFECTED_BOUNDARY_CONFIRMATION_STILL_REQUIRED` |
+| `AUTH-ISSUE-027`, `AUTH-ISSUE-028`, `AUTH-ISSUE-029` | `OPEN` |
+| `AUTH-ISSUE-023` | `RESOLVED_BY_UI_OWNER_VIA_PR_30` |
+| Decision added | `AUTH-DEC-052` |
+| Implementation | `NOT_AUTHORIZED` |
+| Auth runtime | `NOT_IMPLEMENTED / NOT_TESTED` |
+| Frontend Auth | `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED` |
+| Provider runtime | `NOT_PROVISIONED / NOT_TESTED` |
+| `UI-004` | `NOT_AUTHORIZED` |
+
+### Required next sequence, after A2-AUTH acceptance
+
+1. stage the exact seven Auth files;
+2. one additive documentation commit;
+3. normal push to `agent2/auth-002-session-contract` — no force, no amend, no
+   rebase;
+4. record the new PR #29 head;
+5. `A2-UI` rereview of that corrected head;
+6. `A2-SECURITY` rereview of that corrected head;
+7. `A2-BACKEND` affected-boundary review;
+8. `A2-DEPLOYMENT` affected-boundary review;
+9. final `A2-INTEGRATION` review.
+
+Commit `7abe17a` is not amended, nothing is rebased or force-pushed, no second
+Auth PR is opened, and PR #29 is neither marked ready nor merged by this task.
+
+---
+
+## Task result — `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3` (preceding)
+
+- Agent 2: `A2-AUTH`
+- Agent 3: `A3-AUTH` — **not** `A2-AUTH`, **not** `A2-UI`, **not** `A2-SECURITY`
+- Task: `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3`
+- Authorized manager task: `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001`
+- Supersedes: `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001`
+- Parent: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
+- Prompt type: `EXISTING_DRAFT_PR / MULTI_CONSUMER_CONTRACT_CORRECTION /
+  DOCUMENTATION_ONLY`
+- Date: 2026-08-08
+- Result: `IMPLEMENTED / PENDING_A2_AUTH_REVIEW`
+- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED`
+- PR base: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Original consumer-reviewed PR head:
+  `7abe17af8e212bd2127160338ea6ef409da02101`
+- Branch `HEAD` at correction start, unchanged at return:
+  `7abe17af8e212bd2127160338ea6ef409da02101`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-002-session-contract`
+- Branch: `agent2/auth-002-session-contract`
+- Commit, push, PR-creation, PR-ready and merge authorization: `NOT_GRANTED`
+- `ASSUMED`: `NONE`
+
+### Reconciliation of the superseded narrower task
+
+The narrower UI-only correction had already produced an authorized seven-file
+uncommitted package. That package was inspected, **preserved and reconciled**
+into this one — not discarded and recreated. `AUTH-DEC-042` (the A2-UI response)
+and `AUTH-DEC-043` (`/` default and `/` recovery) stand unchanged and
+undurplicated, as does `AUTH-ISSUE-027`. The consolidated task adds the Security
+half on top of them.
+
+### Consumer responses reconciled
+
+| Consumer | Review task | Reviewed head | Disposition |
+|---|---|---|---|
+| `A2-UI` | `AUTH-002-CONSUMER-REVIEW-A2-UI-001` | `7abe17a` | `SPECIFICATION_CONFLICT` |
+| `A2-SECURITY` | `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` | `7abe17a` | `REJECTED_WITH_REASON`, seven required normative corrections |
+
+Agent 1: `CONSOLIDATED_AUTH_CORRECTION_AUTHORIZED`. Both dispositions are
+authoritative for head `7abe17a` and are converted to acceptance nowhere.
+
+### Preserved UI correction
+
+- default post-sign-in destination = `/`;
+- preserved-session rejected-callback recovery = `/`;
+- rejected intended-return destination = `NEVER_USED`.
+
+The UI-owned `UI-DEC-013` custody-rule supersession remains `A2-UI`'s and was
+not performed or authored by Auth. No UI file was modified. It has since been
+merged by its owner via PR #30 — see the current task result above and
+`AUTH-DEC-052`.
+
+### Security corrections applied
+
+| # | Correction | Decision |
+|---:|---|---|
+| 1 | Provider-session cookie posture frozen | `AUTH-DEC-045` |
+| 2 | CSRF and credential-transport boundary | `AUTH-DEC-046` |
+| 3 | `local` sign-out scope; production access-token lifetime `<= 900s` | `AUTH-DEC-047` |
+| 4 | Public `SIGN_IN_FAILED` failure-oracle boundary | `AUTH-DEC-048` |
+| 5 | Server-side ephemeral callback correlation; pending `<= 10 min`, completed exactly `120 s` | `AUTH-DEC-049` |
+| 6 | Server-side intended-return state | `AUTH-DEC-050` |
+| 7 | Live-provider validation for a preserved session | `AUTH-DEC-051` |
+
+The response itself is `AUTH-DEC-044`. Additionally recorded as requirements and
+**not** as runtime evidence: the `Cache-Control: private, no-store` boundary;
+the XSS and runtime hardening requirements; the Security-event field boundary
+with its prohibited-content list; and the key-custody requirements.
+
+### Status after this correction
+
+| Item | State |
+|---|---|
+| `CONTRACT-AUTH-001@1.1.0-draft.1` | `DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY` |
+| Contract version and classification | unchanged: `1.1.0-draft.1`, `ADDITIVE_COMPATIBLE_MINOR` |
+| `AUTH-DEP-011` | `OPEN / RESPONSE_RECEIVED / REJECTED_WITH_REASON / CORRECTION_IN_PROGRESS / REREVIEW_REQUIRED / NOT_ACCEPTED` |
+| `AUTH-DEP-012` | `OPEN / RESPONSE_RECEIVED / SPECIFICATION_CONFLICT_AT_7ABE17AF / UI_OWNER_CORRECTION_MERGED_VIA_PR_30 / AUTH_OWNER_CORRECTION_IN_PROGRESS / CORRECTED_HEAD_REREVIEW_REQUIRED / NOT_ACCEPTED` |
+| `AUTH-ISSUE-027`, `AUTH-ISSUE-028`, `AUTH-ISSUE-029` | `OPEN` |
+| Backend compatibility | `PENDING` |
+| Deployment compatibility | `PENDING` |
+| `A2-UI` rereview | `REQUIRED` |
+| `A2-SECURITY` rereview | `REQUIRED` |
+| Implementation | `NOT_AUTHORIZED` |
+| Auth runtime | `NOT_IMPLEMENTED / NOT_TESTED` |
+| Frontend Auth | `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED` |
+| Provider runtime | `NOT_PROVISIONED / NOT_TESTED` |
+| `UI-004` | `NOT_AUTHORIZED` |
+
+Architecture preserved exactly as `A2-SECURITY` accepted it:
+`SUPABASE_AUTH_WITH_GITHUB_OAUTH`; `@supabase/ssr`; `createBrowserClient` and
+`createServerClient`; one provider-owned cookie-backed session; browser-readable
+provider-session cookie; required PKCE. Prohibited storage is extended, never
+weakened: no access or refresh token in `localStorage` or `sessionStorage`; no
+React, context, Redux, Zustand, IndexedDB, service-worker or custom-cookie token
+store; no duplicate session store; no refresh token to FastAPI. The provider
+session is not redesigned as `HttpOnly`-only and browser persistence is not
+reverted to a `createClient` `localStorage` model.
+
+### Files modified
+
+The same seven authorized Auth-owned Markdown files under
+`docs/components/auth/`: `CONTRACT-AUTH-001.md`, `COMPONENT_STATUS.md`,
+`TASK_LEDGER.md`, `OPEN_ISSUES.md`, `DECISION_LOG.md`,
+`DEPENDENCY_REQUESTS.md`, `LATEST_AGENT3_HANDOFF.md`. No eighth path, and no
+Security file created.
+
+### Next actions
+
+Required next Auth action: **A2-AUTH independent review**, including independent
+SHA-256 verification of every changed file. No manager acceptance is claimed
+here, and applying a consumer's required correction is not that consumer's
+acceptance of it.
+
+Only after an A2-AUTH pass may the repository owner stage the accepted Auth
+paths, create one additive documentation commit — preferred subject
+`docs(auth): reconcile UI and Security consumer reviews` — and push normally to
+`agent2/auth-002-session-contract`, updating PR #29. Commit `7abe17a` is not
+amended; nothing is rebased or force-pushed; no second Auth PR is opened; PR #29
+is not marked ready and not merged. The new head is then recorded, and requires
+at minimum `A2-UI` rereview, `A2-SECURITY` rereview, `A2-BACKEND`
+affected-boundary review and `A2-DEPLOYMENT` affected-boundary review;
+`A2-INTEGRATION` final review follows only once every affected owner response
+and correction is complete.
+
+---
+
+## Task result — `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001-A3` (superseded)
+
+- Agent 2: `A2-AUTH`
+- Agent 3: `A3-AUTH` — **not** `A2-AUTH`
+- Task: `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001-A3`
+- Authorized manager task: `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001`
+- Parent contract task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
+- Prompt type: `EXISTING_DRAFT_PR / CONSUMER_RESPONSE_RECONCILIATION /
+  DOCUMENTATION_ONLY`
+- Scope: `AUTH_CONTRACT_AND_DESIGN_DOCUMENTATION_ONLY`
+- Date: 2026-08-07
+- Result: `IMPLEMENTED / PENDING_A2_AUTH_REVIEW`
+- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED`
+- PR base: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Original reviewed head: `7abe17af8e212bd2127160338ea6ef409da02101`
+- Branch `HEAD` at correction start: `7abe17af8e212bd2127160338ea6ef409da02101`
+- `origin/main` **as of that task**: `006cc885161ff49be582a9fa08f353a70c31c7b1` —
+  inspected, not merged and not rebased; identical to the PR base, so there was
+  no delta. Main has since advanced to
+  `63093f22c37a0fc6affe168f7d5230107b05cdf3` via PR #30; see the current task
+  result at the top of this file
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-002-session-contract`
+- Branch: `agent2/auth-002-session-contract`
+- Commit authorization: `NOT_GRANTED`
+- Push authorization: `NOT_GRANTED`
+- Pull-request authorization: `NOT_GRANTED`
+- PR-ready authorization: `NOT_GRANTED`
+- Merge authorization: `NOT_GRANTED`
+- `ASSUMED`: `NONE`
+
+### Consumer response reconciled
+
+| Field | Value |
+|---|---|
+| Consumer | `A2-UI` |
+| Review task | `AUTH-002-CONSUMER-REVIEW-A2-UI-001` |
+| Reviewed head | `7abe17af8e212bd2127160338ea6ef409da02101` |
+| A2-UI disposition | `SPECIFICATION_CONFLICT` |
+| Agent 1 disposition | `CONFLICT_CONFIRMED / AUTH_OWNED_CORRECTIONS_AUTHORIZED` |
+
+The disposition is authoritative for the head it was returned against and is not
+converted to `ACCEPTED` or `ACCEPTED_WITH_CONSTRAINTS` anywhere in these records.
+
+### Corrections
+
+| Owner | Correction | Executed here |
+|---|---|---|
+| `A2-AUTH` | Default post-sign-in destination frozen to `/`; preserved-session rejected-callback safe recovery frozen to `/`; rejected intended-return destination `NEVER_USED` | yes — `AUTH-DEC-043` |
+| `A2-UI` | Custody-rule supersession of the conflicting `UI-DEC-013` non-`HttpOnly` cookie meaning, preserving its `localStorage`, `sessionStorage` and duplicate-store prohibitions | no — `A2-UI`-owned, not performed, not recorded complete |
+
+The A2-UI response itself is recorded as `AUTH-DEC-042`, and the conflict as
+`AUTH-ISSUE-027`.
+
+### Status after this correction
+
+| Item | State |
+|---|---|
+| Security cookie decision | at that stage, before the subsequent `A2-SECURITY` consumer response: `PENDING_A2_SECURITY_ACCEPTANCE` — not accepted, not claimed accepted. **Superseded:** frozen as policy by `AUTH-DEC-045`; see the current task result above |
+| `CONTRACT-AUTH-001@1.1.0-draft.1` | `DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY` |
+| Contract version and classification | unchanged: `1.1.0-draft.1`, `ADDITIVE_COMPATIBLE_MINOR` |
+| `AUTH-DEP-012` | at that stage: `OPEN / RESPONSE_RECEIVED / SPECIFICATION_CONFLICT / OWNER_CORRECTIONS_AUTHORIZED / REREVIEW_REQUIRED / NOT_ACCEPTED`. **Superseded:** the UI-owned correction has since merged via PR #30; see the current task result above. Still `OPEN` and still `NOT_ACCEPTED` |
+| `AUTH-ISSUE-027` | `OPEN` |
+| Implementation | `NOT_AUTHORIZED` |
+| Auth runtime | `NOT_IMPLEMENTED / NOT_TESTED` |
+| Frontend Auth | `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED` |
+| Provider runtime | `NOT_PROVISIONED / NOT_TESTED` |
+| `UI-004` | `NOT_AUTHORIZED` |
+
+Preserved unchanged: the canonical Auth-owned `@supabase/ssr` cookie-backed
+session; `createBrowserClient` as the approved browser adapter; no access or
+refresh token in `localStorage`; no access or refresh token in `sessionStorage`;
+no duplicate custom token or session store; no refresh token sent to FastAPI;
+PKCE; OAuth-state requirements; callback-correlation semantics and its bounded
+post-completion window; intended-return attempt binding, expiry and single-use
+rules; both `REFRESH_PENDING` modes; cross-context refresh limits; sign-out
+semantics; `Authorization: Bearer` transport; every existing error meaning; and
+FastAPI authority. No `SameSite` value, CSRF mechanism, correlation storage or
+duration, intended-return storage or integrity mechanism, sign-out scope or
+residual access-token lifetime was chosen.
+
+### Files modified
+
+Seven authorized Auth-owned Markdown files, all under
+`docs/components/auth/`: `CONTRACT-AUTH-001.md`, `COMPONENT_STATUS.md`,
+`TASK_LEDGER.md`, `OPEN_ISSUES.md`, `DECISION_LOG.md`,
+`DEPENDENCY_REQUESTS.md`, `LATEST_AGENT3_HANDOFF.md`. No eighth path. No UI,
+Security, Deployment, Backend, Integration, application, test, API-doc,
+environment, manifest, lockfile or infrastructure file was touched.
+
+### Next actions
+
+Required next Auth action: **A2-AUTH independent review** of this unstaged
+correction, including independent SHA-256 verification of every changed file.
+This handoff makes no manager acceptance claim; applying an authorized
+correction is not acceptance of it.
+
+On an A2-AUTH pass, the user-managed lifecycle may stage exactly the accepted
+Auth files, create one additive documentation commit — preferred subject
+`docs(auth): reconcile UI consumer review` — and push normally to
+`agent2/auth-002-session-contract`, which updates the existing PR #29. Commit
+`7abe17a` is not amended; nothing is rebased or force-pushed; no second Auth
+pull request is opened; PR #29 is not marked ready and is not merged, and stays
+`OPEN / DRAFT / NOT_MERGED`. The resulting new head must then be recorded for
+the required later action: **`A2-UI` rereview of the new PR #29 head**.
+
+Closure of the conflict requires all of: the A2-UI correction passing its own
+manager review, that UI correction merging, this Auth correction passing A2-AUTH
+review and being pushed, and the A2-UI rereview returning an acceptable
+disposition. None of those had occurred at the time of that task. The first two
+have since occurred via PR #30; the Auth-side acceptance, push and `A2-UI`
+rereview remain outstanding.
+
+---
+
+## Task result — `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2` (superseded)
 
 - Agent 2: `A2-AUTH`
 - Agent 3: `A3-AUTH` — **not** `A2-AUTH`

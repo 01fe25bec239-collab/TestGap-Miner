@@ -1,9 +1,21 @@
 # Auth Open Issues
 
-- Date: 2026-08-06
+- Date: 2026-08-08
 - Current task:
-  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`
-- Prior correction task:
+  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001-A3`
+- Authorized manager task:
+  `AUTH-002-CONSUMER-CORRECTION-UI-SECURITY-001`
+- Supersedes the narrower task:
+  `AUTH-002-A2-UI-CONSUMER-CONFLICT-CORRECTION-001`, whose uncommitted
+  Auth-side corrections are preserved and reconciled into this package
+- Consumer reviews reconciled:
+  `AUTH-002-CONSUMER-REVIEW-A2-UI-001` — `A2-UI` — `SPECIFICATION_CONFLICT`;
+  `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` — `A2-SECURITY` —
+  `REJECTED_WITH_REASON`, seven required normative corrections
+- Reviewed head for both: `7abe17af8e212bd2127160338ea6ef409da02101`
+- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED`
+- Prior correction tasks:
+  `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C2`,
   `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3-C1`
 - Originating task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001-A3`
 - Parent task: `AUTH-002-DASHBOARD-SIGN-IN-SESSION-CONTRACT-001`
@@ -414,6 +426,15 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
   them and did not.
 - Blocking task: none.
 - Resolution path: raised to A2-UI as a review question in `AUTH-DEP-012`.
+- Status: `RESOLVED_BY_UI_OWNER_VIA_PR_30`. `UI-DEC-027`, merged in PR #30
+  (merge commit `63093f22c37a0fc6affe168f7d5230107b05cdf3`), reconciles the UI
+  durable records to the merged repository evidence: `apps/web` `PRESENT`,
+  `UI-002` and `UI-003` `MERGED`, regression foundation `MERGED`. The same
+  record keeps Auth frontend `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`,
+  Auth runtime `NOT_IMPLEMENTED / NOT_TESTED`, provider runtime
+  `NOT_PROVISIONED / NOT_TESTED`, `UI-004` `BLOCKED / NOT_AUTHORIZED` and
+  `/auth/callback` `RESERVED / NOT_IMPLEMENTED`. A merged frontend foundation is
+  not Auth evidence and is not recorded as any.
 
 ### `AUTH-ISSUE-024` — No A2-SECURITY component records exist
 
@@ -467,6 +488,27 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 - Blocking task: `AUTH-002` acceptance and implementation, `UI-004`.
 - Resolution path: `AUTH-DEP-011` questions 11, 12 and 15. Blocked in practice by
   `AUTH-ISSUE-024`, since no Security record set exists to answer in.
+- **Update — mechanism decided, storage substrate still open.** `A2-SECURITY`
+  has since decided both mechanisms. The correlation record is
+  `AUTH_CONTROLLED / PROVIDER_NEUTRAL / SERVER_SIDE / EPHEMERAL`, with the
+  browser carrying only an opaque handle in a separate `HttpOnly`, `Secure`,
+  `SameSite=Lax`, host-only, callback-path-restricted Auth-owned cookie;
+  `PENDING_ATTEMPT_CORRELATION` lives at most 10 minutes from initiation and
+  `COMPLETED_CALLBACK_CORRELATION` exactly 120 seconds from successful
+  completion, with an atomic transition and fail-closed behavior when the store
+  is unavailable or the handle unverifiable (`AUTH-DEC-049`). The intended-return
+  path lives only inside the server-side pending record, atomically single-use,
+  never in any browser persistence, falling back to `/` on a missing record,
+  integrity failure, replay or store failure (`AUTH-DEC-050`). The two failure
+  modes this issue previously named — a window too short to permit post-success
+  correlation, or too long to be acceptable — are resolved by the frozen
+  120-second value. What remains open here is narrower and belongs to a
+  different owner: the **physical storage technology and deployment topology**
+  for the server-side ephemeral store, plus the key-custody requirements for
+  handle integrity. Both are `SECURITY_REQUIRED /
+  PENDING_AFFECTED_OWNER_COMPATIBILITY_REVIEW` by `A2-DEPLOYMENT` under
+  `AUTH-DEP-013`. No vendor, product or physical technology is selected by Auth.
+  This issue stays `OPEN` on that residue.
 
 ### `AUTH-ISSUE-026` — Cross-context refresh is not serialized and is untested
 
@@ -492,6 +534,158 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 - Resolution path: `AUTH-DEP-011` question 13 and `AUTH-DEP-015` questions 10
   and 11; runtime verification once `AUTH-002` implementation and provider
   provisioning are separately authorized.
+
+## Issues opened by the A2-UI consumer response
+
+### `AUTH-ISSUE-027` — A2-UI returned `SPECIFICATION_CONFLICT` against head `7abe17a`
+
+- Classification: `CONSUMER_SPECIFICATION_CONFLICT`
+- Severity: `HIGH`
+- Substate: `UI_SIDE_CORRECTED_AND_MERGED / AUTH_SIDE_CORRECTED_IN_WORKTREE /
+  PENDING_A2_AUTH_ACCEPTANCE_AND_PUSH / A2_UI_REREVIEW_REQUIRED /
+  CONTRACT_ACCEPTANCE_BLOCKED / IMPLEMENTATION_READINESS_BLOCKED`
+- Current owner-side state:
+
+  | Side | State | Evidence |
+  |---|---|---|
+  | UI | `CORRECTED_AND_MERGED` | PR #30 — implementation commit `30deb92000a20d3837b2423b6bdee3ea3335a7f1`, merge commit `63093f22c37a0fc6affe168f7d5230107b05cdf3`, current `origin/main`; `UI-DEC-026`, `UI-DEC-027` |
+  | Auth | `CORRECTED_IN_WORKTREE / PENDING_A2_AUTH_ACCEPTANCE_AND_PUSH` | uncommitted seven-file Auth package on branch `agent2/auth-002-session-contract`, head `7abe17af8e212bd2127160338ea6ef409da02101` |
+  | `A2-UI` rereview | `REQUIRED` | no rereview of any corrected Auth head exists |
+  | Contract acceptance | `BLOCKED` | — |
+  | Implementation readiness | `BLOCKED` | — |
+- Evidence: consumer `A2-UI`, review task
+  `AUTH-002-CONSUMER-REVIEW-A2-UI-001`, reviewed head
+  `7abe17af8e212bd2127160338ea6ef409da02101` on pull request #29
+  (`OPEN / DRAFT / NOT_MERGED`), disposition `SPECIFICATION_CONFLICT`. Agent 1
+  accepted that response as authoritative consumer input and authorized
+  corrections on both sides. Recorded as `AUTH-DEC-042` and `AUTH-DEC-043`.
+- Conflict A — cookie custody, UI-owned: the merged `UI-DEC-013` non-`HttpOnly`
+  cookie prohibition conflicts with the canonical browser-readable
+  `@supabase/ssr` session architecture this contract requires. `A2-UI` is
+  authorized to supersede that conflicting meaning while preserving its
+  `localStorage`, `sessionStorage` and duplicate-store prohibitions. Auth
+  neither performed nor authored that correction; no UI file was modified by
+  A3-AUTH. Owner-side state: `CORRECTED_AND_MERGED` — `A2-UI` merged it as
+  `UI-DEC-026` and `UI-DEC-027` in PR #30. The merged text preserves the
+  `localStorage` prohibition, the `sessionStorage` prohibition and the
+  no-duplicate/shadow-session-store rule, permits only the canonical Auth-owned
+  `@supabase/ssr` session through the Auth-owned adapter and only conditionally
+  on A2-SECURITY acceptance of the final cookie posture, proposes `/` as the UI
+  default and safe recovery route, and keeps `UI-004` `NOT_AUTHORIZED`. It
+  states in its own text that it does not make Auth PR #29 acceptable and that
+  `A2-UI` rereview remains required. Recorded as `AUTH-DEC-052`.
+- Conflict B — default and recovery route, Auth-owned: Auth had not frozen the
+  concrete route A2-UI proposed. Corrected: default post-sign-in destination
+  `/`; preserved-session rejected-callback safe recovery destination `/`;
+  rejected intended-return destination `NEVER_USED`.
+- Impact: `CONTRACT-AUTH-001@1.1.0-draft.1` is not consumable by `A2-UI` as
+  reviewed at `7abe17af`. `AUTH-DEP-012` is `OPEN / RESPONSE_RECEIVED /
+  SPECIFICATION_CONFLICT_AT_7ABE17AF / UI_OWNER_CORRECTION_MERGED_VIA_PR_30 /
+  AUTH_OWNER_CORRECTION_IN_PROGRESS / CORRECTED_HEAD_REREVIEW_REQUIRED /
+  NOT_ACCEPTED`. `UI-004` remains `NOT_AUTHORIZED`.
+  The browser-readable cookie posture is **no longer pending Security**:
+  `A2-SECURITY` has accepted the browser-readable `@supabase/ssr` architecture
+  as policy, and the final provider-session cookie posture is frozen through
+  `AUTH-DEC-045`. What remains outstanding on this issue is narrower still now
+  that the UI-owned durable-record correction has merged: the Auth-owned
+  correction is unstaged and uncommitted pending A2-AUTH acceptance and push;
+  `A2-DEPLOYMENT` runtime and configuration confirmation is still outstanding;
+  and `A2-UI` rereview of the corrected PR #29 head is still required. No
+  `A2-UI` acceptance of any Auth head is claimed, and PR #30 is not such an
+  acceptance.
+- Owning components: `A2-UI` for conflict A; `A2-AUTH` for conflict B.
+- Blocking task: `AUTH-002` acceptance; `UI-004`; merge of PR #29.
+- Resolution path — four required, two met:
+  1. the `A2-UI` correction passes its own manager review — `MET`, PR #30;
+  2. that UI correction merges — `MET`, merge commit `63093f22`;
+  3. this Auth correction passes A2-AUTH review and is pushed to the PR #29
+     head — `NOT_MET`; and
+  4. `A2-UI` rereviews the new head and returns an acceptable disposition —
+     `NOT_MET`.
+- Status: `OPEN`. It is not closed by the UI half having merged, and it is not
+  closed by this Auth correction alone.
+
+## Issues opened by the A2-SECURITY consumer response
+
+### `AUTH-ISSUE-028` — A2-SECURITY returned `REJECTED_WITH_REASON` against head `7abe17a`
+
+- Classification: `CONSUMER_REJECTION`
+- Severity: `HIGH`
+- Substate: `SEVEN_NORMATIVE_CORRECTIONS_REQUIRED / ALL_SEVEN_APPLIED /
+  AUTH_CORRECTION_PENDING_A2_AUTH_REVIEW / A2_SECURITY_REREVIEW_REQUIRED`
+- Evidence: consumer `A2-SECURITY`, review task
+  `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001`, reviewed head
+  `7abe17af8e212bd2127160338ea6ef409da02101` on pull request #29
+  (`OPEN / DRAFT / NOT_MERGED`), disposition `REJECTED_WITH_REASON`, seven
+  required normative corrections. Agent 1 accepted the rejection as
+  authoritative and authorized the consolidated correction. Recorded as
+  `AUTH-DEC-044`; the corrections as `AUTH-DEC-045` through `AUTH-DEC-051`.
+- Architecture accepted, not disputed: `SUPABASE_AUTH_WITH_GITHUB_OAUTH`,
+  `@supabase/ssr`, `createBrowserClient`, `createServerClient`, one
+  provider-owned cookie-backed session, a browser-readable provider-session
+  cookie, and required PKCE. The rejection was of the contract text, not of the
+  architecture.
+- Corrections and their residues:
+  1. cookie posture frozen (`AUTH-DEC-045`) — residue: `A2-DEPLOYMENT` runtime
+     and configuration confirmation;
+  2. CSRF and credential-transport boundary frozen (`AUTH-DEC-046`) — residue:
+     `A2-BACKEND` compatibility, including CORS implementation;
+  3. `local` sign-out scope and `<= 900`-second production access-token bound
+     (`AUTH-DEC-047`) — residue: `A2-BACKEND` and `A2-DEPLOYMENT` confirmation;
+  4. public `SIGN_IN_FAILED` boundary (`AUTH-DEC-048`) — no owner residue;
+  5. server-side ephemeral correlation with 10-minute and 120-second lifetimes
+     (`AUTH-DEC-049`) — residue: `A2-DEPLOYMENT` storage capability and
+     topology, tracked in `AUTH-ISSUE-025`;
+  6. server-side intended-return state (`AUTH-DEC-050`) — residue: same as 5;
+  7. live-provider proof for a preserved session (`AUTH-DEC-051`) — no owner
+     residue.
+- Impact: `CONTRACT-AUTH-001@1.1.0-draft.1` is not acceptable to `A2-SECURITY`
+  as reviewed. `AUTH-DEP-011` is `OPEN / RESPONSE_RECEIVED /
+  REJECTED_WITH_REASON / CORRECTION_IN_PROGRESS / NOT_ACCEPTED`. The
+  cache-control, XSS/runtime, Security-event and key-custody requirements are
+  recorded as implementation and release requirements and are **not** runtime
+  evidence; nothing in this repository proves any of them is implemented.
+- Owning component: `A2-SECURITY` for policy; `A2-AUTH` for the contract
+  semantics applied here; `A2-DEPLOYMENT` and `A2-BACKEND` for the compatibility
+  residues.
+- Blocking task: `AUTH-002` acceptance; `UI-004`; merge of PR #29.
+- Resolution path — none yet met: this Auth correction passes A2-AUTH review and
+  is pushed to the PR #29 head; `A2-SECURITY` rereviews the new head and returns
+  an acceptable disposition; and the `A2-DEPLOYMENT` and `A2-BACKEND`
+  compatibility confirmations are obtained.
+- Status: `OPEN`. Applying all seven required corrections does not close it.
+
+### `AUTH-ISSUE-029` — Security implementation and release requirements are unmet
+
+- Classification: `IMPLEMENTATION_REQUIREMENT / NOT_RUNTIME_EVIDENCE`
+- Severity: `MEDIUM`
+- Evidence: `A2-SECURITY` requires `Cache-Control: private, no-store` on every
+  authentication, session-refresh, cookie-setting and callback response, with no
+  shared-cache, ISR or CDN `Set-Cookie` serving; strict CSP with no
+  `unsafe-eval` and no unrestricted `unsafe-inline`, nonce- or hash-based script
+  policy, Trusted Types where supported, no unreviewed third-party scripts on
+  authenticated surfaces, dependency and supply-chain scanning, no token
+  exposure in the DOM, to analytics or to client logs, and callback and session
+  route security testing; a bounded, secret-free, attributable Security-event
+  field set with its prohibited-content list; and key-custody handling for
+  opaque-handle integrity including `>= 256`-bit server key material where HMAC
+  is selected, secret-manager custody, no `NEXT_PUBLIC`, source-control, log or
+  browser exposure, and rotation accepting the previous verification key for at
+  most 15 minutes while never minting with it.
+- Impact: none of these is implemented, and none is claimed to be. There is no
+  Auth runtime, no frontend Auth surface, no Security-event pipeline and no
+  provisioned provider in this repository. Recording a requirement is not
+  evidence of satisfying it.
+- Owning component: `A2-AUTH` and `A2-UI` for application-side implementation,
+  `A2-DEPLOYMENT` for cache, secret custody and rotation infrastructure, with
+  `A2-SECURITY` acceptance.
+- Blocking task: `AUTH-002` implementation once separately authorized;
+  `AUTH-007`; `AUTH-008` final acceptance.
+- Resolution path: implementation under a future authorized task, then
+  `A2-SECURITY` verification against runtime evidence. No key was generated, no
+  secret manager selected, no runtime configured and no infrastructure
+  provisioned by this documentation task.
+- Status: `OPEN`.
 
 ## Summary
 
@@ -539,6 +733,49 @@ draft text rather than surfacing a new external dependency:
 
 Neither correction relaxed a fail-closed rule, and neither made an existing
 session sufficient callback correlation.
+
+The A2-UI consumer response opened `AUTH-ISSUE-027` and closed nothing.
+`A2-UI` returned `SPECIFICATION_CONFLICT` against head `7abe17a`, and that
+disposition stands for that head. Agent 1 authorized one correction per owner:
+the UI-owned supersession of the conflicting `UI-DEC-013` cookie meaning, which
+Auth did not perform or author, and the Auth-owned freezing of `/` as both the
+default post-sign-in destination and the preserved-session rejected-callback
+safe recovery destination, recorded as `AUTH-DEC-043`. `AUTH-DEC-042` records
+the response itself.
+
+The UI-owned half is now `CORRECTED_AND_MERGED`: `A2-UI` merged `UI-DEC-026` and
+`UI-DEC-027` in PR #30 — implementation commit `30deb920`, merge commit
+`63093f22`, current `origin/main` — recorded on the Auth side as
+`AUTH-DEC-052`. That merge also resolves `AUTH-ISSUE-023`. The Auth-owned half
+is `CORRECTED_IN_WORKTREE / PENDING_A2_AUTH_ACCEPTANCE_AND_PUSH`.
+`AUTH-ISSUE-027` remains `OPEN` until this Auth correction is accepted and
+pushed and `A2-UI` rereviews the new PR #29 head with an acceptable disposition.
+Freezing a route resolved an open contract slot; merging the UI record
+correction resolved the UI-owned half; neither is `A2-UI` acceptance of any Auth
+head.
+
+The A2-SECURITY consumer response opened `AUTH-ISSUE-028` and `AUTH-ISSUE-029`,
+closed nothing, and narrowed `AUTH-ISSUE-025`. `A2-SECURITY` returned
+`REJECTED_WITH_REASON` against the same head `7abe17a` with seven required
+normative corrections, while explicitly accepting the selected architecture —
+`SUPABASE_AUTH_WITH_GITHUB_OAUTH`, `@supabase/ssr`, `createBrowserClient`,
+`createServerClient`, one provider-owned cookie-backed session, a
+browser-readable provider-session cookie and required PKCE. All seven
+corrections are applied and recorded as `AUTH-DEC-045` through `AUTH-DEC-051`,
+with the response itself as `AUTH-DEC-044`. Applying every required correction
+closes nothing: `AUTH-DEP-011` remains `OPEN` and `NOT_ACCEPTED`, and
+`A2-SECURITY` rereview of the corrected PR #29 head is required.
+
+The Security decision on the browser-readable cookie also settles the *policy*
+question beneath the A2-UI conflict, which is why that posture is no longer
+described anywhere as pending Security. It did not settle the UI-owned record
+correction — PR #30 did, on its owner's side — and it does not remove the
+`A2-DEPLOYMENT` runtime and configuration
+confirmation, the `A2-BACKEND` compatibility confirmation, or any of the
+implementation and release requirements now tracked as `AUTH-ISSUE-029`.
+`AUTH-ISSUE-024` is likewise not closed: the Security response arrived through
+the coordinator, not through a `docs/components/security/` record set, which
+still does not exist and remains Agent 1's to create.
 
 What remains open is Auth runtime absence, provider provisioning and every
 untested runtime behavior — callback runtime, JWT validation, cookies, CSRF,
