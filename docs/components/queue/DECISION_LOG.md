@@ -1,5 +1,51 @@
 # Queue Decision Log
 
+## 2026-08-09 — Consolidate affected-owner draft.2 re-review and correct provenance (QUEUE-004-C6)
+
+- Task: `QUEUE-004-C6-AFFECTED-OWNER-REREVIEW-CONSOLIDATION-AND-PROVENANCE-CORRECTION-001`.
+- Status: `COMPLETE / 9_OF_9_RESPONSES_RECEIVED / READY_FOR_COORDINATING_MANAGER_DECISION`.
+- Reconciled `origin/main`: `9a28d72eb08303b6701bf7db6df622006991196a`.
+- Reviewed Queue head before status commit: `97c656a3796708e478a23a29228e8d4efd45146d`.
+- Queue contract SHA-256: `106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327` (unchanged across consolidation).
+- Consolidated affected-owner re-review results (9 / 9 responses received):
+  - `A2-AGENT-WORKFLOW`: `ACCEPTED_WITH_CONSTRAINTS`
+  - `A2-DATABASE`: `ACCEPTED_WITH_CONSTRAINTS`
+  - `A2-EVIDENCE`: `ACCEPTED_WITH_CONSTRAINTS`
+  - `A2-EXECUTION`: `ACCEPTED`
+  - `A2-SECURITY`: `ACCEPTED_WITH_CONSTRAINTS`
+  - `A2-AUTH`: `ACCEPTED_WITH_CONSTRAINTS`
+  - `A2-DEPLOYMENT`: `ACCEPTED_WITH_CONSTRAINTS`
+  - `A2-INTEGRATION`: `ACCEPTED_WITH_CONSTRAINTS`
+  - `A2-EVALUATION`: `ACCEPTED_WITH_CONSTRAINTS`
+- Summary totals:
+  - `9_OF_9` responses received: `1 ACCEPTED`, `8 ACCEPTED_WITH_CONSTRAINTS`, `0 REJECTED_WITH_REASON`, `0 SPECIFICATION_CONFLICT`.
+  - Normative Queue corrections required: NONE (NORMATIVE_CORRECTIONS_REQUIRED = NONE).
+  - Affected-owner semantic merge blockers: NONE.
+- Prior draft.1 blockers resolution at contract layer:
+  - `A2-AGENT-WORKFLOW`: 7 / 7 resolved.
+  - `A2-EVIDENCE`: 2 / 2 specification-conflict findings resolved.
+  - `A2-EXECUTION`: 2 / 2 rejection findings resolved.
+  - `A2-DEPLOYMENT`: 4 / 4 rejection findings resolved.
+- Preserved re-review constraint groups:
+  - `A2-AGENT-WORKFLOW`: `WORKFLOW-Q2-C-001` through `WORKFLOW-Q2-C-006`
+  - `A2-DATABASE`: `DATABASE-Q-001` through `DATABASE-Q-006`
+  - `A2-EVIDENCE`: `EVIDENCE-Q-001` through `EVIDENCE-Q-006`
+  - `A2-EXECUTION`: NONE
+  - `A2-SECURITY`: `SECURITY-Q-001` through `SECURITY-Q-011`
+  - `A2-AUTH`: `AUTH-Q-001` through `AUTH-Q-007`
+  - `A2-DEPLOYMENT`: `DEPLOY-Q-001` through `DEPLOY-Q-004`
+  - `A2-INTEGRATION`: `INT-QUEUE-001` through `INT-QUEUE-005`
+  - `A2-EVALUATION`: `EVAL-CONSTRAINT-001` through `EVAL-CONSTRAINT-005`
+- Remaining constraint classification:
+  - Implementation acceptance, external owner policy/configuration, compatibility, Evaluation evidence, release evidence, pre-merge freshness. They are NOT remaining normative draft.2 defects.
+- Provenance drift correction:
+  - Corrected stale status wording so all current-main references consistently identify `9a28d72eb08303b6701bf7db6df622006991196a`.
+- Contract immutability:
+  - `CONTRACT-QUEUE-001.md` preserved byte-identical (`106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327`).
+- Decision: A2-QUEUE consolidates 9/9 affected-owner responses as acceptable at the contract layer. No normative Queue correction remains. No REJECTED_WITH_REASON remains. No SPECIFICATION_CONFLICT remains. The current contract blob is preserved unchanged. The branch may proceed to coordinating-manager readiness decision (`QUEUE-004-C7-COORDINATING-MANAGER-READINESS-DECISION-001`). This decision does NOT itself mark PR #24 ready or authorize merge.
+- PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`.
+- Provider remains `UNSELECTED`; Queue runtime remains `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`; DB-003 remains `NOT_STARTED / UNAUTHORIZED`.
+
 ## 2026-08-09 — Perform latest origin/main freshness reconciliation (QUEUE-004-C4B)
 
 - Task: `QUEUE-004-C4B-LATEST-MAIN-FRESHNESS-RECONCILIATION-001`.

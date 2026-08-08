@@ -1,42 +1,85 @@
 # Queue Dependency Requests — CONTRACT-QUEUE-001 consumer review
 
-- Date: `2026-08-04`
+- Date: `2026-08-09`
 - Requester/owner: `A2-QUEUE`
 - Historical reviewed contract: `CONTRACT-QUEUE-001@1.0.0-draft.1`
 - Active corrected contract: `CONTRACT-QUEUE-001@1.0.0-draft.2`
-- Status: `DRAFT / A2_QUEUE_REVIEW_PASSED / AFFECTED_OWNER_REREVIEW_PENDING`
+- Status: `DRAFT / REREVIEW_COMPLETE / READY_FOR_COORDINATING_MANAGER_DECISION`
 - API dependency: `CONTRACT-API-001@0.1.0-draft.1`
 - Rule: no disposition authorizes runtime, provider selection, or DB-003.
 
 All ten draft.1 responses were received. Six were constrained acceptances, not
 unconditional acceptance; two specification conflicts and two rejections
-blocked merge. The affected owners MUST re-review draft.2 at the new
-A2-QUEUE-reviewed head. Silence remains non-acceptance.
+blocked merge. The affected owners re-reviewed draft.2 at the reviewed head.
 
-At that review point, A2-QUEUE's independent draft.2 review found two final defects: the exact
-Workflow repaired-candidate sequence was omitted and the constrained responses
-were not fully enumerated. Both records were corrected; final A2-QUEUE review,
-affected-owner re-review, current-main reconciliation, and commit/push were
-then pending.
-
-A2-QUEUE's renewed review accepted the exact Workflow sequence and confirmed
-the 39-row table was structurally valid. The source-fidelity defects in 17
-Auth, Integration, and Evaluation rows were corrected, and A2-QUEUE's final
-source review passed. `QUEUE-004-C3-C2-CONSTRAINT-REGISTER-SOURCE-FIDELITY-CORRECTION`
-is `COMPLETE / ACCEPTED_BY_A2_QUEUE` in reviewed correction commit
-`16a396f03b2de7b1bf2c8a0380e6463fb7f42773`.
+Under task `QUEUE-004-C6-AFFECTED-OWNER-REREVIEW-CONSOLIDATION-AND-PROVENANCE-CORRECTION-001`, all 9 affected-owner re-reviews are complete and acceptable at the contract layer.
 
 Current-main freshness reconciliation is `COMPLETE / FRESHNESS_RECONCILED / NO_QUEUE_SEMANTIC_CONFLICT_FOUND`:
 normal merge reconciles latest `origin/main` `9a28d72eb08303b6701bf7db6df622006991196a` under task `QUEUE-004-C4B-LATEST-MAIN-FRESHNESS-RECONCILIATION-001`. Queue contract SHA-256 remains unchanged (`106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327`).
-Auth PR #29 (`CONTRACT-AUTH-001@1.1.0-draft.1`) merged into `origin/main` at `9a28d72eb08303b6701bf7db6df622006991196a`; observed and verified that it does not alter Queue semantics. Focused draft.2 re-review is `PENDING / NOT_BEGUN / NEXT_STEP` for A2-AGENT-WORKFLOW,
-A2-DATABASE, A2-EVIDENCE, A2-EXECUTION, A2-SECURITY, A2-AUTH, A2-DEPLOYMENT,
-A2-INTEGRATION, and A2-EVALUATION. A2-BACKEND is not reopened because draft.2
-changed no Backend/API-owned normative boundary.
+Stale current-main SHA references in component status records are corrected to `9a28d72eb08303b6701bf7db6df622006991196a`.
 
 PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`; provider remains
 `UNSELECTED`; runtime remains `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`;
-DB-003 remains `NOT_STARTED / UNAUTHORIZED`. Draft.2 remains unaccepted and
-not implementation-ready.
+DB-003 remains `NOT_STARTED / UNAUTHORIZED`.
+
+## Draft.2 affected-owner re-review summary
+
+- Task: `QUEUE-004-C6-AFFECTED-OWNER-REREVIEW-CONSOLIDATION-AND-PROVENANCE-CORRECTION-001`
+- Reviewed contract: `CONTRACT-QUEUE-001@1.0.0-draft.2`
+- Reviewed contract SHA-256: `106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327` (unchanged / zero diff)
+- Reconciled `origin/main`: `9a28d72eb08303b6701bf7db6df622006991196a`
+- Reviewed Queue head before status commit: `97c656a3796708e478a23a29228e8d4efd45146d`
+
+### Consolidated 9/9 Re-review Results
+
+1. `A2-AGENT-WORKFLOW`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Prior draft.1 blockers: 7 / 7 resolved at contract layer (attempt identity, repair allowance, semantic lifecycle/races/terminality, result-slot acceptance, checkpoint authority).
+   - Preserved constraint group: `WORKFLOW-Q2-C-001` through `WORKFLOW-Q2-C-006`.
+2. `A2-DATABASE`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Preserved constraint group: `DATABASE-Q-001` through `DATABASE-Q-006`.
+3. `A2-EVIDENCE`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Prior draft.1 blockers: 2 / 2 specification-conflict findings resolved at contract layer.
+   - Preserved constraint group: `EVIDENCE-Q-001` through `EVIDENCE-Q-006`.
+4. `A2-EXECUTION`: `ACCEPTED`
+   - Prior draft.1 blockers: 2 / 2 rejection findings resolved at contract layer.
+   - Preserved constraint group: `NONE`.
+5. `A2-SECURITY`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Preserved constraint group: `SECURITY-Q-001` through `SECURITY-Q-011`.
+6. `A2-AUTH`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Preserved constraint group: `AUTH-Q-001` through `AUTH-Q-007`.
+7. `A2-DEPLOYMENT`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Prior draft.1 blockers: 4 / 4 rejection findings resolved at contract layer.
+   - Preserved constraint group: `DEPLOY-Q-001` through `DEPLOY-Q-004`.
+8. `A2-INTEGRATION`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Preserved constraint group: `INT-QUEUE-001` through `INT-QUEUE-005`.
+9. `A2-EVALUATION`: `ACCEPTED_WITH_CONSTRAINTS`
+   - Preserved constraint group: `EVAL-CONSTRAINT-001` through `EVAL-CONSTRAINT-005`.
+
+### Totals & Dispositions
+
+- `9_OF_9` responses received:
+  - `1 ACCEPTED`
+  - `8 ACCEPTED_WITH_CONSTRAINTS`
+  - `0 REJECTED_WITH_REASON`
+  - `0 SPECIFICATION_CONFLICT`
+- Normative Queue corrections required: NONE (NORMATIVE_CORRECTIONS_REQUIRED = NONE).
+- Affected-owner semantic merge blockers: NONE.
+
+### Remaining Constraint Classification
+
+All remaining preserved constraints from the 8 `ACCEPTED_WITH_CONSTRAINTS` managers are classified as future downstream obligations:
+- Implementation acceptance;
+- External owner policy and operational configuration;
+- Cross-contract compatibility;
+- Evaluation measurement evidence;
+- Release evidence gates;
+- Pre-merge freshness reconciliation.
+
+These constraints are NOT remaining normative draft.2 defects, and contract-layer acceptance does NOT convert `ACCEPTED_WITH_CONSTRAINTS` into unconditional acceptance or claim future implementation/release obligations are closed.
+
+## Historical draft.1 review records and constraint register
+
+The table and register below record historical draft.1 review findings and preserved consumer constraints.
 
 | Request / reviewer | Draft.1 disposition | Constraint or blocking finding preserved in draft.2 | Future closure input |
 |---|---|---|---|
