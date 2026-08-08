@@ -27,8 +27,8 @@ is `COMPLETE / ACCEPTED_BY_A2_QUEUE` in reviewed correction commit
 `16a396f03b2de7b1bf2c8a0380e6463fb7f42773`.
 
 Current-main freshness reconciliation is `COMPLETE / FRESHNESS_RECONCILED / NO_QUEUE_SEMANTIC_CONFLICT_FOUND`:
-normal merge reconciles latest `origin/main` `1057ba727a4e825259c5f7772b6d428511a58a37` under task `QUEUE-004-C4B-LATEST-MAIN-FRESHNESS-RECONCILIATION-001`. Queue contract SHA-256 remains unchanged (`106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327`).
-Shared Auth registry update in `A2_DATABASE_MANAGER(1).md` referencing `CONTRACT-AUTH-001@1.1.0-draft.1` observed (`CONTRACT-AUTH-001@1.1.0-draft.1` remains draft context; Auth PR #29 remains unmerged). Focused draft.2 re-review is `PENDING / NOT_BEGUN / NEXT_STEP` for A2-AGENT-WORKFLOW,
+normal merge reconciles latest `origin/main` `9a28d72eb08303b6701bf7db6df622006991196a` under task `QUEUE-004-C4B-LATEST-MAIN-FRESHNESS-RECONCILIATION-001`. Queue contract SHA-256 remains unchanged (`106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327`).
+Auth PR #29 (`CONTRACT-AUTH-001@1.1.0-draft.1`) merged into `origin/main` at `9a28d72eb08303b6701bf7db6df622006991196a`; observed and verified that it does not alter Queue semantics. Focused draft.2 re-review is `PENDING / NOT_BEGUN / NEXT_STEP` for A2-AGENT-WORKFLOW,
 A2-DATABASE, A2-EVIDENCE, A2-EXECUTION, A2-SECURITY, A2-AUTH, A2-DEPLOYMENT,
 A2-INTEGRATION, and A2-EVALUATION. A2-BACKEND is not reopened because draft.2
 changed no Backend/API-owned normative boundary.

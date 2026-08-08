@@ -4,12 +4,12 @@
 
 - Task: `QUEUE-004-C4B-LATEST-MAIN-FRESHNESS-RECONCILIATION-001`.
 - Status: `COMPLETE / FRESHNESS_RECONCILED / AFFECTED_OWNER_REREVIEW_NEXT`.
-- Latest `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`.
+- Latest `origin/main`: `9a28d72eb08303b6701bf7db6df622006991196a`.
 - Queue contract SHA-256: `106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327` (unchanged across reconciliation).
 - Findings:
   - No Queue semantic conflict found.
   - Newer merged UI/frontend work (PRs #28, #30, #31) does not alter Queue semantics.
-  - Shared Auth registry change observed in `docs/specifications/A2_DATABASE_MANAGER(1).md` referencing `CONTRACT-AUTH-001@1.1.0-draft.1`. `CONTRACT-AUTH-001@1.1.0-draft.1` remains draft context, and Auth PR #29 remains separate and unmerged.
+  - Auth PR #29 (`CONTRACT-AUTH-001@1.1.0-draft.1`) merged into `origin/main` at `9a28d72eb08303b6701bf7db6df622006991196a`; observed and verified that it does not alter Queue-owned normative semantics.
 - Affected-owner re-review remains `NOT_BEGUN` (next step: `QUEUE-004-C5-AFFECTED-OWNER-DRAFT2-REREVIEW-DISPATCH-001`).
 - PR #24 remains `OPEN / DRAFT / NOT_READY / NOT_MERGED`.
 - Provider remains `UNSELECTED`; Queue runtime remains `NOT_AUTHORIZED`; DB-003 remains `NOT_STARTED / UNAUTHORIZED`.

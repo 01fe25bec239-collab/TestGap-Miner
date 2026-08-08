@@ -7,7 +7,7 @@
 - Branch: `agent2/queue-contract-001`
 - Expected starting HEAD: `d3fbdf77212799617580fed96f77ab89b4f8f798`
 - Reviewed correction commit: `16a396f03b2de7b1bf2c8a0380e6463fb7f42773`
-- Reconciled `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`
+- Reconciled `origin/main`: `9a28d72eb08303b6701bf7db6df622006991196a`
 - Scope: `DOCUMENTATION_ONLY / NO_RUNTIME`
 
 ## Current result
@@ -20,7 +20,7 @@
 | `QUEUE-004-C3-C2-CONSTRAINT-REGISTER-SOURCE-FIDELITY-CORRECTION` | `COMPLETE / ACCEPTED_BY_A2_QUEUE` | Exact mappings and evidence obligations are preserved in the reviewed correction commit. |
 | `CONTRACT-QUEUE-001@1.0.0-draft.2` | `DRAFT / A2_QUEUE_REVIEW_PASSED / AFFECTED_OWNER_REREVIEW_PENDING` | Draft.2 remains unaccepted and not implementation-ready. |
 | Accepted consumer-constraint register | `39_ENTRIES / 6_MANAGERS / 17_SOURCE_ROWS_CORRECTED` | Exact Auth, Integration, and Evaluation mappings and complete evidence obligations now preserve their source reviews; constrained acceptance remains conditional. |
-| Freshness reconciliation | `COMPLETE / FRESHNESS_RECONCILED / NO_QUEUE_SEMANTIC_CONFLICT_FOUND` | Normal merge of `origin/main` `1057ba727a4e825259c5f7772b6d428511a58a37`; Queue contract SHA-256 unchanged (`106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327`); newer merged UI/frontend work (PRs #28, #30, #31) does not alter Queue semantics; shared Auth registry update in `A2_DATABASE_MANAGER(1).md` referencing `CONTRACT-AUTH-001@1.1.0-draft.1` observed; `CONTRACT-AUTH-001@1.1.0-draft.1` remains draft context; Auth PR #29 remains separate and unmerged. |
+| Freshness reconciliation | `COMPLETE / FRESHNESS_RECONCILED / NO_QUEUE_SEMANTIC_CONFLICT_FOUND` | Normal merge of `origin/main` `9a28d72eb08303b6701bf7db6df622006991196a`; Queue contract SHA-256 unchanged (`106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327`); newer merged UI/frontend work (PRs #28, #30, #31) and merged Auth PR #29 (`CONTRACT-AUTH-001@1.1.0-draft.1` at `9a28d72eb08303b6701bf7db6df622006991196a`) do not alter Queue semantics. |
 | Affected-owner re-review | `PENDING / NOT_BEGUN / NEXT_STEP` | Required from A2-AGENT-WORKFLOW, A2-DATABASE, A2-EVIDENCE, A2-EXECUTION, A2-SECURITY, A2-AUTH, A2-DEPLOYMENT, A2-INTEGRATION, and A2-EVALUATION. A2-BACKEND is not reopened because draft.2 changes no Backend/API-owned normative boundary. |
 | PR #24 | `OPEN / DRAFT / NOT_READY / NOT_MERGED` | A body-only status update is authorized; readiness, merge, title, and base changes are not. |
 | Provider | `UNSELECTED` | Provider and operational values remain classified and unresolved. |

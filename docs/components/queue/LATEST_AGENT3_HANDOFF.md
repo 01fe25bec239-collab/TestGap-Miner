@@ -14,13 +14,14 @@
 ## Commit and reconciliation record
 
 - Starting Queue HEAD: `d3fbdf77212799617580fed96f77ab89b4f8f798`.
-- Reconciled `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`.
+- Reconciled `origin/main`: `9a28d72eb08303b6701bf7db6df622006991196a`.
 - Pre/post Queue contract SHA-256: `106ef0e5c4a58a6010d55f890ac852f7869e041baca963298e4af436e5aa5327` (preserved).
 - Semantic-change result: `NO_QUEUE_SEMANTIC_CONFLICT_FOUND`.
 - Merged new work classification:
   - UI/frontend paths (PRs #28, #30): `NON_QUEUE`
-  - Auth registry path (`docs/specifications/A2_DATABASE_MANAGER(1).md` in PR #31): `CROSS_CONTRACT_RELEVANT`
-- Auth PR #29 observed state: `UNMERGED / SEPARATE_BRANCH`. `CONTRACT-AUTH-001@1.1.0-draft.1` remains draft context.
+  - Shared Auth registry path (`docs/specifications/A2_DATABASE_MANAGER(1).md` in PR #31): `CROSS_CONTRACT_RELEVANT`
+  - Auth PR #29 (`CONTRACT-AUTH-001@1.1.0-draft.1`): `CROSS_CONTRACT_RELEVANT` (merged into `origin/main` at `9a28d72eb08303b6701bf7db6df622006991196a`; verified no Queue semantic change).
+- Auth PR #29 observed state: `MERGED_ON_MAIN` at `9a28d72eb08303b6701bf7db6df622006991196a`.
 
 ## Review boundary
 
