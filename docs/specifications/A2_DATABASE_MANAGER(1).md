@@ -70,7 +70,7 @@ The following contracts are protected. The named owner may propose changes; all 
 | Contract ID | Contract | Primary owner | Required consumers |
 |---|---|---|---|
 | CONTRACT-DB-001 | Domain entities, identifiers, constraints, migration order | A2-DATABASE | Auth, Backend, RAG, Agent Workflow, Evaluation, Integration |
-| CONTRACT-AUTH-001 | Authenticated user context, GitHub installation context, permissions | A2-AUTH | Backend, UI, Security, Integration |
+| CONTRACT-AUTH-001 | Current `CONTRACT-AUTH-001@1.1.0-draft.1`: authenticated user context, GitHub installation context, permissions, browser/session contract | A2-AUTH | UI, Security, Deployment, Backend, Integration |
 | CONTRACT-API-001 | REST routes, request/response models, error envelope, pagination | A2-BACKEND | UI, Auth, Evaluation, Integration |
 | CONTRACT-RAG-001 | Repository manifest, ranked file candidate, context item, context bundle | A2-RAG | Agent Workflow, Evaluation, Backend |
 | CONTRACT-WORKFLOW-001 | Run state, workflow step, failure code, retry/abstention transitions | A2-AGENT-WORKFLOW | Backend, UI, Database, Evaluation, Integration |
@@ -80,6 +80,8 @@ The following contracts are protected. The named owner may propose changes; all 
 | CONTRACT-SEC-001 | Data classification, redaction result, security event, tool policy | A2-SECURITY | Every component |
 | CONTRACT-DEPLOY-001 | Environment variables, service topology, health/readiness, release artefacts | A2-DEPLOYMENT | Every component |
 | CONTRACT-INTEGRATION-001 | Component handoff, dependency request, release-readiness result | A2-INTEGRATION | Every component |
+
+Registry note — `CONTRACT-AUTH-001`: A2-DATABASE is a historical consumer of `CONTRACT-AUTH-001@1.0.0-draft.2`; it acknowledged and implemented the earlier identity/persistence boundary through DB-002. A2-DATABASE is not a current blocking consumer of the browser/session additions in `CONTRACT-AUTH-001@1.1.0-draft.1`.
 
 ### Canonical MVP states
 
