@@ -1,5 +1,7 @@
+from urllib.parse import urlparse
+
 from pydantic import SecretStr, field_validator, model_validator
-from pydantic.networks import PostgresDsn
+from pydantic.networks import AnyUrl, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +11,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=None, hide_input_in_errors=True)
 
     database_url: SecretStr
+    auth_jwt_issuer: str
+    auth_jwt_audience: str
+    auth_jwks_url: AnyUrl
+    dashboard_origin: str
 
     @model_validator(mode="before")
     @classmethod
@@ -27,3 +33,30 @@ class Settings(BaseSettings):
         if url.scheme != "postgresql+psycopg":
             raise ValueError("DATABASE_URL must use the postgresql+psycopg scheme")
         return value
+
+    @field_validator("auth_jwt_issuer")
+    @classmethod
+    def require_https_issuer(cls, value: str) -> str:
+        parsed = urlparse(value)
+        if parsed.scheme != "https" or not parsed.netloc:
+            raise ValueError("AUTH_JWT_ISSUER must be an HTTPS URL")
+        if value.endswith("/"):
+            raise ValueError("AUTH_JWT_ISSUER must not end with a slash")
+        return value
+
+    @field_validator("auth_jwks_url")
+    @classmethod
+    def require_safe_jwks_url(cls, value: AnyUrl) -> AnyUrl:
+        if value.scheme != "https":
+            raise ValueError("AUTH_JWKS_URL must use HTTPS")
+        return value
+
+    @field_validator("dashboard_origin")
+    @classmethod
+    def require_origin(cls, value: str) -> str:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("DASHBOARD_ORIGIN must be an HTTP(S) origin")
+        if parsed.path not in {"", "/"} or parsed.params or parsed.query or parsed.fragment:
+            raise ValueError("DASHBOARD_ORIGIN must not include a path, query, or fragment")
+        return f"{parsed.scheme}://{parsed.netloc}"

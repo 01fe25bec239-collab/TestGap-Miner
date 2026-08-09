@@ -4,8 +4,16 @@ from pydantic import ValidationError
 from app.settings import Settings
 
 
-def test_database_url_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.fixture(autouse=True)
+def authentication_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://user:password@localhost/testgap")
+    monkeypatch.setenv("AUTH_JWT_ISSUER", "https://issuer.test/auth/v1")
+    monkeypatch.setenv("AUTH_JWT_AUDIENCE", "authenticated")
+    monkeypatch.setenv("AUTH_JWKS_URL", "https://testserver/jwks.json")
+    monkeypatch.setenv("DASHBOARD_ORIGIN", "http://dashboard.test")
+
+
+def test_database_url_is_accepted() -> None:
 
     settings = Settings()
 
@@ -34,4 +42,37 @@ def test_database_url_failures_are_redacted(
 
 
 def test_settings_only_define_the_ordinary_database_url() -> None:
-    assert set(Settings.model_fields) == {"database_url"}
+    assert set(Settings.model_fields) == {
+        "database_url",
+        "auth_jwt_issuer",
+        "auth_jwt_audience",
+        "auth_jwks_url",
+        "dashboard_origin",
+    }
+
+
+@pytest.mark.parametrize(
+    "jwks_url",
+    [
+        "http://localhost/keys",
+        "http://127.0.0.1/keys",
+        "http://testserver/keys",
+        "http://jwks.example.test/keys",
+    ],
+)
+def test_jwks_must_use_https(
+    monkeypatch: pytest.MonkeyPatch, jwks_url: str
+) -> None:
+    monkeypatch.setenv("AUTH_JWKS_URL", jwks_url)
+
+    with pytest.raises(ValidationError, match="AUTH_JWKS_URL must use HTTPS"):
+        Settings()
+
+
+def test_trailing_slash_issuer_is_rejected_without_normalization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AUTH_JWT_ISSUER", "https://issuer.test/auth/v1/")
+
+    with pytest.raises(ValidationError, match="must not end with a slash"):
+        Settings()
