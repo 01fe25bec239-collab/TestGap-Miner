@@ -38,8 +38,23 @@ export type InternalCallbackError =
   | "SESSION_EXCHANGE_FAILED";
 
 export type AuthSecurityEvent = Readonly<{
+  eventName: `AUTH_${InternalCallbackError}`;
   classification: InternalCallbackError;
+  occurredAt: string;
+  environmentClass: "LOCAL_DEVELOPMENT" | "TEST" | "STAGING" | "PRODUCTION";
+  sourceComponent: "AUTH";
+  outcome: "REJECTED";
+  blockingEffect: "CALLBACK_REJECTED";
+  actorType: "HUMAN_USER" | "UNAUTHENTICATED";
+  actorReference: string;
+  signInAttemptReference: string | null;
+  callbackFlowReference: string | null;
+  requestReference: string;
+  correlationReference: string | null;
+  policyVersion: string;
   sessionPreserved: boolean;
+  reasonCode: InternalCallbackError;
+  redactionStatus: "SECRET_FREE";
   callbackSuccess: false;
   rejectedCallbackDestinationUsed: false;
 }>;

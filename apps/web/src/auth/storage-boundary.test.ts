@@ -51,6 +51,32 @@ describe("token custody and secret safety", () => {
       "setResponseHeaders(headers)",
     );
   });
+
+  it("keeps synchronization, binding, correlation, and Security-event storage secret-free", () => {
+    const fence = readFileSync(join(authDirectory, "session-fence.ts"), "utf8");
+    const correlation = readFileSync(join(authDirectory, "correlation.ts"), "utf8");
+    const adapter = readFileSync(join(authDirectory, "adapter.ts"), "utf8");
+    const eventEnvelope = adapter.slice(
+      adapter.indexOf("async #emitSecurityEvent"),
+      adapter.indexOf("async #captureCallbackFence"),
+    );
+    const synchronizationState = fence.slice(
+      fence.indexOf("type AttemptRecord"),
+      fence.indexOf("export type AuthResolvedSession"),
+    );
+    const hostResolution = fence.slice(fence.indexOf("export type AuthResolvedSession"));
+
+    expect(synchronizationState).not.toMatch(
+      /\b(?:accessToken|refreshToken|authorizationCode|pkceVerifier|intendedReturn|userReference|authorizationCapability)\b/,
+    );
+    expect(hostResolution).not.toMatch(
+      /\b(?:accessToken|refreshToken|authorizationCode|pkceVerifier|cookie|contextHandle|bindingHandle|generation)\b/,
+    );
+    expect(correlation).not.toMatch(/\b(?:generation|sessionBinding|attemptReference)\b/);
+    expect(eventEnvelope).not.toMatch(
+      /\b(?:accessToken|refreshToken|authorizationCode|pkceVerifier|cookie|rawHeader|providerPayload|fullUrl|stackTrace|email|secret|signingKey|contextHandle|bindingHandle|generation)\b/,
+    );
+  });
 });
 
 describe("deferred public environment validation", () => {
