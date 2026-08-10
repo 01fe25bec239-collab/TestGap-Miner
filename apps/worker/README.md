@@ -36,4 +36,3 @@ wall-clock timeout is reported as `SupervisorTimeoutEnforced`.
 
 `Child::kill` terminates only the direct child and is not a sandbox or a
 portable process-tree guarantee.
-

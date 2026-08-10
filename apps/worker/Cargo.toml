@@ -6,4 +6,3 @@ publish = false
 
 [lib]
 name = "testgap_worker"
-
