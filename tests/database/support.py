@@ -1,4 +1,4 @@
-"""Shared DB-002 test constants and helpers.
+"""Shared Database test constants and helpers.
 
 `tests` is not an importable package under the Backend-owned pytest
 configuration, so shared helpers live in this sibling module rather than being
@@ -19,8 +19,11 @@ from app.db.models import (
     Repository,
     RepositoryAccess,
     Run,
+    RunEvent,
     RunRequest,
     User,
+    WorkflowStep,
+    WorkflowStepAttempt,
 )
 from app.db.models.workflow import FAILURE_CODES, TERMINAL_RUN_STATES
 
@@ -36,18 +39,27 @@ DB_002_TABLES = frozenset(
     }
 )
 
-# DB-003 and later domains that must not exist yet.
+DB_003_TABLES = frozenset(
+    {"workflow_steps", "workflow_step_attempts", "run_events"}
+)
+
+DB_CURRENT_TABLES = DB_002_TABLES | DB_003_TABLES
+
+# DB-004+, Queue, and other unauthorized domains that must not exist.
 FORBIDDEN_TABLES = frozenset(
     {
-        "workflow_steps",
         "steps",
-        "workflow_step_attempts",
         "step_attempts",
         "attempts",
-        "run_events",
         "events",
         "event_sequences",
         "run_transitions",
+        "queue_messages",
+        "queue_deliveries",
+        "queue_claims",
+        "queue_leases",
+        "queue_acks",
+        "provider_receipts",
         "checkpoints",
         "context_selections",
         "candidate_patches",
@@ -152,3 +164,47 @@ def make_run(
         values["cancellation_code"] = "USER_REQUESTED"
     values.update(overrides)
     return Run(**values)
+
+
+def make_step(run: Run, **overrides: object) -> WorkflowStep:
+    values: dict[str, object] = {
+        "run_id": run.id,
+        "kind": "PLAN",
+        "occurrence": 1,
+        "input_reference": "input://redacted/1",
+        "input_version": "input-v1",
+    }
+    values.update(overrides)
+    return WorkflowStep(**values)
+
+
+def make_attempt(step: WorkflowStep, **overrides: object) -> WorkflowStepAttempt:
+    values: dict[str, object] = {
+        "step_id": step.id,
+        "attempt_index": 0,
+        "started_at": datetime.now(UTC),
+        "actor_type": "WORKER",
+        "actor_id": "worker-1",
+    }
+    values.update(overrides)
+    return WorkflowStepAttempt(**values)
+
+
+def make_event(run: Run, **overrides: object) -> RunEvent:
+    unique = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "run_id": run.id,
+        "sequence": 1,
+        "event_type": "CHECKPOINT_COMMITTED",
+        "actor_type": "WORKFLOW",
+        "actor_id": "workflow-runtime",
+        "occurred_at": datetime.now(UTC),
+        "producer_event_id": unique,
+        "contract_version": "1.0.0-draft.1",
+        "payload_schema_version": "1",
+        "payload": {},
+        "producer_event_fingerprint": unique,
+        "producer_event_fingerprint_version": 1,
+    }
+    values.update(overrides)
+    return RunEvent(**values)

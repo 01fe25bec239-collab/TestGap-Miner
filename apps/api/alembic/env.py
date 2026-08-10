@@ -1,6 +1,6 @@
 from alembic import context
 
-import app.db.models  # noqa: F401  registers every DB-002 table on the metadata
+import app.db.models  # noqa: F401  registers every Database table on the metadata
 from app.db.config import resolve_migration_database_url
 from app.db.engine import create_database_engine
 from app.db.metadata import metadata
@@ -41,4 +41,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

@@ -1,7 +1,11 @@
 # Database Task Ledger
 
-- Date: 2026-08-02
-- Branch: `agent2/database`
+- Date: 2026-08-10
+- Branch: `agent2/db-003-workflow-persistence`
+- Current task: `DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001`
+- Authorization: `EXPLICIT_AGENT_1_AUTHORIZATION`
+- Authorized/verified baseline:
+  `f318d9b515a4324b0848e64059f179027d19bd1f`
 - DB-002 implementation baseline:
   `8884b5d540351c735b6cddc01314a7dd9e25af05`
 - Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
@@ -9,8 +13,8 @@
 - Historical DB-002 reconciliation merge commit:
   `1511f474ee301651b631c8adfe406aeb775327aa` (PR #13)
 - Database scaffold: `IMPLEMENTED`; historical validation evidence is preserved.
-- Domain schema: `IMPLEMENTED` for DB-002; exactly one Alembic head
-  `ad3f80907336`.
+- Domain schema: `IMPLEMENTED` for DB-002 and DB-003; exactly one Alembic head
+  `e7b4c2d9a631`, down revision `ad3f80907336`.
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`.
 - `DB-DEP-001`: `ACCEPTED`.
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`.
@@ -25,7 +29,11 @@
   #13 (`docs(database): close merged DB-002`); head commit
   `861781b1c91cc5eed870653bc35b2d39fc9c1021`; reconciliation merge commit
   `1511f474ee301651b631c8adfe406aeb775327aa`.
-- `DB-003`: `NOT_STARTED` / `NOT_AUTHORIZED`; not authorized by this task.
+- `CONTRACT-QUEUE-001@1.0.0-draft.2`: available on merged repository main;
+  provider-neutral identity/persistence boundary consumed by DB-003. Queue
+  runtime/provider/adapter remains `NOT_IMPLEMENTED`.
+- `DB-003`: `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW`; work remains
+  unstaged, uncommitted, and unpushed.
 - `WORKFLOW-DB002-OWNER-RECONCILIATION-001`:
   `SATISFIED / VERIFIED_COMPLETE / CLOSED`; Database dependency:
   `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` /
@@ -47,20 +55,15 @@
 | DB-002-MERGE-001 — Post-merge task reconciliation | `PASS` | Documentation-only closure of DB-002 after its PR #12 implementation merge; the reconciliation changes were merged through documentation PR #13 at `1511f474ee301651b631c8adfe406aeb775327aa`; the six Database management records state `PASS / VERIFIED_COMPLETE / MERGED`, both PR #12 implementation commits, and Alembic head `ad3f80907336`. | None. |
 | DB-002-WORKFLOW-OWNER-ACK-001 | `PASS / A2_ACCEPTED / PENDING_MERGE` | Exactly six Database records modified; Workflow PR #16 evidence and Workflow-owner decisions recorded; documentation validation passed; no implementation or runtime files changed. | A2-DATABASE commits and pushes the six Database records, opens the documentation-only pull request, and verifies the merge. Database task merge status: `PENDING`. |
 | WORKFLOW-DB002-OWNER-RECONCILIATION-001 | `SATISFIED / VERIFIED_COMPLETE / CLOSED` | Execution task `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`: `PASS / VERIFIED_COMPLETE / MERGED`; Workflow PR #16, documentation commit `4db0911d5600f852f43edc9e132a48bd817577b3`, merge commit `110a90ca53058372677d53868977f74520bd3f80`; `CONTRACT-WORKFLOW-001@1.0.0-draft.1` is `ACKNOWLEDGED_AND_MERGED` with `SEMANTIC_INTEGRITY_PRESERVED / NO_SEMANTIC_CHANGE_REQUIRED`. | None; `WORKFLOW_OWNER_RESPONSE_ACKNOWLEDGED` / `WORKFLOW_DB002_RECONCILIATION_DEPENDENCY_SATISFIED`. No model, migration, constraint, or test correction is required. |
-| DB-003 — Workflow persistence and event history | `NOT_STARTED` / `NOT_AUTHORIZED` | No implementation exists; accepted Workflow ownership assigns steps, attempts, events, and ordering to DB-003, and DB-002 deliberately created none of them. DB-002-MERGE-001 did not begin, authorize, or assess DB-003. | Separate future authorization and a separate DB-003 readiness assessment; Queue semantics remain a scoped dependency. |
+| DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001 — Workflow persistence and event history | `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW` | Explicit Agent-1 authorization at baseline `f318d9b515a4324b0848e64059f179027d19bd1f`; revision `e7b4c2d9a631` adds only `workflow_steps`, `workflow_step_attempts`, and `run_events`; row-locked sequence/idempotency append and allowlisted CAS never commit or choose Workflow semantics; PostgreSQL migration/transaction coverage passes; 221 Database, 42 API, and 263 full-suite tests pass. | A2-DATABASE independently reviews every unstaged change. No stage/commit/push/PR/merge action is authorized. |
 | DB-004 — Context, patch, execution, and artefact metadata | `BLOCKED` | No implementation exists. | Requires CONTRACT-RAG-001 and CONTRACT-EVIDENCE-001, plus Security/Deployment data-handling constraints. |
 | DB-005 — GitHub publication and human decisions | `BLOCKED` | No implementation exists. | Requires API, Evidence, and Integration contracts; accepted Auth semantics remain binding. |
 | DB-006 — Evaluation, provenance, and usage metadata | `BLOCKED` | No implementation exists. | Requires CONTRACT-EVAL-001 plus Workflow/Security telemetry fields. |
 | DB-007 — Indexes, retention, migrations, and recovery | `BLOCKED` | Only high-level documentation exists. | Requires DB-002 through DB-006 and CONTRACT-DEPLOY-001/CONTRACT-SEC-001. |
-| DB-008 — Database final acceptance | `BLOCKED` | The DB-002 domain slice exists; DB-003 through DB-007 and their consumer handoffs remain incomplete. | Requires all prior DB tasks and CONTRACT-INTEGRATION-001. |
+| DB-008 — Database final acceptance | `BLOCKED` | DB-002 is merged and DB-003 is implemented pending A2 review; DB-004 through DB-007 and their consumer handoffs remain incomplete. | Requires all prior DB tasks and CONTRACT-INTEGRATION-001. |
 
-DB-002 is implemented and merged. This reconciliation creates no steps,
-attempts, run events, ordering, transition history, Queue persistence, Evidence
-persistence, or runtime behavior. It does not begin or authorize DB-003 or an
-A3-DATABASE DB-003 implementation prompt. Auth runtime is
-`NOT_STARTED / NOT_TESTED`; Workflow runtime is
-`NOT_IMPLEMENTED / NOT_TESTED`. PR #17
-(`docs(auth): complete AUTH-001 trust-boundary audit`) is the Auth
-trust-boundary audit and current baseline only; it neither implements Auth
-runtime nor resolves the typed machine/publication actor relationship. No DB-003
-through DB-008 implementation was attempted.
+DB-003 is implemented and tested for A2-DATABASE review. It creates no Queue,
+Evidence, candidate/artefact, context/RAG, publication, human-decision,
+evaluation, Security, DB-004+, API, UI, Auth-runtime, Workflow-runtime, or
+Execution-runtime persistence. `DB-ISSUE-013` remains open, deferred, and
+nonblocking. No stage, commit, push, pull request, or merge was performed.

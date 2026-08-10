@@ -1,6 +1,111 @@
 # Latest A3-DATABASE Handoff
 
-## DB-002 Workflow-owner reconciliation acknowledgement
+## DB-003 workflow persistence implementation
+
+- Date: 2026-08-10
+- Result: `PASS — DB_003_IMPLEMENTED_FOR_A2_DATABASE_REVIEW`
+- Task: `DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001`
+- Authorization: `EXPLICIT_AGENT_1_AUTHORIZATION`
+- Verified baseline: `f318d9b515a4324b0848e64059f179027d19bd1f`
+- Branch: `agent2/db-003-workflow-persistence`
+- Worktree:
+  `/Users/omkar/Documents/TestGap-Miner-wt-db-003-workflow-persistence`
+- Status: `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW`
+- Alembic revision: `e7b4c2d9a631` —
+  `create DB-003 workflow persistence`
+- Down revision: `ad3f80907336`; final head count: exactly one
+- New tables: `workflow_steps`, `workflow_step_attempts`, `run_events`
+- DB-002 regression: `PASS`; seven tables, accepted constraints, rows, failure
+  family behavior, repair `0..1`, and request identity remain preserved.
+- DB-004+: `ABSENT / NOT_STARTED / NOT_AUTHORIZED`
+- `DB-ISSUE-013`: `OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`
+
+### Implementation result
+
+- Workflow step occurrences have internal UUIDs, exact bounded kinds, positive
+  occurrence, Database-authored creation time, bounded immutable input
+  reference/version, run FK/index, and unique `(run_id, kind, occurrence)`.
+- Attempts have their own UUID, zero-based unique index under the same step,
+  interval/completed-shape checks, exact actor type plus opaque actor ID, and
+  bounded error/Evidence references. Active attempts can be completed; a
+  completed attempt cannot be updated or deleted. Retry preserves attempt zero
+  and creates attempt one without creating a request or consuming repair.
+- Run events have positive deterministic per-run sequence, producer-event
+  idempotency, bounded additive event type, exact state/step/attempt
+  attribution, producer/Database timestamps, causation/correlation,
+  object-shaped 65,536-byte-bounded JSONB, fingerprint/version, and explicit
+  terminal-reason history.
+- Frozen transition pairs and terminal-reason families are enforced only as
+  stored-history integrity. No Database code chooses a transition, retry,
+  repair, terminal state, scheduling action, or Queue action.
+- PostgreSQL triggers make run events append-only, protect completed attempts
+  and immutable step bindings, and prevent rewriting already-terminal run
+  facts.
+- `append_run_event` row-locks the run, resolves identical producer events,
+  rejects fingerprint conflicts, allocates the next sequence, flushes, and
+  never commits.
+- `compare_and_swap_run` accepts expected state/version, updates an explicit
+  projection allowlist, increments version exactly once, updates `updated_at`,
+  fails deterministically on stale input, and never commits.
+- CAS plus append is usable in one caller-owned transaction. Valid commit
+  preserves both; invalid event rollback restores projection/version and leaves
+  no event.
+
+### Migration and validation evidence
+
+| Check | Exact result |
+|---|---|
+| `uv sync --project apps/api --all-groups --locked` | `PASS`; locked environment synchronized; no manifest/lockfile change |
+| Compose PostgreSQL health | `PASS`; retained `postgres:16.14-alpine3.24` service healthy; `pg_isready` accepting connections |
+| Fresh base → DB-003 head | `PASS` |
+| Populated DB-002 → DB-003 head | `PASS`; representative request/run unchanged |
+| DB-003 head → `ad3f80907336` | `PASS`; DB-003 objects removed, seven DB-002 tables/rows preserved |
+| DB-002 head → DB-003 head again | `PASS`; three tables restored |
+| Alembic heads | `PASS`; exactly one, `e7b4c2d9a631` |
+| Alembic metadata check | `PASS`; `No new upgrade operations detected.` |
+| `uv run --project apps/api pytest tests/database -q` | `PASS`; 221 passed, 0 failed, 0 skipped, 1 dependency deprecation warning |
+| `uv run --project apps/api pytest tests/api -q` | `PASS`; 42 passed, 0 failed, 0 skipped, 3 dependency/test warnings |
+| `uv run --project apps/api pytest tests -q` | `PASS`; 263 passed, 0 failed, 0 skipped, 3 dependency/test warnings |
+
+### Exact changed paths
+
+1. `apps/api/alembic/env.py`
+2. `apps/api/alembic/versions/e7b4c2d9a631_create_db_003_workflow_persistence.py`
+3. `apps/api/app/db/models/__init__.py`
+4. `apps/api/app/db/models/workflow.py`
+5. `apps/api/app/db/workflow_persistence.py`
+6. `tests/database/conftest.py`
+7. `tests/database/support.py`
+8. `tests/database/test_alembic.py`
+9. `tests/database/test_migration_cycle.py`
+10. `tests/database/test_schema.py`
+11. `tests/database/test_workflow_persistence.py`
+12. `docs/data/database-schema.md`
+13. `docs/components/database/COMPONENT_STATUS.md`
+14. `docs/components/database/TASK_LEDGER.md`
+15. `docs/components/database/OPEN_ISSUES.md`
+16. `docs/components/database/DECISION_LOG.md`
+17. `docs/components/database/DEPENDENCY_REQUESTS.md`
+18. `docs/components/database/LATEST_AGENT3_HANDOFF.md`
+
+### Boundary and Git result
+
+- Queue identity separation: `PASS` against
+  `CONTRACT-QUEUE-001@1.0.0-draft.2`; no Queue provider-specific or
+  message/delivery/claim/lease/receipt/acknowledgement identity is used as a
+  Workflow attempt or producer-event identity.
+- Queue runtime: `NOT_IMPLEMENTED`; provider: `NOT_SELECTED`; Queue adapter:
+  `NOT_IMPLEMENTED`; Queue release readiness: `NOT_CLAIMED`.
+- Workflow runtime: `NOT_MODIFIED`; Evidence persistence: `NOT_IMPLEMENTED`;
+  DB-004: `NOT_STARTED / NOT_AUTHORIZED`.
+- No raw prompt, repository, patch, log, secret, token, Evidence byte, or
+  artefact byte storage was added.
+- `STAGED: NO`; `COMMITTED: NO`; `PUSHED: NO`; `PR: NONE`; `MERGED: NO`.
+- Known limitations: physical persistence only; the future Workflow caller
+  owns all semantic decisions. DB-ISSUE-013 remains intentionally deferred.
+- Assumed: `NONE`.
+
+## Historical DB-002 Workflow-owner reconciliation acknowledgement
 
 - Date: 2026-08-02
 - Task: `DB-002-WORKFLOW-OWNER-ACK-001`
