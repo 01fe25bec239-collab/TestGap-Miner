@@ -1,23 +1,23 @@
 # Auth Dependency Requests
 
-- Date: 2026-08-09
+- Date: 2026-08-10
 - Current task:
-  `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`
+  `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001-A3-R2`
 - Authorized manager task:
-  `AUTH-002-FINAL-READINESS-RECONCILIATION-001`
+  `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001`
 - Authorizing coordinator:
   `Agent 1`
-- Consumer reviews reconciled (Current Final Coordination State):
+- Consumer reviews for AUTH-005 additions:
   `A2-UI` (`ACCEPTED_WITH_CONSTRAINTS`), `A2-SECURITY` (`ACCEPTED_WITH_CONSTRAINTS`),
-  `A2-BACKEND` (`ACCEPTED_WITH_CONSTRAINTS`), `A2-DEPLOYMENT` (`ACCEPTED_WITH_CONSTRAINTS`),
-  `A2-INTEGRATION` (`ACCEPTED_WITH_CONSTRAINTS`)
-- Reviewed head for all: `84ad9e322d886f8963c34386f87074a444b3fa2b`
-- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`
+  `A2-DEPLOYMENT` (`ACCEPTED_WITH_CONSTRAINTS`), `A2-INTEGRATION` (`ACCEPTED_WITH_CONSTRAINTS`)
+- Baseline: `5ffa8994b286e85d9f676336dbe0169cfbc89d2c`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-contract-1.2-finalization`
+- Branch: `agent2/auth-contract-1.2-finalization`
 - Shared registry correction: PR #31 — `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED` (`a80145e2` / `1057ba72`)
-- Scope: `AUTH_DURABLE_RECORDS_ONLY`
+- Scope: `AUTH_DURABLE_RECORDS_AND_CONTRACT_ONLY`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
-- Auth runtime implementation: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
-- `CONTRACT-AUTH-001@1.1.0-draft.1`: `UNCHANGED / FINAL_CONSUMER_REVIEW_COMPLETE / NOT_IMPLEMENTATION_READY`
+- Auth runtime status: `EXISTING_MERGED_CODE_IN_APPS_WEB_SRC_AUTH / AUTH_006_RUNTIME_MODIFICATION_AUTHORIZED=NONE / FENCE_CORRECTION_RUNTIME=NOT_YET_AUTHORIZED`
+- `CONTRACT-AUTH-001@1.2.0-draft.1`: `FINALIZED_CONTRACT_DRAFT_FOR_A2_REVIEW / NOT_IMPLEMENTATION_READY`
 - `ASSUMED`: `NONE`
 
 ## Database consumer review
@@ -1008,9 +1008,11 @@ All five current consumer domains have reviewed `CONTRACT-AUTH-001@1.1.0-draft.1
 
 `CONTRACT-AUTH-001@1.1.0-draft.1` content remains byte-identical (`8ed2154561785566b4b17baa16535e1fad8e662c`). Embedded non-normative consumer status provenance is superseded for coordination purposes by this authoritative readiness reconciliation.
 
-Runtime implementation remains explicitly `NOT_AUTHORIZED`:
-- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
-- Frontend Auth: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+Runtime modification under AUTH-006 remains explicitly NOT_AUTHORIZED:
+- Existing merged Auth runtime state: Present in baseline under `apps/web/src/auth/**` (including `AuthAdapter`, state machine, correlation, storage boundary, redirect, types, and tests).
+- `AUTH-006` runtime modification authorization: `NONE` / `NO_RUNTIME_MODIFICATION_AUTHORIZED`.
+- `AUTH-003` / `AUTH-005` fence correction runtime implementation: `NOT_YET_AUTHORIZED` / `NOT_YET_IMPLEMENTED`.
+- Frontend Auth `/auth/callback`: `NOT_IMPLEMENTED / NOT_AUTHORIZED`
 - Provider runtime: `NOT_PROVISIONED / NOT_TESTED`
 - `UI-004`: `NOT_AUTHORIZED`
 - Release: `NOT_READY`
