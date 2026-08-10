@@ -1,10 +1,11 @@
 # Agent Workflow Open Issues
 
-- Date: 2026-08-02
+- Date: 2026-08-10
 - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` (`ACKNOWLEDGED_AND_MERGED`)
-- Current task: `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`
-  (`DOCUMENTATION_RECONCILIATION_ONLY`)
-- Evidence baseline: `d13e28117ca6266c3ab3ffa7775f63185ab74b3e`
+- Current task: `WORKFLOW-002-DB003-POSTMERGE-STATUS-RECONCILIATION-001`
+  (`DOCUMENTATION_STATUS_RECONCILIATION_ONLY`)
+- Original authorized implementation baseline: `f318d9b515a4324b0848e64059f179027d19bd1f`
+- Reconciled current-main base: `6eb622cf429093f3806dbe0261c3fa86cad607b6`
 
 ## Current blockers
 
@@ -99,52 +100,65 @@ These do not block any merged or authorized work.
 
 These are not blockers and not open defects. None is authorized by this task.
 
-### `AGW-ISSUE-003` — Queue contract not authorized
+### `AGW-ISSUE-003` — Queue runtime/provider integration not implemented
 
 - Status: `OPEN`
-- Classification: `NOT_AUTHORIZED`
-- Evidence: transport fields remain owned by `CONTRACT-QUEUE-001`, which was
-  not created here.
-- Next action: complete a separate owner-authorized Queue contract task.
+- Classification: `CONTRACT_EXISTS` / `RUNTIME_NOT_IMPLEMENTED_BY_WORKFLOW_002`
+- Ownership: `CONTRACT-QUEUE-001` and Queue runtime/provider integration belong
+  to A2-QUEUE. Workflow is a semantic consumer, not the Queue owner.
+- Evidence: `CONTRACT-QUEUE-001` exists on the authorized baseline.
+- Next action: any Queue runtime/provider work requires a separate
+  owner-authorized integration task.
 
-### `AGW-ISSUE-004` — Workflow runtime not implemented
-
-- Status: `OPEN`
-- Classification: `NOT_IMPLEMENTED` / `NOT_TESTED` / `NOT_AUTHORIZED`
-- Evidence: no workflow engine or runtime behavior exists.
-- Next action: begin only under a future authorized implementation task.
-
-### `AGW-ISSUE-008` — Evidence contract not authorized
+### `AGW-ISSUE-004` — Full Workflow runtime not implemented
 
 - Status: `OPEN`
-- Classification: `NOT_AUTHORIZED`
-- Evidence: Evidence payload fields remain owned by `CONTRACT-EVIDENCE-001`,
-  which was not created here.
-- Next action: the Evidence owner publishes its contract.
+- Classification: `PURE_LIFECYCLE_FOUNDATION_IMPLEMENTED` / `A2_ACCEPTED` /
+  `EXTERNAL_RUNTIME_NOT_IMPLEMENTED` / `NOT_AUTHORIZED`
+- Evidence: the pure `app.workflow` semantic engine and direct tests exist and have passed final A2 review (`A2_ACCEPTED`);
+  WORKFLOW-002 DB-003 integration, Queue, model/provider, RAG, Execution, Evidence, publication, and API
+  integrations do not. (DB-003 persistence is merged by A2-DATABASE via PR #37).
+- Next action: WORKFLOW-002 pure foundation is accepted and ready for Git lifecycle. Open external integrations
+  only under separately authorized owner tasks.
 
-### `AGW-ISSUE-009` — Security contract pending
-
-- Status: `OPEN`
-- Classification: `NOT_AUTHORIZED`
-- Evidence: Security payload fields remain owned by `CONTRACT-SEC-001`.
-- Next action: the Security owner publishes its contract.
-
-### `AGW-ISSUE-010` — Runtime acceptance fixtures not tested
+### `AGW-ISSUE-008` — Evidence runtime/persistence not implemented
 
 - Status: `OPEN`
-- Classification: `NOT_TESTED` / `NOT_AUTHORIZED`
-- Evidence: documentation defines fixtures but this task forbids runtime tests.
-- Next action: authorized runtime implementation tasks add and run them.
+- Classification: `CONTRACT_EXISTS` / `RUNTIME_NOT_IMPLEMENTED_BY_WORKFLOW_002`
+- Ownership: `CONTRACT-EVIDENCE-001` and Evidence semantics belong to
+  A2-EVIDENCE. Workflow consumes the relevant semantic boundary.
+- Evidence: `CONTRACT-EVIDENCE-001` exists on the authorized baseline.
+- Next action: any Evidence runtime or persistence work requires a separate
+  owner-authorized integration task.
 
-### `AGW-ISSUE-012` — DB-003 not started and not authorized
+### `AGW-ISSUE-009` — Security contract pending (historical)
+
+- Status: `HISTORICAL` / `NOT_A_CURRENT_STATE_ASSERTION`
+- Supersession note: the C1 correction did not infer or reconcile the current
+  Security contract state, and C2 does not change that boundary. The earlier
+  pending statement is retained only as historical coordination evidence.
+
+### `AGW-ISSUE-010` — External acceptance fixtures not implemented
 
 - Status: `OPEN`
-- Classification: `NOT_STARTED` / `NOT_AUTHORIZED`
-- Evidence: DB-003 owns workflow steps, attempts, ordered events, and
-  transition history. The DB-002 versus DB-003 boundary is recorded as
-  `DB002_BOUNDARY_ACCEPTED`.
-- Next action: a separate owner-authorized DB-003 readiness assessment. This
-  task neither starts nor authorizes DB-003.
+- Classification: `PURE_SEMANTIC_FIXTURES_TESTED` /
+  `EXTERNAL_OWNER_OR_FUTURE_INTEGRATION_REQUIRED`
+- Evidence: pure semantics cover `successful_human_review`,
+  `single_repair_success`, `repair_terminal_exits`, `second_repair_rejected`,
+  `explicit_abstention`, `cooperative_cancellation`,
+  `invalid_and_terminal_transitions`, `checkpoint_resume`, and
+  `benchmark_system_completion`.
+- Not implemented by pure core: ordered durable event insertion, request
+  idempotency persistence, identifier persistence/redaction, WORKFLOW-002 DB-003 integration, and
+  Evidence byte handling.
+- Next action: external owners add integration fixtures under separate tasks.
+
+### `AGW-ISSUE-012` — DB-003 merged by A2-DATABASE; WORKFLOW-002 integration pending
+
+- Status: `CLOSED` / `SUPERSEDED_BY_PR37`
+- Classification: `IMPLEMENTED` / `MERGED_BY_A2_DATABASE`
+- Evidence: DB-003 workflow persistence was implemented and merged to main via PR #37 (`6eb622cf429093f3806dbe0261c3fa86cad607b6`). Active wording describing DB-003 as `NOT_STARTED` or `NOT_AUTHORIZED` is superseded.
+- Distinction: WORKFLOW-002 DB-003 integration remains `NOT_IMPLEMENTED_BY_WORKFLOW_002`. WORKFLOW-002 remains a pure in-process workflow lifecycle foundation. It does NOT yet: persist lifecycle mutations through DB-003, write Workflow events, create DB-003 step occurrences, create DB-003 attempts, perform event/projection atomic commits, integrate checkpoint persistence, or integrate producer-event idempotency.
 
 ## Closed baseline note
 
@@ -157,12 +171,9 @@ These are not blockers and not open defects. None is authorized by this task.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: acknowledgement, ambiguity resolutions, and post-merge owner
-  decisions recorded.
-- `TESTED`: documentation evidence and frozen semantic body validated.
-- `NOT_TESTED`: workflow runtime and acceptance fixtures.
-- `BLOCKED`: nothing. Queue, Evidence, Security, DB-003, and runtime work are
-  `NOT_AUTHORIZED` rather than blocked; `AGW-ISSUE-011` is deferred and
-  nonblocking.
-- `ASSUMED`: closed initial baseline reconciliation; merge evidence read from
-  local `origin/main` history rather than from the GitHub API.
+- `IMPLEMENTED`: pure Workflow lifecycle foundation and prior contract records.
+- `TESTED`: pure semantic acceptance coverage and existing API regression.
+- `NOT_TESTED`: external runtime and persistence integration.
+- `BLOCKED`: none in the authorized pure-core scope; remaining work is
+  deferred or unauthorized.
+- `ASSUMED`: none for the current task.

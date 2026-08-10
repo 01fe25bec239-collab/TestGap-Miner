@@ -1,10 +1,11 @@
 # Agent Workflow Dependency Requests
 
-- Date: 2026-08-02
+- Date: 2026-08-10
 - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` (`ACKNOWLEDGED_AND_MERGED`)
-- Current task: `WORKFLOW-DB002-OWNER-RECONCILIATION-001-C1`
-  (`DOCUMENTATION_RECONCILIATION_ONLY`)
-- Evidence baseline: `d13e28117ca6266c3ab3ffa7775f63185ab74b3e`
+- Current task: `WORKFLOW-002-DB003-POSTMERGE-STATUS-RECONCILIATION-001`
+  (`DOCUMENTATION_STATUS_RECONCILIATION_ONLY`)
+- Original authorized implementation baseline: `f318d9b515a4324b0848e64059f179027d19bd1f`
+- Reconciled current-main base: `6eb622cf429093f3806dbe0261c3fa86cad607b6`
 - Historical starting-state evidence (superseded, retained as evidence): the
   original task began clean with no Agent Workflow directory; C1 and C2 began
   with exactly seven permitted untracked Markdown files and no other changed
@@ -44,7 +45,7 @@
   Workflow-reconciliation PR #10, merge commit
   `99c8022c9f44e6a54bed624aa0153be7e32f234b`, 2026-08-01.
 - Downstream consumption: DB-002 merged via PR #12, merge commit
-  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`, 2026-08-02. `DB-DEP-011` is
+  `3701520e6d61e2bb80391e7af888d0d530bdb6c4`, 2026-08-02; DB-003 merged via PR #37 (`6eb622cf429093f3806dbe0261c3fa86cad607b6`), 2026-08-10. `DB-DEP-011` is
   `ACCEPTED` / `VERIFIED_COMPLETE` / `CLOSED`.
 - Next action: none. This dependency is complete.
 
@@ -100,7 +101,7 @@
 
 - Request ID: `AGW-DEP-003`
 - Requesting Agent 2: `A2-AGENT-WORKFLOW`
-- Owning Agent 2: `A2-AGENT-WORKFLOW` under a separate authorized task
+- Owning Agent 2: `A2-QUEUE`
 - Required change and reason: publish queue envelope, delivery identity,
   visibility/lease, redelivery, worker-result, and dead-letter semantics.
 - Contract affected: `CONTRACT-QUEUE-001`
@@ -110,20 +111,26 @@
 - Urgency: `MEDIUM`
 - Proposed acceptance test: at-least-once duplicate delivery produces one
   semantic effect, bounded attempts, and attributable dead-letter outcome.
-- Approval status: `PENDING` / `NOT_AUTHORIZED`
-- Completion evidence: none; intentionally not implemented in this task.
-  `CONTRACT-QUEUE-001` was not created.
-- Next action: issue a separate scoped contract prompt.
+- Contract layer: `SATISFIED` / `CONTRACT_EXISTS`.
+- Contract evidence: `CONTRACT-QUEUE-001` exists on the authorized baseline
+  and remains owned by A2-QUEUE.
+- Queue runtime/provider integration:
+  `NOT_AUTHORIZED_BY_WORKFLOW_002` /
+  `SEPARATE_OWNER_AUTHORIZATION_REQUIRED`.
+- Next action: any runtime/provider integration requires a separate
+  owner-authorized task.
 
 ## Ownership boundaries
 
 - `CONTRACT-AUTH-001`: owned by `A2-AUTH`.
-- `CONTRACT-QUEUE-001`: owned by `A2-AGENT-WORKFLOW` under a separate task.
-- `CONTRACT-EVIDENCE-001`: owned by `A2-AGENT-WORKFLOW` under a separate task.
+- `CONTRACT-QUEUE-001`: exists and is owned by `A2-QUEUE`; Workflow is a
+  semantic consumer.
+- `CONTRACT-EVIDENCE-001`: exists and is owned by `A2-EVIDENCE`; Workflow is a
+  consumer of the relevant semantic boundary.
 - `CONTRACT-SEC-001`: owned by `A2-SECURITY`.
 
-These contracts remain independent and were not implemented, created, or
-re-owned by this post-merge reconciliation.
+WORKFLOW-002 implements neither Queue runtime/provider integration nor Evidence
+runtime/persistence. This reconciliation changes no cross-owner contract.
 
 ## Explicit labels
 
@@ -131,8 +138,7 @@ re-owned by this post-merge reconciliation.
 - `TESTED`: ownership, merge evidence, and blocking-task references reconciled.
 - `NOT_TESTED`: consumer/runtime behavior.
 - `BLOCKED`: nothing. `AGW-DEP-001` is complete and closed; `AGW-DEP-002` is
-  satisfied for DB-002; `AGW-DEP-003` and `AGW-DEP-004` are `NOT_AUTHORIZED`
-  and deferred nonblocking respectively.
-- `ASSUMED`: A2-AGENT-WORKFLOW retains Queue ownership per the shared registry,
-  but a separate task is required; merge evidence read from local `origin/main`
-  history rather than from the GitHub API.
+  satisfied for DB-002; the `AGW-DEP-003` contract layer is satisfied while
+  Queue runtime/provider integration requires separate owner authorization;
+  `AGW-DEP-004` is deferred and nonblocking.
+- `ASSUMED`: none for this current-state correction.
