@@ -8,6 +8,11 @@ import {
   type CorrelationStore,
 } from "./correlation";
 import { DEFAULT_AUTH_DESTINATION, validateIntendedReturn } from "./redirect";
+import {
+  createOpaqueAuthHandle,
+  type AuthFenceEventReferences,
+  type AuthSessionFence,
+} from "./session-fence";
 import { AuthStateMachine } from "./state-machine";
 import type {
   AuthAdapter,
@@ -39,10 +44,17 @@ class SecurityEventSinkFailure extends Error {
   }
 }
 
+type CallbackSecurityContext = {
+  readonly requestReference: string;
+  references: AuthFenceEventReferences | null;
+};
+
 export type AuthRuntimeDependencies = Readonly<{
   provider: import("./types").AuthProvider;
   correlationStore: CorrelationStore;
+  sessionFence: AuthSessionFence;
   securityPolicyVersion: string;
+  environmentClass: AuthSecurityEvent["environmentClass"];
   applicationOrigin: string;
   redirectToProvider: (url: string) => void | Promise<void>;
   setCorrelationCookie: (cookie: CorrelationCookie) => void | Promise<void>;
@@ -64,6 +76,7 @@ class AuthRuntime implements AuthAdapter {
   #callbackProcessingCount = 0;
   #callbackFlights = new Map<string, Promise<CallbackResult>>();
   #operationEpoch = 0;
+  #verificationEpoch = 0;
   #callbackUrl: string;
 
   constructor(private readonly dependencies: AuthRuntimeDependencies) {
@@ -71,29 +84,35 @@ class AuthRuntime implements AuthAdapter {
       throw new AuthRuntimeError("CONFIGURATION_UNAVAILABLE", true);
     }
     this.#callbackUrl = callbackUrlForOrigin(dependencies.applicationOrigin);
+    dependencies.sessionFence.subscribeToFenceChanges(() => {
+      this.#verificationEpoch += 1;
+      if (this.#signOutPromise || this.#machine.snapshot.state === "SIGN_OUT_PENDING") return;
+      this.#transitionFailClosed();
+    });
     dependencies.provider.onSessionChange((event, session) => {
-      if (this.#callbackProcessingCount || this.#refreshPromise || this.#signOutPromise) return;
-      try {
-        if (event === "SIGNED_OUT" || !session) {
-          this.#machine.transition("UNAUTHENTICATED");
-        } else {
-          this.#machine.transition("AUTHENTICATED", {
-            userReference: session.userReference,
-          });
-        }
-      } catch {
-        // Invalid provider event ordering already moved the machine fail closed.
+      if (event === "SIGNED_OUT" || !session) {
+        this.#verificationEpoch += 1;
+        this.#transitionUnauthenticated();
+        void this.dependencies.sessionFence.cleanupStaleSessionMaterial().catch(() => undefined);
+        return;
       }
+      if (this.#callbackProcessingCount || this.#refreshPromise || this.#signOutPromise) return;
+      void this.#resolveProviderSignal(session);
     });
   }
 
   beginSignIn(intendedReturn?: string): Promise<void> {
     if (this.#beginPromise) return this.#beginPromise;
     const state = this.#machine.snapshot.state;
-    if (state !== "UNAUTHENTICATED" && state !== "RECOVERABLE_ERROR") {
+    if (
+      state !== "UNAUTHENTICATED" &&
+      state !== "RECOVERABLE_ERROR" &&
+      state !== "TERMINAL_SESSION_ERROR"
+    ) {
       return Promise.reject(new AuthRuntimeError("TEMPORARY_PROVIDER_FAILURE", true));
     }
 
+    this.#verificationEpoch += 1;
     this.#beginPromise = this.#beginSignIn(intendedReturn).finally(() => {
       this.#beginPromise = null;
     });
@@ -103,8 +122,10 @@ class AuthRuntime implements AuthAdapter {
   async #beginSignIn(intendedReturn?: string) {
     this.#machine.transition("SIGN_IN_PENDING");
     let handle: string | null = null;
+    let signInAttemptReference: string | null = null;
     let redirectUrl: string;
     try {
+      ({ signInAttemptReference } = await this.dependencies.sessionFence.prepareSignIn());
       const providerResult = await this.dependencies.provider.beginGitHubOAuth(
         this.#callbackUrl,
       );
@@ -116,6 +137,10 @@ class AuthRuntime implements AuthAdapter {
         intendedReturn: validateIntendedReturn(intendedReturn),
         now: this.#now(),
       });
+      await this.dependencies.sessionFence.associateSignInAttempt(
+        signInAttemptReference,
+        handle,
+      );
       await this.dependencies.setCorrelationCookie(
         correlationCookie(handle, this.dependencies.applicationOrigin),
       );
@@ -125,7 +150,14 @@ class AuthRuntime implements AuthAdapter {
         await this.dependencies.correlationStore.remove(handle).catch(() => undefined);
         await Promise.resolve(this.dependencies.deleteCorrelationCookie(handle)).catch(() => undefined);
       }
-      this.#machine.transition("RECOVERABLE_ERROR");
+      if (signInAttemptReference) {
+        await this.dependencies.sessionFence
+          .abandonSignInAttempt(signInAttemptReference)
+          .catch(() => undefined);
+      }
+      if (this.#machine.snapshot.state !== "TERMINAL_SESSION_ERROR") {
+        this.#machine.transition("RECOVERABLE_ERROR");
+      }
       throw safeRuntimeError(error, "TEMPORARY_PROVIDER_FAILURE");
     }
     await this.dependencies.redirectToProvider(redirectUrl);
@@ -133,6 +165,10 @@ class AuthRuntime implements AuthAdapter {
 
   async processCallback(request: CallbackRequest): Promise<CallbackResult> {
     this.#callbackProcessingCount += 1;
+    const securityContext: CallbackSecurityContext = {
+      requestReference: createOpaqueAuthHandle(),
+      references: null,
+    };
     const preExistingSession = await this.dependencies.provider.getSession().catch(() => null);
     try {
       this.#machine.transition("CALLBACK_PROCESSING");
@@ -143,24 +179,49 @@ class AuthRuntime implements AuthAdapter {
 
       if (!parsed.ok) {
         if (match?.record.lifecycle === "PENDING_ATTEMPT_CORRELATION") {
+          await this.#captureCallbackFence(match.handle, securityContext);
           await this.#discardAttempt(match.handle);
         }
-        return await this.#callbackFailure(parsed.error, preExistingSession);
+        return await this.#callbackFailure(parsed.error, preExistingSession, securityContext);
       }
 
       if (!match) {
-        return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+        return await this.#callbackFailure(
+          "INVALID_CALLBACK",
+          preExistingSession,
+          securityContext,
+        );
       }
 
       if (match.record.securityPolicyVersion !== this.dependencies.securityPolicyVersion) {
+        await this.#captureCallbackFence(match.handle, securityContext);
         if (match.record.lifecycle === "PENDING_ATTEMPT_CORRELATION") {
           await this.#discardAttempt(match.handle);
         }
-        return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+        return await this.#callbackFailure(
+          "INVALID_CALLBACK",
+          preExistingSession,
+          securityContext,
+        );
+      }
+
+      if (!(await this.#captureCallbackFence(match.handle, securityContext))) {
+        if (match.record.lifecycle === "PENDING_ATTEMPT_CORRELATION") {
+          await this.#discardAttempt(match.handle);
+        }
+        return await this.#callbackFailure(
+          "INVALID_CALLBACK",
+          preExistingSession,
+          securityContext,
+        );
       }
 
       if (match.record.lifecycle === "COMPLETED_CALLBACK_CORRELATION") {
-        return await this.#completedCallback(match.record, preExistingSession);
+        return await this.#completedCallback(
+          match.record,
+          preExistingSession,
+          securityContext,
+        );
       }
 
       const active = this.#callbackFlights.get(match.handle);
@@ -172,16 +233,32 @@ class AuthRuntime implements AuthAdapter {
         this.#now(),
       );
       if (!current) {
-        return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+        return await this.#callbackFailure(
+          "INVALID_CALLBACK",
+          preExistingSession,
+          securityContext,
+        );
       }
       if (current.securityPolicyVersion !== this.dependencies.securityPolicyVersion) {
         if (current.lifecycle === "PENDING_ATTEMPT_CORRELATION") {
           await this.#discardAttempt(match.handle);
         }
-        return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+        return await this.#callbackFailure(
+          "INVALID_CALLBACK",
+          preExistingSession,
+          securityContext,
+        );
       }
       if (current.lifecycle === "COMPLETED_CALLBACK_CORRELATION") {
-        return await this.#completedCallback(current, preExistingSession);
+        return await this.#completedCallback(current, preExistingSession, securityContext);
+      }
+      if (!(await this.#captureCallbackFence(match.handle, securityContext))) {
+        await this.#discardAttempt(match.handle);
+        return await this.#callbackFailure(
+          "INVALID_CALLBACK",
+          preExistingSession,
+          securityContext,
+        );
       }
 
       const concurrentlyStarted = this.#callbackFlights.get(match.handle);
@@ -192,6 +269,7 @@ class AuthRuntime implements AuthAdapter {
         parsed.flowId,
         match.handle,
         preExistingSession,
+        securityContext,
       );
       this.#callbackFlights.set(match.handle, flight);
       try {
@@ -203,7 +281,11 @@ class AuthRuntime implements AuthAdapter {
       }
     } catch (error) {
       if (error instanceof SecurityEventSinkFailure) throw error;
-      return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+      return await this.#callbackFailure(
+        "INVALID_CALLBACK",
+        preExistingSession,
+        securityContext,
+      );
     } finally {
       this.#callbackProcessingCount -= 1;
     }
@@ -214,7 +296,10 @@ class AuthRuntime implements AuthAdapter {
     flowId: string,
     handle: string,
     preExistingSession: ProviderSession | null,
+    securityContext: CallbackSecurityContext,
   ): Promise<CallbackResult> {
+    const operationEpoch = this.#operationEpoch;
+    const verificationEpoch = this.#verificationEpoch;
     this.#machine.transition("CALLBACK_PROCESSING");
     let exchange: Awaited<ReturnType<AuthRuntimeDependencies["provider"]["exchangeCode"]>>;
     try {
@@ -226,7 +311,7 @@ class AuthRuntime implements AuthAdapter {
         PUBLIC_CALLBACK_FAILURES.has(error.code as InternalCallbackError)
           ? (error.code as InternalCallbackError)
           : "SESSION_EXCHANGE_FAILED";
-      return await this.#callbackFailure(internalError, preExistingSession);
+      return await this.#callbackFailure(internalError, preExistingSession, securityContext);
     }
 
     try {
@@ -234,7 +319,24 @@ class AuthRuntime implements AuthAdapter {
     } catch {
       await exchange.discardSession();
       await this.#discardAttempt(handle);
-      return await this.#callbackFailure("SESSION_EXCHANGE_FAILED", preExistingSession);
+      return await this.#callbackFailure(
+        "SESSION_EXCHANGE_FAILED",
+        preExistingSession,
+        securityContext,
+      );
+    }
+
+    if (
+      operationEpoch !== this.#operationEpoch ||
+      !(await this.#captureCallbackFence(handle, securityContext))
+    ) {
+      await exchange.discardSession();
+      await this.#discardAttempt(handle);
+      return await this.#callbackFailure(
+        "INVALID_CALLBACK",
+        preExistingSession,
+        securityContext,
+      );
     }
 
     let completion;
@@ -248,19 +350,57 @@ class AuthRuntime implements AuthAdapter {
     } catch {
       await exchange.discardSession();
       await this.#discardAttempt(handle).catch(() => undefined);
-      return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+      return await this.#callbackFailure(
+        "INVALID_CALLBACK",
+        preExistingSession,
+        securityContext,
+      );
     }
     if (!completion) {
       await exchange.discardSession();
       await this.#discardAttempt(handle);
-      return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+      return await this.#callbackFailure(
+        "INVALID_CALLBACK",
+        preExistingSession,
+        securityContext,
+      );
     }
 
+    const establishment = await this.dependencies.sessionFence.establishSession(handle);
+    if (!establishment.eligible || operationEpoch !== this.#operationEpoch) {
+      await exchange.discardSession();
+      await this.#rollbackRejectedEstablishment(handle);
+      return await this.#callbackFailure(
+        "INVALID_CALLBACK",
+        preExistingSession,
+        securityContext,
+      );
+    }
+    securityContext.references = establishment.references;
+
+    let committed = false;
     try {
       await this.dependencies.setCorrelationCookie(
         completedCorrelationCookie(handle, this.dependencies.applicationOrigin),
       );
+      const beforeCommit = await this.dependencies.sessionFence.resolveFence();
+      if (!beforeCommit.eligible || operationEpoch !== this.#operationEpoch) throw new Error();
       await exchange.commitSession();
+      committed = true;
+      const afterCommit = await this.dependencies.sessionFence.resolveFence();
+      if (
+        !afterCommit.eligible ||
+        !this.#canRestoreAuthenticated(operationEpoch, verificationEpoch)
+      ) {
+        this.#transitionFailClosed();
+        await this.#rollbackRejectedEstablishment(handle);
+        await this.#cleanupStaleCurrentProviderMaterial();
+        return await this.#callbackFailure(
+          "INVALID_CALLBACK",
+          preExistingSession,
+          securityContext,
+        );
+      }
       this.#machine.transition("AUTHENTICATED", {
         userReference: exchange.session.userReference,
       });
@@ -272,19 +412,36 @@ class AuthRuntime implements AuthAdapter {
         duplicate: false,
       };
     } catch {
-      await exchange.discardSession();
-      return await this.#callbackFailure("SESSION_EXCHANGE_FAILED", preExistingSession);
+      if (!committed) await exchange.discardSession().catch(() => undefined);
+      await this.#rollbackRejectedEstablishment(handle);
+      return await this.#callbackFailure(
+        "SESSION_EXCHANGE_FAILED",
+        preExistingSession,
+        securityContext,
+      );
     }
   }
 
   async #completedCallback(
     record: Extract<CorrelationRecord, { lifecycle: "COMPLETED_CALLBACK_CORRELATION" }>,
     preExistingSession: ProviderSession | null,
+    securityContext: CallbackSecurityContext,
   ): Promise<CallbackResult> {
+    const operationEpoch = this.#operationEpoch;
+    const verificationEpoch = this.#verificationEpoch;
     this.#machine.transition("CALLBACK_PROCESSING");
     const validated = await this.#validatePreservedSession(preExistingSession);
-    if (validated?.userReference !== record.outcome.userReference) {
-      return await this.#callbackFailure("INVALID_CALLBACK", preExistingSession);
+    if (
+      validated?.userReference !== record.outcome.userReference ||
+      !this.#canRestoreAuthenticated(operationEpoch, verificationEpoch)
+    ) {
+      this.#transitionFailClosed();
+      await this.#cleanupStaleCurrentProviderMaterial();
+      return await this.#callbackFailure(
+        "INVALID_CALLBACK",
+        null,
+        securityContext,
+      );
     }
     this.#machine.transition("AUTHENTICATED", {
       userReference: record.outcome.userReference,
@@ -309,14 +466,17 @@ class AuthRuntime implements AuthAdapter {
   }
 
   async getAccessTokenForApiRequest(): Promise<string> {
+    const operationEpoch = this.#operationEpoch;
+    const verificationEpoch = this.#verificationEpoch;
     if (this.#refreshPromise) await this.#refreshPromise;
     if (this.#machine.snapshot.state !== "AUTHENTICATED") {
+      await this.#cleanupStaleCurrentProviderMaterial();
       throw new AuthRuntimeError("SESSION_EXPIRED");
     }
 
     let session = await this.dependencies.provider.getSession();
-    if (!session) {
-      this.#machine.transition("TERMINAL_SESSION_ERROR");
+    if (!session || !(await this.#isCurrentProviderSession(session))) {
+      await this.#denyCurrentSession();
       throw new AuthRuntimeError("SESSION_EXPIRED");
     }
 
@@ -329,7 +489,17 @@ class AuthRuntime implements AuthAdapter {
       session = await this.dependencies.provider.getSession();
     }
 
-    if (!session || this.#machine.snapshot.state !== "AUTHENTICATED") {
+    if (!session) {
+      await this.#denyCurrentSession();
+      throw new AuthRuntimeError("SESSION_EXPIRED");
+    }
+    const current = await this.#isCurrentProviderSession(session);
+    if (
+      !current ||
+      this.#machine.snapshot.state !== "AUTHENTICATED" ||
+      !this.#canRestoreAuthenticated(operationEpoch, verificationEpoch)
+    ) {
+      await this.#denyCurrentSession();
       throw new AuthRuntimeError("SESSION_EXPIRED");
     }
     return session.accessToken;
@@ -351,63 +521,98 @@ class AuthRuntime implements AuthAdapter {
     forcedMode?: import("./types").RefreshMode,
   ): Promise<AuthSessionSnapshot> {
     if (this.#machine.snapshot.state !== "AUTHENTICATED") {
+      await this.#cleanupStaleCurrentProviderMaterial();
       throw new AuthRuntimeError("SESSION_EXPIRED");
     }
 
     const session = await this.dependencies.provider.getSession();
+    if (!session || !(await this.#isCurrentProviderSession(session))) {
+      await this.#denyCurrentSession();
+      throw new AuthRuntimeError("SESSION_EXPIRED");
+    }
     const mode =
       forcedMode ??
-      (session && session.expiresAt > this.#now()
+      (session.expiresAt > this.#now()
         ? "PROVEN_CREDENTIAL"
         : "UNPROVEN_CREDENTIAL");
     const epoch = this.#operationEpoch;
+    const verificationEpoch = this.#verificationEpoch;
     this.#machine.transition("REFRESH_PENDING", {
       refreshMode: mode,
-      userReference: session?.userReference,
+      userReference: session.userReference,
     });
 
-    return this.dependencies.provider
-      .refresh()
-      .then((refreshed) => {
-        if (epoch !== this.#operationEpoch) return this.#machine.snapshot;
-        return this.#machine.transition("AUTHENTICATED", {
-          userReference: refreshed.userReference,
-        });
-      })
-      .catch((error) => {
-        const recoverable = error instanceof AuthRuntimeError && error.recoverable;
-        this.#machine.transition(recoverable ? "RECOVERABLE_ERROR" : "TERMINAL_SESSION_ERROR");
-        throw safeRuntimeError(error, recoverable ? "TEMPORARY_PROVIDER_FAILURE" : "REFRESH_FAILED");
+    try {
+      const refreshed = await this.dependencies.provider.refresh();
+      if (epoch !== this.#operationEpoch) {
+        await Promise.all([
+          this.dependencies.sessionFence.cleanupStaleSessionMaterial().catch(() => undefined),
+          this.dependencies.provider.signOutLocal().catch(() => undefined),
+        ]);
+        return this.#machine.snapshot;
+      }
+      if (verificationEpoch !== this.#verificationEpoch) {
+        await this.#cleanupStaleCurrentProviderMaterial();
+        throw new AuthRuntimeError("REFRESH_FAILED");
+      }
+      if (!(await this.#isCurrentProviderSession(refreshed))) {
+        await this.#denyCurrentSession();
+        throw new AuthRuntimeError("REFRESH_FAILED");
+      }
+      if (
+        !this.#canRestoreAuthenticated(epoch, verificationEpoch)
+      ) {
+        await this.#cleanupStaleCurrentProviderMaterial();
+        return this.#machine.snapshot;
+      }
+      return this.#machine.transition("AUTHENTICATED", {
+        userReference: refreshed.userReference,
       });
+    } catch (error) {
+      if (epoch !== this.#operationEpoch) return this.#machine.snapshot;
+      const recoverable = error instanceof AuthRuntimeError && error.recoverable;
+      this.#machine.transition(recoverable ? "RECOVERABLE_ERROR" : "TERMINAL_SESSION_ERROR");
+      throw safeRuntimeError(error, recoverable ? "TEMPORARY_PROVIDER_FAILURE" : "REFRESH_FAILED");
+    }
   }
 
   signOut(): Promise<SignOutResult> {
     if (this.#signOutPromise) return this.#signOutPromise;
-    if (this.#machine.snapshot.state === "UNAUTHENTICATED") {
-      return Promise.resolve({ ok: true, error: null, destination: DEFAULT_AUTH_DESTINATION });
+    let tombstone: Promise<void>;
+    try {
+      tombstone = Promise.resolve(
+        this.dependencies.sessionFence.createLocalSignOutTombstone(),
+      );
+    } catch (error) {
+      tombstone = Promise.reject(error);
     }
-
     this.#operationEpoch += 1;
+    this.#verificationEpoch += 1;
     this.#machine.transition("SIGN_OUT_PENDING");
-    this.#signOutPromise = this.dependencies.provider
-      .signOutLocal()
-      .then(() => ({ ok: true, error: null, destination: DEFAULT_AUTH_DESTINATION }) as const)
-      .catch(
-        () =>
-          ({
-            ok: false,
-            error: "SIGN_OUT_FAILED",
-            destination: DEFAULT_AUTH_DESTINATION,
-          }) as const,
-      )
-      .then((result) => {
-        this.#machine.transition("UNAUTHENTICATED");
-        return result;
-      })
-      .finally(() => {
+    this.#signOutPromise = this.#performSignOut(tombstone).finally(() => {
         this.#signOutPromise = null;
       });
     return this.#signOutPromise;
+  }
+
+  async #performSignOut(tombstone: Promise<void>): Promise<SignOutResult> {
+    let failed = false;
+    await tombstone.catch(() => {
+      failed = true;
+    });
+    await this.dependencies.sessionFence.publishSignOut().catch(() => {
+      failed = true;
+    });
+    await this.dependencies.provider.signOutLocal().catch(() => {
+      failed = true;
+    });
+    await this.dependencies.sessionFence.cleanupStaleSessionMaterial().catch(() => {
+      failed = true;
+    });
+    this.#transitionUnauthenticated();
+    return failed
+      ? { ok: false, error: "SIGN_OUT_FAILED", destination: DEFAULT_AUTH_DESTINATION }
+      : { ok: true, error: null, destination: DEFAULT_AUTH_DESTINATION };
   }
 
   async #findCorrelation(handles: readonly string[], flowId: string) {
@@ -423,16 +628,20 @@ class AuthRuntime implements AuthAdapter {
 
   async #discardAttempt(handle: string) {
     await this.dependencies.correlationStore.remove(handle);
+    await this.dependencies.sessionFence.abandonCallback(handle).catch(() => undefined);
     await this.dependencies.deleteCorrelationCookie(handle);
   }
 
   async #callbackFailure(
     internalError: InternalCallbackError | "PROVIDER_DENIED" | "USER_CANCELLED",
     preExistingSession: ProviderSession | null,
+    securityContext: CallbackSecurityContext,
   ): Promise<CallbackResult> {
+    const operationEpoch = this.#operationEpoch;
+    const verificationEpoch = this.#verificationEpoch;
     await Promise.resolve(this.dependencies.clearCallbackUrl()).catch(() => undefined);
     const preserved = await this.#validatePreservedSession(preExistingSession);
-    if (preserved) {
+    if (preserved && this.#canRestoreAuthenticated(operationEpoch, verificationEpoch)) {
       this.#machine.transition("AUTHENTICATED", { userReference: preserved.userReference });
       const result = {
         ok: false,
@@ -440,8 +649,16 @@ class AuthRuntime implements AuthAdapter {
         snapshot: this.#machine.snapshot,
         destination: DEFAULT_AUTH_DESTINATION,
       } as const;
-      await this.#emitSecurityEvent(internalError, true);
+      await this.#emitSecurityEvent(
+        internalError,
+        true,
+        securityContext,
+        preserved.userReference,
+      );
       return result;
+    }
+    if (preserved) {
+      this.#transitionFailClosed();
     }
 
     const next =
@@ -455,7 +672,13 @@ class AuthRuntime implements AuthAdapter {
       snapshot: this.#machine.snapshot,
       destination: null,
     } as const;
-    await this.#emitSecurityEvent(internalError, false);
+    await this.#emitSecurityEvent(internalError, false, securityContext, null);
+    if (preExistingSession) {
+      await Promise.all([
+        this.dependencies.sessionFence.cleanupStaleSessionMaterial().catch(() => undefined),
+        this.dependencies.provider.signOutLocal().catch(() => undefined),
+      ]);
+    }
     return result;
   }
 
@@ -464,25 +687,144 @@ class AuthRuntime implements AuthAdapter {
     const validated = await this.dependencies.provider
       .validatePreExistingSession(preExisting)
       .catch(() => null);
-    return validated?.userReference === preExisting.userReference ? validated : null;
+    if (validated?.userReference !== preExisting.userReference) return null;
+    const fence = await this.dependencies.sessionFence.resolveFence().catch(() => null);
+    return fence?.eligible ? validated : null;
   }
 
   async #emitSecurityEvent(
     classification: InternalCallbackError | "PROVIDER_DENIED" | "USER_CANCELLED",
     sessionPreserved: boolean,
+    securityContext: CallbackSecurityContext,
+    userReference: string | null,
   ) {
     if (!PUBLIC_CALLBACK_FAILURES.has(classification as InternalCallbackError)) return;
     try {
       await this.dependencies.emitSecurityEvent(
         Object.freeze({
+          eventName: `AUTH_${classification}` as `AUTH_${InternalCallbackError}`,
           classification: classification as InternalCallbackError,
+          occurredAt: new Date(this.#now()).toISOString(),
+          environmentClass: this.dependencies.environmentClass,
+          sourceComponent: "AUTH",
+          outcome: "REJECTED",
+          blockingEffect: "CALLBACK_REJECTED",
+          actorType: userReference ? "HUMAN_USER" : "UNAUTHENTICATED",
+          actorReference: userReference ?? "UNAUTHENTICATED",
+          signInAttemptReference:
+            securityContext.references?.signInAttemptReference ?? null,
+          callbackFlowReference:
+            securityContext.references?.callbackFlowReference ?? null,
+          requestReference: securityContext.requestReference,
+          correlationReference:
+            securityContext.references?.correlationReference ?? null,
+          policyVersion: this.dependencies.securityPolicyVersion,
           sessionPreserved,
+          reasonCode: classification as InternalCallbackError,
+          redactionStatus: "SECRET_FREE",
           callbackSuccess: false,
           rejectedCallbackDestinationUsed: false,
         }),
       );
     } catch {
       throw new SecurityEventSinkFailure();
+    }
+  }
+
+  async #captureCallbackFence(
+    handle: string,
+    securityContext: CallbackSecurityContext,
+  ) {
+    const resolution = await this.dependencies.sessionFence.validateCallback(handle);
+    if (resolution.eligible) securityContext.references = resolution.references;
+    return resolution.eligible;
+  }
+
+  async #rollbackRejectedEstablishment(handle: string) {
+    await this.dependencies.sessionFence
+      .rollbackSessionEstablishment(handle)
+      .catch(() => undefined);
+    await this.dependencies.correlationStore.remove(handle).catch(() => undefined);
+    await Promise.resolve(this.dependencies.deleteCorrelationCookie(handle)).catch(
+      () => undefined,
+    );
+  }
+
+  async #isCurrentProviderSession(session: ProviderSession) {
+    const currentUser = await this.dependencies.provider
+      .validateCurrentUser()
+      .catch(() => null);
+    const fence = currentUser
+      ? await this.dependencies.sessionFence.resolveFence().catch(() => null)
+      : null;
+    return Boolean(
+      fence?.eligible && currentUser?.userReference === session.userReference,
+    );
+  }
+
+  #canRestoreAuthenticated(operationEpoch: number, verificationEpoch: number) {
+    return (
+      operationEpoch === this.#operationEpoch &&
+      verificationEpoch === this.#verificationEpoch &&
+      !this.#signOutPromise &&
+      this.#machine.snapshot.state !== "SIGN_OUT_PENDING"
+    );
+  }
+
+  async #denyCurrentSession() {
+    this.#transitionFailClosed();
+    await this.#cleanupStaleCurrentProviderMaterial();
+  }
+
+  async #cleanupStaleCurrentProviderMaterial() {
+    await Promise.all([
+      this.dependencies.sessionFence.cleanupStaleSessionMaterial().catch(() => undefined),
+      this.dependencies.provider.signOutLocal().catch(() => undefined),
+    ]);
+  }
+
+  async #resolveProviderSignal(provisionalSession: ProviderSession) {
+    const verificationEpoch = ++this.#verificationEpoch;
+    const operationEpoch = this.#operationEpoch;
+    try {
+      this.#machine.transition("INITIALIZING");
+    } catch {
+      return;
+    }
+    const session = await this.dependencies.provider.getSession().catch(() => null);
+    const eligible = session && (await this.#isCurrentProviderSession(session));
+    if (
+      verificationEpoch !== this.#verificationEpoch ||
+      operationEpoch !== this.#operationEpoch ||
+      this.#beginPromise ||
+      this.#callbackProcessingCount ||
+      this.#refreshPromise ||
+      this.#signOutPromise
+    ) {
+      return;
+    }
+    if (eligible && session.userReference === provisionalSession.userReference) {
+      this.#machine.transition("AUTHENTICATED", {
+        userReference: session.userReference,
+      });
+      return;
+    }
+    await this.#denyCurrentSession();
+  }
+
+  #transitionFailClosed() {
+    try {
+      this.#machine.transition("TERMINAL_SESSION_ERROR");
+    } catch {
+      // Invalid ordering already forces TERMINAL_SESSION_ERROR.
+    }
+  }
+
+  #transitionUnauthenticated() {
+    try {
+      this.#machine.transition("UNAUTHENTICATED");
+    } catch {
+      // Invalid ordering already fails closed.
     }
   }
 

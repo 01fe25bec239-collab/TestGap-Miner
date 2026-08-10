@@ -42,6 +42,17 @@ describe("AuthStateMachine", () => {
     });
   });
 
+  it("allows explicit reauthentication from a terminal session error", () => {
+    const machine = new AuthStateMachine();
+    expect(() => machine.transition("REFRESH_PENDING")).toThrow(InvalidAuthTransition);
+    expect(machine.transition("SIGN_IN_PENDING")).toMatchObject({
+      state: "SIGN_IN_PENDING",
+      userReference: null,
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+  });
+
   it("requires an explicit refresh mode", () => {
     const machine = new AuthStateMachine();
     machine.transition("AUTHENTICATED", { userReference: "user-1" });

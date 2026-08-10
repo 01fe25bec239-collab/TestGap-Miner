@@ -28,6 +28,7 @@ const TRANSITIONS: Readonly<Record<AuthSessionState, readonly AuthSessionState[]
     "SIGN_OUT_PENDING",
   ],
   AUTHENTICATED: [
+    "INITIALIZING",
     "CALLBACK_PROCESSING",
     "REFRESH_PENDING",
     "SIGN_OUT_PENDING",
@@ -50,7 +51,14 @@ const TRANSITIONS: Readonly<Record<AuthSessionState, readonly AuthSessionState[]
     "AUTHENTICATED",
     "SIGN_OUT_PENDING",
   ],
-  TERMINAL_SESSION_ERROR: ["UNAUTHENTICATED", "AUTHENTICATED", "SIGN_OUT_PENDING"],
+  TERMINAL_SESSION_ERROR: [
+    "INITIALIZING",
+    "SIGN_IN_PENDING",
+    "CALLBACK_PROCESSING",
+    "UNAUTHENTICATED",
+    "AUTHENTICATED",
+    "SIGN_OUT_PENDING",
+  ],
 };
 
 export class InvalidAuthTransition extends Error {

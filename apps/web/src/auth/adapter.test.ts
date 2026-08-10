@@ -5,6 +5,13 @@ import {
   PENDING_CORRELATION_TTL_MS,
   type CorrelationCookie,
 } from "./correlation";
+import {
+  AuthSessionFenceHostService,
+  AuthSessionFenceService,
+  LocalProcessAuthSynchronizationAuthority,
+  createOpaqueAuthHandle,
+  type AuthFenceStateStore,
+} from "./session-fence";
 import type {
   AuthProvider,
   AuthSecurityEvent,
@@ -50,6 +57,8 @@ class MockProvider implements AuthProvider {
   beginGate: ReturnType<typeof deferred<{ redirectUrl: string; flowId: string }>> | null = null;
   exchangeGate: ReturnType<typeof deferred<void>> | null = null;
   refreshGate: ReturnType<typeof deferred<ProviderSession>> | null = null;
+  validationGate: ReturnType<typeof deferred<void>> | null = null;
+  validationCalls = 0;
   callbackUrls: string[] = [];
   #listeners = new Set<
     (event: ProviderSessionEvent, session: ProviderSession | null) => void
@@ -91,6 +100,8 @@ class MockProvider implements AuthProvider {
   }
 
   async validateCurrentUser() {
+    this.validationCalls += 1;
+    if (this.validationGate) await this.validationGate.promise;
     return this.validationSucceeds && this.session
       ? { userReference: this.session.userReference }
       : null;
@@ -134,6 +145,50 @@ class MockProvider implements AuthProvider {
   }
 }
 
+class MemoryFenceState implements AuthFenceStateStore {
+  contextHandle: string | null = null;
+  sessionBindingHandle: string | null = null;
+  tombstone = false;
+  contextWrites = 0;
+  bindingClears = 0;
+  tombstoneClears = 0;
+
+  async readAuthContextHandle() {
+    return this.contextHandle;
+  }
+
+  async writeAuthContextHandle(handle: string) {
+    this.contextHandle = handle;
+    this.contextWrites += 1;
+  }
+
+  async readSessionBindingHandle() {
+    return this.sessionBindingHandle;
+  }
+
+  async writeSessionBindingHandle(handle: string) {
+    this.sessionBindingHandle = handle;
+  }
+
+  async clearSessionBindingHandle() {
+    this.sessionBindingHandle = null;
+    this.bindingClears += 1;
+  }
+
+  async hasLocalSignOutTombstone() {
+    return this.tombstone;
+  }
+
+  createLocalSignOutTombstone() {
+    this.tombstone = true;
+  }
+
+  async clearLocalSignOutTombstone() {
+    this.tombstone = false;
+    this.tombstoneClears += 1;
+  }
+}
+
 function currentSession(accessToken = "access-token", expiresAt = Date.now() + 300_000) {
   return { userReference: "user-1", accessToken, expiresAt };
 }
@@ -143,6 +198,8 @@ function createHarness(
     now?: number;
     store?: LocalCorrelationStore;
     securityPolicyVersion?: string;
+    authority?: LocalProcessAuthSynchronizationAuthority;
+    fenceState?: MemoryFenceState;
   } = {},
 ) {
   const provider = new MockProvider();
@@ -152,12 +209,19 @@ function createHarness(
   const redirects: string[] = [];
   const securityEvents: AuthSecurityEvent[] = [];
   const securitySink = { throws: false };
+  const authority =
+    options.authority ??
+    new LocalProcessAuthSynchronizationAuthority("LOCAL_NON_PRODUCTION_ONLY");
+  const fenceState = options.fenceState ?? new MemoryFenceState();
+  const sessionFence = new AuthSessionFenceService(authority, fenceState);
   let cleared = 0;
   let now = options.now ?? Date.now();
   const adapter = createAuthAdapter({
     provider,
     correlationStore: store,
+    sessionFence,
     securityPolicyVersion: options.securityPolicyVersion ?? securityPolicyVersion,
+    environmentClass: "TEST",
     applicationOrigin: "http://localhost:3000",
     redirectToProvider: (url) => {
       redirects.push(url);
@@ -189,11 +253,46 @@ function createHarness(
     redirects,
     securityEvents,
     securitySink,
+    authority,
+    fenceState,
+    sessionFence,
     cleared: () => cleared,
     setNow: (value: number) => {
       now = value;
     },
   };
+}
+
+async function establishAuthenticatedSession(
+  harness: ReturnType<typeof createHarness>,
+  session = currentSession(),
+) {
+  await establishFenceBinding(harness);
+  harness.provider.emit("SIGNED_IN", session);
+  await vi.waitFor(() =>
+    expect(harness.adapter.getSessionSnapshot().state).toBe("AUTHENTICATED"),
+  );
+}
+
+async function establishFenceBinding(harness: ReturnType<typeof createHarness>) {
+  const prepared = await harness.sessionFence.prepareSignIn();
+  const callbackLookupHandle = createOpaqueAuthHandle();
+  await harness.sessionFence.associateSignInAttempt(
+    prepared.signInAttemptReference,
+    callbackLookupHandle,
+  );
+  await harness.sessionFence.establishSession(callbackLookupHandle);
+}
+
+async function associateFenceAttempt(
+  harness: ReturnType<typeof createHarness>,
+  callbackLookupHandle: string,
+) {
+  const prepared = await harness.sessionFence.prepareSignIn();
+  await harness.sessionFence.associateSignInAttempt(
+    prepared.signInAttemptReference,
+    callbackLookupHandle,
+  );
 }
 
 function callback(flow = flowId, authCode = code) {
@@ -355,6 +454,8 @@ describe("callback processing", () => {
       intendedReturn: "/two",
       now: 10_000,
     });
+    await associateFenceAttempt(harness, firstHandle);
+    await associateFenceAttempt(harness, secondHandle);
     harness.provider.exchangeGate = deferred();
 
     const first = harness.adapter.processCallback({
@@ -460,7 +561,7 @@ describe("callback processing", () => {
 
   it("rejects uncorrelated duplicates while preserving only a live-validated session", async () => {
     const harness = createHarness();
-    harness.provider.emit("SIGNED_IN", currentSession());
+    await establishAuthenticatedSession(harness);
     const result = await harness.adapter.processCallback({
       url: callback("unknown_flow_1"),
       correlationHandles: ["b".repeat(64)],
@@ -519,7 +620,7 @@ describe("callback processing", () => {
     });
     expect(result).toMatchObject({ ok: false, error: "SIGN_IN_FAILED" });
     expect(JSON.stringify(result)).not.toContain(internalError);
-    expect(harness.securityEvents).toEqual([
+    expect(harness.securityEvents).toMatchObject([
       {
         classification: internalError,
         sessionPreserved: false,
@@ -527,6 +628,14 @@ describe("callback processing", () => {
         rejectedCallbackDestinationUsed: false,
       },
     ]);
+    expect(harness.securityEvents[0].signInAttemptReference).toMatch(/^[a-f0-9]{64}$/);
+    expect(harness.securityEvents[0].callbackFlowReference).toMatch(/^[a-f0-9]{64}$/);
+    expect(harness.securityEvents[0].correlationReference).toMatch(/^[a-f0-9]{64}$/);
+    expect([
+      harness.securityEvents[0].signInAttemptReference,
+      harness.securityEvents[0].callbackFlowReference,
+      harness.securityEvents[0].correlationReference,
+    ]).not.toContain(harness.cookies[0].value);
   });
 
   it("commits the exchanged session once only after correlation completion", async () => {
@@ -567,7 +676,7 @@ describe("callback processing", () => {
     expect(harness.provider.commitSessionCalls).toBe(0);
     expect(harness.provider.discardSessionCalls).toBe(1);
     expect(harness.provider.signOutCalls).toBe(0);
-    expect(harness.securityEvents).toEqual([
+    expect(harness.securityEvents).toMatchObject([
       {
         classification: "INVALID_CALLBACK",
         sessionPreserved: false,
@@ -633,7 +742,8 @@ describe("callback processing", () => {
       now: 10_000,
     });
     const original = currentSession("original-access-token");
-    harness.provider.emit("SIGNED_IN", original);
+    await establishAuthenticatedSession(harness, original);
+    await associateFenceAttempt(harness, handle);
     vi.spyOn(harness.store, "complete").mockResolvedValue(null);
 
     await expect(
@@ -665,7 +775,11 @@ describe("callback processing", () => {
         intendedReturn: "/",
         now: 10_000,
       });
-      harness.provider.emit("SIGNED_IN", currentSession("original-access-token"));
+      await establishAuthenticatedSession(
+        harness,
+        currentSession("original-access-token"),
+      );
+      await associateFenceAttempt(harness, handle);
       harness.provider.validationSucceeds = failure !== "invalid";
       harness.provider.validatedUserReference = failure === "mismatch" ? "user-2" : null;
       harness.provider.validationThrows = failure === "unavailable";
@@ -680,7 +794,7 @@ describe("callback processing", () => {
         snapshot: { state: "TERMINAL_SESSION_ERROR" },
       });
       expect(harness.securityEvents[0]).toMatchObject({ sessionPreserved: false });
-      expect(harness.provider.signOutCalls).toBe(0);
+      expect(harness.provider.signOutCalls).toBe(1);
     },
   );
 
@@ -759,11 +873,20 @@ describe("callback processing", () => {
 });
 
 describe("session, token, refresh, and sign-out semantics", () => {
-  it("publishes safe snapshots from canonical provider events", () => {
+  it("treats provider events as provisional until fence verification", async () => {
     const harness = createHarness();
     const listener = vi.fn();
     const unsubscribe = harness.adapter.subscribeToSessionChanges(listener);
+    await establishFenceBinding(harness);
     harness.provider.emit("SIGNED_IN", currentSession("sensitive-access-token"));
+    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+      state: "INITIALIZING",
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+    await vi.waitFor(() =>
+      expect(harness.adapter.getSessionSnapshot().state).toBe("AUTHENTICATED"),
+    );
     const snapshot = harness.adapter.getSessionSnapshot();
     expect(snapshot).toMatchObject({
       state: "AUTHENTICATED",
@@ -774,30 +897,32 @@ describe("session, token, refresh, and sign-out semantics", () => {
     harness.provider.emit("SIGNED_OUT", null);
     expect(harness.adapter.getSessionSnapshot().state).toBe("UNAUTHENTICATED");
     unsubscribe();
-    expect(listener).toHaveBeenCalledTimes(3);
+    expect(listener).toHaveBeenCalledTimes(4);
   });
 
   it("retrieves access tokens just in time without an independent cache", async () => {
     const harness = createHarness();
-    harness.provider.emit("SIGNED_IN", currentSession("first-token"));
+    await establishAuthenticatedSession(harness, currentSession("first-token"));
+    const callsBeforeRequests = harness.provider.getSessionCalls;
     expect(await harness.adapter.getAccessTokenForApiRequest()).toBe("first-token");
     harness.provider.session = currentSession("second-token");
     expect(await harness.adapter.getAccessTokenForApiRequest()).toBe("second-token");
-    expect(harness.provider.getSessionCalls).toBe(2);
+    expect(harness.provider.getSessionCalls - callsBeforeRequests).toBe(2);
   });
 
   it("keeps REFRESH_PENDING fail closed and coalesces refresh in one runtime", async () => {
     const harness = createHarness();
-    harness.provider.emit("SIGNED_IN", currentSession());
+    await establishAuthenticatedSession(harness);
     harness.provider.refreshGate = deferred();
     const first = harness.adapter.refreshSession();
     const second = harness.adapter.refreshSession();
-    await Promise.resolve();
-    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
-      state: "REFRESH_PENDING",
-      refreshMode: "PROVEN_CREDENTIAL",
-      canMakeApiRequest: false,
-    });
+    await vi.waitFor(() =>
+      expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+        state: "REFRESH_PENDING",
+        refreshMode: "PROVEN_CREDENTIAL",
+        canMakeApiRequest: false,
+      }),
+    );
     harness.provider.refreshGate.resolve(currentSession("fresh-token"));
     await expect(first).resolves.toMatchObject({ state: "AUTHENTICATED" });
     await expect(second).resolves.toMatchObject({ state: "AUTHENTICATED" });
@@ -806,14 +931,17 @@ describe("session, token, refresh, and sign-out semantics", () => {
 
   it("uses unproven refresh for expired credentials and returns the fresh token", async () => {
     const harness = createHarness();
-    harness.provider.emit("SIGNED_IN", currentSession("expired", Date.now() - 1));
+    await establishAuthenticatedSession(
+      harness,
+      currentSession("expired", Date.now() - 1),
+    );
     expect(await harness.adapter.getAccessTokenForApiRequest()).toBe("fresh-access-token");
     expect(harness.provider.refreshCalls).toBe(1);
   });
 
   it("distinguishes recoverable and terminal refresh failures", async () => {
     const recoverable = createHarness();
-    recoverable.provider.emit("SIGNED_IN", currentSession());
+    await establishAuthenticatedSession(recoverable);
     recoverable.provider.refreshError = new AuthRuntimeError(
       "TEMPORARY_PROVIDER_FAILURE",
       true,
@@ -824,7 +952,7 @@ describe("session, token, refresh, and sign-out semantics", () => {
     expect(recoverable.adapter.getSessionSnapshot().state).toBe("RECOVERABLE_ERROR");
 
     const terminal = createHarness();
-    terminal.provider.emit("SIGNED_IN", currentSession());
+    await establishAuthenticatedSession(terminal);
     terminal.provider.refreshError = new AuthRuntimeError("REFRESH_FAILED");
     await expect(terminal.adapter.refreshSession()).rejects.toMatchObject({
       code: "REFRESH_FAILED",
@@ -834,7 +962,7 @@ describe("session, token, refresh, and sign-out semantics", () => {
 
   it("signs out the current session, coalesces repeats, and clears on remote failure", async () => {
     const harness = createHarness();
-    harness.provider.emit("SIGNED_IN", currentSession());
+    await establishAuthenticatedSession(harness);
     const first = harness.adapter.signOut();
     const second = harness.adapter.signOut();
     expect(harness.adapter.getSessionSnapshot().state).toBe("SIGN_OUT_PENDING");
@@ -844,7 +972,7 @@ describe("session, token, refresh, and sign-out semantics", () => {
     expect(harness.adapter.getSessionSnapshot().state).toBe("UNAUTHENTICATED");
 
     const failed = createHarness();
-    failed.provider.emit("SIGNED_IN", currentSession());
+    await establishAuthenticatedSession(failed);
     failed.provider.signOutError = true;
     await expect(failed.adapter.signOut()).resolves.toEqual({
       ok: false,
@@ -852,5 +980,707 @@ describe("session, token, refresh, and sign-out semantics", () => {
       destination: "/",
     });
     expect(failed.adapter.getSessionSnapshot().state).toBe("UNAUTHENTICATED");
+  });
+});
+
+describe("AUTH-007 generation fence regressions", () => {
+  it("does not restore a completed callback after stale preserved-session validation", async () => {
+    const harness = createHarness({ now: 10_000 });
+    await harness.adapter.beginSignIn("/runs");
+    const handle = harness.cookies[0].value;
+    await harness.adapter.processCallback({
+      url: callback(),
+      correlationHandles: [handle],
+    });
+    const finalFenceStarted = deferred<void>();
+    const finalFenceGate = deferred<void>();
+    const resolveFence = harness.sessionFence.resolveFence.bind(harness.sessionFence);
+    vi.spyOn(harness.sessionFence, "resolveFence").mockImplementation(async () => {
+      const resolution = await resolveFence();
+      finalFenceStarted.resolve(undefined);
+      await finalFenceGate.promise;
+      return resolution;
+    });
+
+    const duplicate = harness.adapter.processCallback({
+      url: callback(),
+      correlationHandles: [handle],
+    });
+    await finalFenceStarted.promise;
+    const signOutState = new MemoryFenceState();
+    signOutState.contextHandle = harness.fenceState.contextHandle;
+    const signOutService = new AuthSessionFenceService(harness.authority, signOutState);
+    signOutService.createLocalSignOutTombstone();
+    await signOutService.publishSignOut();
+    finalFenceGate.resolve(undefined);
+
+    await expect(duplicate).resolves.toMatchObject({
+      ok: false,
+      error: "SIGN_IN_FAILED",
+      destination: null,
+      snapshot: { canRenderProtectedContent: false, canMakeApiRequest: false },
+    });
+    expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+    expect(harness.provider.session).toBeNull();
+    expect(harness.fenceState.sessionBindingHandle).toBeNull();
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+  });
+
+  it("does not preserve a rejected callback session after stale fence validation", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(
+      harness,
+      currentSession("preserved-session-token"),
+    );
+    const finalFenceStarted = deferred<void>();
+    const finalFenceGate = deferred<void>();
+    const resolveFence = harness.sessionFence.resolveFence.bind(harness.sessionFence);
+    vi.spyOn(harness.sessionFence, "resolveFence").mockImplementation(async () => {
+      const resolution = await resolveFence();
+      finalFenceStarted.resolve(undefined);
+      await finalFenceGate.promise;
+      return resolution;
+    });
+
+    const rejected = harness.adapter.processCallback({
+      url: callback("unknown_flow_1"),
+      correlationHandles: [],
+    });
+    await finalFenceStarted.promise;
+    const signOutState = new MemoryFenceState();
+    signOutState.contextHandle = harness.fenceState.contextHandle;
+    const signOutService = new AuthSessionFenceService(harness.authority, signOutState);
+    signOutService.createLocalSignOutTombstone();
+    await signOutService.publishSignOut();
+    finalFenceGate.resolve(undefined);
+
+    await expect(rejected).resolves.toMatchObject({
+      ok: false,
+      error: "SIGN_IN_FAILED",
+      destination: null,
+      snapshot: { canRenderProtectedContent: false, canMakeApiRequest: false },
+    });
+    expect(harness.securityEvents).toMatchObject([{ sessionPreserved: false }]);
+    expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+    expect(harness.provider.session).toBeNull();
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+  });
+
+  it("does not return an access token after stale final fence validation", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness, currentSession("must-not-escape"));
+    const finalFenceStarted = deferred<void>();
+    const finalFenceGate = deferred<void>();
+    const resolveFence = harness.sessionFence.resolveFence.bind(harness.sessionFence);
+    let resolutions = 0;
+    vi.spyOn(harness.sessionFence, "resolveFence").mockImplementation(async () => {
+      const resolution = await resolveFence();
+      resolutions += 1;
+      if (resolutions === 2) {
+        finalFenceStarted.resolve(undefined);
+        await finalFenceGate.promise;
+      }
+      return resolution;
+    });
+
+    const token = harness.adapter.getAccessTokenForApiRequest();
+    await finalFenceStarted.promise;
+    const signOutState = new MemoryFenceState();
+    signOutState.contextHandle = harness.fenceState.contextHandle;
+    const signOutService = new AuthSessionFenceService(harness.authority, signOutState);
+    signOutService.createLocalSignOutTombstone();
+    await signOutService.publishSignOut();
+    finalFenceGate.resolve(undefined);
+
+    await expect(token).rejects.toMatchObject({ code: "SESSION_EXPIRED" });
+    expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+    expect(harness.provider.session).toBeNull();
+    expect(harness.fenceState.sessionBindingHandle).toBeNull();
+  });
+
+  it("enforces a shared generation fence across distinct callback and sign-out services", async () => {
+    const callbackRuntime = createHarness();
+    await callbackRuntime.adapter.beginSignIn("/runs");
+    const handle = callbackRuntime.cookies[0].value;
+    callbackRuntime.provider.exchangeGate = deferred();
+    const callbackResult = callbackRuntime.adapter.processCallback({
+      url: callback(),
+      correlationHandles: [handle],
+    });
+    await vi.waitFor(() => expect(callbackRuntime.provider.exchangeCalls).toBe(1));
+
+    const signOutState = new MemoryFenceState();
+    signOutState.contextHandle = callbackRuntime.fenceState.contextHandle;
+    const signOutService = new AuthSessionFenceService(
+      callbackRuntime.authority,
+      signOutState,
+    );
+    signOutService.createLocalSignOutTombstone();
+    await signOutService.publishSignOut();
+
+    callbackRuntime.provider.exchangeGate.resolve(undefined);
+    await expect(callbackResult).resolves.toMatchObject({
+      ok: false,
+      error: "SIGN_IN_FAILED",
+      snapshot: { canRenderProtectedContent: false, canMakeApiRequest: false },
+    });
+    expect(callbackRuntime.provider.commitSessionCalls).toBe(0);
+    expect(callbackRuntime.provider.discardSessionCalls).toBe(1);
+    expect(callbackRuntime.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+    await expect(
+      callbackRuntime.adapter.getAccessTokenForApiRequest(),
+    ).rejects.toMatchObject({ code: "SESSION_EXPIRED" });
+  });
+
+  it("lets sign-out win when a generation-G callback resolves after G+1", async () => {
+    const harness = createHarness();
+    await harness.adapter.beginSignIn("/runs");
+    const oldHandle = harness.cookies[0].value;
+    harness.provider.exchangeGate = deferred();
+    const callbackResult = harness.adapter.processCallback({
+      url: callback(),
+      correlationHandles: [oldHandle],
+    });
+    await vi.waitFor(() => expect(harness.provider.exchangeCalls).toBe(1));
+
+    await expect(harness.adapter.signOut()).resolves.toEqual({
+      ok: true,
+      error: null,
+      destination: "/",
+    });
+    harness.provider.exchangeGate.resolve(undefined);
+    await expect(callbackResult).resolves.toMatchObject({
+      ok: false,
+      error: "SIGN_IN_FAILED",
+      snapshot: { canRenderProtectedContent: false, canMakeApiRequest: false },
+    });
+    expect(harness.provider.commitSessionCalls).toBe(0);
+    expect(harness.provider.discardSessionCalls).toBe(1);
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+  });
+
+  it("keeps local Auth signed out when sign-out publication fails", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness);
+    harness.authority.setAvailableForTests(false);
+
+    await expect(harness.adapter.signOut()).resolves.toEqual({
+      ok: false,
+      error: "SIGN_OUT_FAILED",
+      destination: "/",
+    });
+    expect(harness.fenceState.tombstone).toBe(true);
+    expect(harness.provider.signOutCalls).toBeGreaterThan(0);
+    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+      state: "UNAUTHENTICATED",
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+
+    harness.provider.emit("SIGNED_IN", currentSession("stale-token"));
+    await vi.waitFor(() =>
+      expect(harness.adapter.getSessionSnapshot().state).not.toBe("INITIALIZING"),
+    );
+    expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+  });
+
+  it("clears a tombstone only after successful explicit reconciliation", async () => {
+    const successful = createHarness();
+    await establishAuthenticatedSession(successful);
+    await successful.adapter.signOut();
+    expect(successful.fenceState.tombstone).toBe(true);
+    await successful.adapter.beginSignIn();
+    expect(successful.fenceState.tombstone).toBe(false);
+    expect(successful.provider.beginCalls).toBe(1);
+
+    const failed = createHarness();
+    await establishAuthenticatedSession(failed);
+    failed.authority.setAvailableForTests(false);
+    await failed.adapter.signOut();
+    failed.authority.setAvailableForTests(true);
+    await expect(failed.adapter.beginSignIn()).rejects.toMatchObject({
+      code: "TEMPORARY_PROVIDER_FAILURE",
+    });
+    expect(failed.fenceState.tombstone).toBe(true);
+    expect(failed.provider.beginCalls).toBe(0);
+  });
+
+  it("does not start OAuth when a missing tombstone hides unreconciled authority state", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness);
+    await harness.adapter.signOut();
+    harness.fenceState.tombstone = false;
+    vi.spyOn(harness.fenceState, "clearLocalSignOutTombstone").mockRejectedValueOnce(
+      new Error("reconciliation unavailable"),
+    );
+
+    await expect(harness.adapter.beginSignIn()).rejects.toMatchObject({
+      code: "TEMPORARY_PROVIDER_FAILURE",
+    });
+    expect(harness.provider.beginCalls).toBe(0);
+    expect(harness.fenceState.tombstone).toBe(true);
+
+    await expect(harness.adapter.beginSignIn()).resolves.toBeUndefined();
+    expect(harness.provider.beginCalls).toBe(1);
+    expect(harness.fenceState.tombstone).toBe(false);
+  });
+
+  it("does not let an old proof clear a second tombstone after publication failure", async () => {
+    const harness = createHarness();
+    await harness.adapter.beginSignIn("/generation-g");
+    await expect(harness.adapter.signOut()).resolves.toMatchObject({ ok: true });
+
+    await harness.adapter.beginSignIn("/generation-g-plus-one");
+    const currentHandle = harness.cookies.at(-1)!.value;
+    expect(harness.fenceState.tombstone).toBe(false);
+    const providerBegins = harness.provider.beginCalls;
+
+    vi.spyOn(harness.authority, "advanceSignOutGeneration").mockImplementationOnce(
+      () => {
+        harness.authority.setAvailableForTests(false);
+        throw new Error("Auth synchronization authority unavailable");
+      },
+    );
+    await expect(harness.adapter.signOut()).resolves.toEqual({
+      ok: false,
+      error: "SIGN_OUT_FAILED",
+      destination: "/",
+    });
+    harness.authority.setAvailableForTests(true);
+
+    await expect(harness.adapter.beginSignIn()).rejects.toMatchObject({
+      code: "TEMPORARY_PROVIDER_FAILURE",
+    });
+    expect(harness.provider.beginCalls).toBe(providerBegins);
+    expect(harness.fenceState.tombstone).toBe(true);
+    await expect(
+      harness.adapter.processCallback({
+        url: callback(),
+        correlationHandles: [currentHandle],
+      }),
+    ).resolves.toMatchObject({ ok: false, error: "SIGN_IN_FAILED" });
+    expect(harness.provider.exchangeCalls).toBe(0);
+    expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+  });
+
+  it("requires provider validity for the complete Auth-owned RESOLVE_SESSION", async () => {
+    const harness = createHarness();
+    await establishFenceBinding(harness);
+    const host = new AuthSessionFenceHostService(
+      harness.sessionFence,
+      harness.provider,
+    );
+    expect(
+      Object.getOwnPropertyNames(AuthSessionFenceHostService.prototype),
+    ).toEqual(["constructor", "prepareSignIn", "publishSignOut", "resolveSession"]);
+
+    await expect(host.resolveSession()).resolves.toEqual({
+      state: "UNAUTHENTICATED",
+      userReference: null,
+    });
+    expect(harness.fenceState.sessionBindingHandle).toBeNull();
+
+    await establishFenceBinding(harness);
+    harness.provider.session = currentSession("must-not-be-returned");
+    await expect(host.resolveSession()).resolves.toEqual({
+      state: "AUTHENTICATED",
+      userReference: "user-1",
+    });
+    expect(JSON.stringify(await host.resolveSession())).not.toMatch(
+      /must-not-be-returned|token|context|binding|generation/i,
+    );
+
+    harness.provider.validationSucceeds = false;
+    await expect(host.resolveSession()).resolves.toEqual({
+      state: "UNAUTHENTICATED",
+      userReference: null,
+    });
+    expect(harness.provider.session).toBeNull();
+  });
+
+  it("rechecks the host fence after held live provider validation", async () => {
+    const harness = createHarness();
+    await establishFenceBinding(harness);
+    harness.provider.session = currentSession("must-not-escape");
+    harness.provider.validationGate = deferred();
+    const host = new AuthSessionFenceHostService(
+      harness.sessionFence,
+      harness.provider,
+    );
+    const resolution = host.resolveSession();
+    await vi.waitFor(() => expect(harness.provider.validationCalls).toBeGreaterThan(0));
+
+    const signOutState = new MemoryFenceState();
+    signOutState.contextHandle = harness.fenceState.contextHandle;
+    const signOutService = new AuthSessionFenceService(
+      harness.authority,
+      signOutState,
+    );
+    signOutService.createLocalSignOutTombstone();
+    await signOutService.publishSignOut();
+    harness.provider.validationGate.resolve(undefined);
+
+    await expect(resolution).resolves.toEqual({
+      state: "UNAUTHENTICATED",
+      userReference: null,
+    });
+    expect(harness.provider.session).toBeNull();
+    expect(JSON.stringify(await resolution)).not.toMatch(
+      /must-not-escape|token|context|binding|generation/i,
+    );
+  });
+
+  it("does not restore callback authentication after a stale final fence result", async () => {
+    const harness = createHarness();
+    await harness.adapter.beginSignIn("/runs");
+    const handle = harness.cookies[0].value;
+    const finalFenceStarted = deferred<void>();
+    const finalFenceGate = deferred<void>();
+    const resolveFence = harness.sessionFence.resolveFence.bind(harness.sessionFence);
+    let heldFinalFence = false;
+    vi.spyOn(harness.sessionFence, "resolveFence").mockImplementation(async () => {
+      const resolution = await resolveFence();
+      if (harness.provider.commitSessionCalls === 1 && !heldFinalFence) {
+        heldFinalFence = true;
+        finalFenceStarted.resolve(undefined);
+        await finalFenceGate.promise;
+      }
+      return resolution;
+    });
+    const callbackResult = harness.adapter.processCallback({
+      url: callback(),
+      correlationHandles: [handle],
+    });
+    await finalFenceStarted.promise;
+
+    const signOutState = new MemoryFenceState();
+    signOutState.contextHandle = harness.fenceState.contextHandle;
+    const signOutService = new AuthSessionFenceService(
+      harness.authority,
+      signOutState,
+    );
+    signOutService.createLocalSignOutTombstone();
+    await signOutService.publishSignOut();
+    finalFenceGate.resolve(undefined);
+
+    await expect(callbackResult).resolves.toMatchObject({
+      ok: false,
+      error: "SIGN_IN_FAILED",
+      snapshot: { canRenderProtectedContent: false, canMakeApiRequest: false },
+    });
+    expect(harness.provider.commitSessionCalls).toBe(1);
+    expect(harness.provider.session).toBeNull();
+    expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+  });
+
+  it("keeps callback A stale after sign-out and newer intentional sign-in B", async () => {
+    const harness = createHarness();
+    await harness.adapter.beginSignIn("/old");
+    const oldHandle = harness.cookies[0].value;
+    await harness.adapter.signOut();
+    await harness.adapter.beginSignIn("/new");
+    const newHandle = harness.cookies.at(-1)!.value;
+
+    await expect(
+      harness.adapter.processCallback({
+        url: callback(),
+        correlationHandles: [oldHandle],
+      }),
+    ).resolves.toMatchObject({ ok: false, error: "SIGN_IN_FAILED" });
+    expect(harness.provider.exchangeCalls).toBe(0);
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+
+    await expect(
+      harness.adapter.processCallback({
+        url: callback(),
+        correlationHandles: [newHandle],
+      }),
+    ).resolves.toMatchObject({ ok: true, destination: "/new" });
+    expect(harness.provider.exchangeCalls).toBe(1);
+  });
+
+  it.each(["SIGNED_IN", "TOKEN_REFRESHED"] as const)(
+    "keeps an active tombstone authoritative over provider %s",
+    async (event) => {
+      const harness = createHarness();
+      await establishAuthenticatedSession(harness);
+      await harness.adapter.signOut();
+      harness.provider.emit(event, currentSession("stale-provider-token"));
+      await vi.waitFor(() =>
+        expect(harness.adapter.getSessionSnapshot().state).not.toBe("INITIALIZING"),
+      );
+      expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+        canRenderProtectedContent: false,
+        canMakeApiRequest: false,
+      });
+      expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+      expect(harness.fenceState.tombstone).toBe(true);
+    },
+  );
+
+  it.each(["INITIAL_SESSION", "USER_UPDATED"] as const)(
+    "keeps provider %s provisional until asynchronous fence verification",
+    async (event) => {
+      const harness = createHarness();
+      await establishFenceBinding(harness);
+      harness.provider.emit(event, currentSession());
+      expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+        state: "INITIALIZING",
+        canRenderProtectedContent: false,
+        canMakeApiRequest: false,
+      });
+      await vi.waitFor(() =>
+        expect(harness.adapter.getSessionSnapshot().state).toBe("AUTHENTICATED"),
+      );
+    },
+  );
+
+  it("fails token preparation closed after authority state loss", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness, currentSession("must-not-escape"));
+    const context = harness.fenceState.contextHandle;
+    harness.authority.resetStateForTests();
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+    expect(harness.fenceState.contextHandle).toBe(context);
+    expect(harness.fenceState.sessionBindingHandle).toBeNull();
+    expect(harness.provider.session).toBeNull();
+  });
+
+  it("reauthenticates from terminal authority loss against a fresh context", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(
+      harness,
+      currentSession("old-access-token"),
+    );
+    const oldContext = harness.fenceState.contextHandle;
+    const oldBinding = harness.fenceState.sessionBindingHandle!;
+
+    harness.authority.resetStateForTests();
+    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+      state: "TERMINAL_SESSION_ERROR",
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+
+    await expect(harness.adapter.beginSignIn("/runs")).resolves.toBeUndefined();
+    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+      state: "SIGN_IN_PENDING",
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+    expect(harness.provider.beginCalls).toBe(1);
+    expect(harness.fenceState.contextHandle).not.toBe(oldContext);
+    expect(harness.fenceState.sessionBindingHandle).toBeNull();
+    expect(
+      harness.authority.validateSessionBinding(
+        harness.fenceState.contextHandle!,
+        oldBinding,
+      ),
+    ).toBeNull();
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+    expect(harness.provider.session).toBeNull();
+  });
+
+  it("keeps a lost-context callback stale after explicit reauthentication", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness);
+    const oldContext = harness.fenceState.contextHandle;
+    const oldCallbackHandle = createOpaqueAuthHandle();
+    await harness.store.createPending({
+      handle: oldCallbackHandle,
+      flowId,
+      securityPolicyVersion,
+      intendedReturn: "/old",
+      now: Date.now(),
+    });
+    await associateFenceAttempt(harness, oldCallbackHandle);
+
+    harness.authority.resetStateForTests();
+    await harness.adapter.beginSignIn("/new");
+    const freshContext = harness.fenceState.contextHandle;
+    expect(freshContext).not.toBe(oldContext);
+
+    await expect(
+      harness.adapter.processCallback({
+        url: callback(),
+        correlationHandles: [oldCallbackHandle],
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      error: "SIGN_IN_FAILED",
+      snapshot: { canRenderProtectedContent: false, canMakeApiRequest: false },
+    });
+    expect(harness.provider.exchangeCalls).toBe(0);
+    expect(harness.fenceState.contextHandle).toBe(freshContext);
+  });
+
+  it("recovers from authority loss with a tombstone and retries reset failure", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness);
+    await harness.adapter.signOut();
+    const lostContext = harness.fenceState.contextHandle;
+    expect(harness.fenceState.tombstone).toBe(true);
+    harness.authority.resetStateForTests();
+    expect(harness.adapter.getSessionSnapshot().state).toBe(
+      "TERMINAL_SESSION_ERROR",
+    );
+
+    const writeContext = harness.fenceState.writeAuthContextHandle.bind(
+      harness.fenceState,
+    );
+    vi.spyOn(harness.fenceState, "writeAuthContextHandle").mockImplementationOnce(
+      async (handle) => {
+        await writeContext(handle);
+        throw new Error("cookie mutation failed");
+      },
+    );
+    await expect(harness.adapter.beginSignIn()).rejects.toMatchObject({
+      code: "TEMPORARY_PROVIDER_FAILURE",
+    });
+    const freshContext = harness.fenceState.contextHandle;
+    expect(freshContext).not.toBe(lostContext);
+    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+      state: "RECOVERABLE_ERROR",
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+    expect(harness.fenceState.sessionBindingHandle).toBeNull();
+    expect(harness.fenceState.tombstone).toBe(true);
+    expect(harness.provider.beginCalls).toBe(0);
+
+    await expect(harness.adapter.beginSignIn()).resolves.toBeUndefined();
+    expect(harness.fenceState.contextHandle).toBe(freshContext);
+    expect(harness.fenceState.tombstone).toBe(false);
+    expect(harness.provider.beginCalls).toBe(1);
+    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+      state: "SIGN_IN_PENDING",
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+  });
+
+  it("preserves refresh sign-out-wins and cleans late refreshed material", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness);
+    harness.provider.refreshGate = deferred();
+    const refresh = harness.adapter.refreshSession();
+    await vi.waitFor(() =>
+      expect(harness.adapter.getSessionSnapshot().state).toBe("REFRESH_PENDING"),
+    );
+    await harness.adapter.signOut();
+    harness.provider.refreshGate.resolve(currentSession("late-refresh-token"));
+    await expect(refresh).resolves.toMatchObject({
+      state: "UNAUTHENTICATED",
+      canMakeApiRequest: false,
+    });
+    expect(harness.provider.session).toBeNull();
+    expect(harness.fenceState.tombstone).toBe(true);
+  });
+
+  it("does not restore refresh after sign-out during final fence validation", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness);
+    harness.provider.refreshGate = deferred();
+    const finalFenceStarted = deferred<void>();
+    const finalFenceGate = deferred<void>();
+    const resolveFence = harness.sessionFence.resolveFence.bind(harness.sessionFence);
+    let heldFinalFence = false;
+    vi.spyOn(harness.sessionFence, "resolveFence").mockImplementation(async () => {
+      const resolution = await resolveFence();
+      if (harness.provider.refreshCalls === 1 && !heldFinalFence) {
+        heldFinalFence = true;
+        finalFenceStarted.resolve(undefined);
+        await finalFenceGate.promise;
+      }
+      return resolution;
+    });
+    const refresh = harness.adapter.refreshSession();
+    await vi.waitFor(() => expect(harness.provider.refreshCalls).toBe(1));
+    harness.provider.refreshGate.resolve(currentSession("late-refresh-token"));
+    await finalFenceStarted.promise;
+
+    const signOutState = new MemoryFenceState();
+    signOutState.contextHandle = harness.fenceState.contextHandle;
+    const signOutService = new AuthSessionFenceService(
+      harness.authority,
+      signOutState,
+    );
+    signOutService.createLocalSignOutTombstone();
+    await signOutService.publishSignOut();
+    finalFenceGate.resolve(undefined);
+
+    await expect(refresh).resolves.toMatchObject({
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+    expect(harness.adapter.getSessionSnapshot().state).not.toBe("AUTHENTICATED");
+    expect(harness.provider.session).toBeNull();
+    await expect(harness.adapter.getAccessTokenForApiRequest()).rejects.toMatchObject({
+      code: "SESSION_EXPIRED",
+    });
+  });
+
+  it("fails an in-flight refresh closed when fence verification becomes unavailable", async () => {
+    const harness = createHarness();
+    await establishAuthenticatedSession(harness);
+    harness.provider.refreshGate = deferred();
+    const refresh = harness.adapter.refreshSession();
+    await vi.waitFor(() =>
+      expect(harness.adapter.getSessionSnapshot().state).toBe("REFRESH_PENDING"),
+    );
+    harness.authority.setAvailableForTests(false);
+    harness.provider.refreshGate.resolve(currentSession("unverified-refresh-token"));
+    await expect(refresh).rejects.toMatchObject({ code: "REFRESH_FAILED" });
+    expect(harness.adapter.getSessionSnapshot()).toMatchObject({
+      state: "TERMINAL_SESSION_ERROR",
+      canRenderProtectedContent: false,
+      canMakeApiRequest: false,
+    });
+    expect(harness.provider.session).toBeNull();
+  });
+
+  it("emits the accepted INVALID_CALLBACK envelope without prohibited material", async () => {
+    const harness = createHarness({ now: 1_723_200_000_000 });
+    const result = await harness.adapter.processCallback({
+      url: callback("unknown_flow_1", "secret-code-123456789"),
+      correlationHandles: [],
+    });
+    expect(result).toMatchObject({ ok: false, error: "SIGN_IN_FAILED" });
+    expect(harness.securityEvents[0]).toMatchObject({
+      eventName: "AUTH_INVALID_CALLBACK",
+      classification: "INVALID_CALLBACK",
+      occurredAt: "2024-08-09T10:40:00.000Z",
+      environmentClass: "TEST",
+      sourceComponent: "AUTH",
+      outcome: "REJECTED",
+      blockingEffect: "CALLBACK_REJECTED",
+      actorType: "UNAUTHENTICATED",
+      actorReference: "UNAUTHENTICATED",
+      policyVersion: securityPolicyVersion,
+      sessionPreserved: false,
+      reasonCode: "INVALID_CALLBACK",
+      redactionStatus: "SECRET_FREE",
+      callbackSuccess: false,
+      rejectedCallbackDestinationUsed: false,
+    });
+    expect(harness.securityEvents[0].requestReference).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(harness.securityEvents[0])).not.toMatch(
+      /secret-code|access-token|refresh-token|verifier|cookie|sb_flow|localhost|http:|stack|email/i,
+    );
   });
 });
