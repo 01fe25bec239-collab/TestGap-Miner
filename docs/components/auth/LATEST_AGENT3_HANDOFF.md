@@ -1,100 +1,79 @@
-# Agent 3 Hand-off Record: AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3
+# Agent 3 Hand-off Record: AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001-A3-R2
 
-- Task ID: `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`
-- Authorized manager task: `AUTH-002-FINAL-READINESS-RECONCILIATION-001`
+- Task ID: `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001-A3-R2`
+- Authorized manager task: `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001`
 - Authorizing coordinator: `Agent 1`
 - Supervising manager: `A2-AUTH`
-- Date: 2026-08-09
-- Task Type: `FINAL_NON_NORMATIVE_COORDINATION_RECONCILIATION / AUTH_DURABLE_RECORDS_ONLY / NO_CONTRACT_SEMANTIC_CHANGE / NO_RUNTIME_IMPLEMENTATION`
-- Target Branch: `agent2/auth-002-session-contract`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-002-session-contract`
-- Reviewed HEAD: `84ad9e322d886f8963c34386f87074a444b3fa2b`
-- Current `origin/main`: `1057ba727a4e825259c5f7772b6d428511a58a37`
-- Merged PR #31: Implementation `a80145e2648596aef2254f4c3bd833c3a50be761`, Merge `1057ba727a4e825259c5f7772b6d428511a58a37`
-- Contract: `CONTRACT-AUTH-001@1.1.0-draft.1` — blob SHA `8ed2154561785566b4b17baa16535e1fad8e662c` (byte-identical and untouched)
-- Pull Request: #29 — `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`
-- Modified Files: Exactly 6 authorized Auth durable records under `docs/components/auth/`
+- Date: 2026-08-10
+- Task Type: `DOCUMENTATION / CONTRACT FINALIZATION / NO_RUNTIME_IMPLEMENTATION`
+- Target Branch: `agent2/auth-contract-1.2-finalization`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-auth-contract-1.2-finalization`
+- Baseline: `5ffa8994b286e85d9f676336dbe0169cfbc89d2c`
+- Target Contract Version: `CONTRACT-AUTH-001@1.2.0-draft.1`
+- Modified Files: Auth-owned durable records under `docs/components/auth/`
 - Git Working Tree State: All modifications UNSTAGED and UNCOMMITTED
 
 ---
 
 ## Executive Summary
 
-`A3-AUTH` has executed the authorized non-normative readiness reconciliation for `AUTH-002`. This task reconciles status, provenance, and consumer review matrix state across all six authorized Auth durable records without changing any normative rule in `CONTRACT-AUTH-001.md`.
-
-All five current consumer domains (`A2-UI`, `A2-SECURITY`, `A2-BACKEND`, `A2-DEPLOYMENT`, `A2-INTEGRATION`) have reviewed `CONTRACT-AUTH-001@1.1.0-draft.1` at HEAD `84ad9e322d886f8963c34386f87074a444b3fa2b` and returned `ACCEPTED_WITH_CONSTRAINTS` with zero required normative Auth corrections.
-
-The shared-contract registry in `docs/specifications/A2_DATABASE_MANAGER(1).md` was corrected and merged via PR #31 (`a80145e2` / `1057ba72`), resolving `AUTH-DEP-003` to `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED` and `AUTH-ISSUE-002` to `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`.
-
-Historical consumer responses against earlier HEAD `7abe17af8e212bd2127160338ea6ef409da02101` (`A2-UI` `SPECIFICATION_CONFLICT`, `A2-SECURITY` `REJECTED_WITH_REASON`, `A2-INTEGRATION` `ACCEPTED_WITH_CONSTRAINTS`) are preserved in full as immutable historical provenance (`HISTORICAL_STATE`).
-
-Decision `AUTH-DEC-053` has been recorded. `CONTRACT-AUTH-001.md` content remains byte-identical (`8ed2154561785566b4b17baa16535e1fad8e662c`). Runtime implementation remains strictly unauthorized (`NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`); release remains `NOT_READY`. PR #29 remains `OPEN / DRAFT / NOT_MERGED` pending the final Agent 1 readiness decision.
+`A3-AUTH` has executed the authorized contract finalization review correction task `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001-A3-R2`. This task finalizes `CONTRACT-AUTH-001` to version `1.2.0-draft.1` by incorporating all normative corrections from the accepted `AUTH-005` proposal across all four required consumer domains (`A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-INTEGRATION`, all `ACCEPTED_WITH_CONSTRAINTS`) along with R1/R2 targeted corrections resolving all A2-AUTH review feedback.
 
 ---
 
-## 1. Authoritative Final Coordination State (`CURRENT_FINAL_COORDINATION_STATE`)
+## 1. Normative Contract Finalization (`CONTRACT-AUTH-001@1.2.0-draft.1`) & R2 Corrections
 
-| Consumer Domain | Task Reference | Reviewed Head | Final Disposition | Required Auth Corrections |
-|---|---|---|---|---|
-| `A2-UI` | `AUTH-002-CONSUMER-REREVIEW-A2-UI-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
-| `A2-SECURITY` | `AUTH-002-CONSUMER-REREVIEW-A2-SECURITY-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` (7 original corrections incorporated) |
-| `A2-BACKEND` | `AUTH-002-CORRECTED-HEAD-AFFECTED-REVIEW-A2-BACKEND-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
-| `A2-DEPLOYMENT` | `AUTH-002-CORRECTED-HEAD-AFFECTED-REVIEW-A2-DEPLOYMENT-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
-| `A2-INTEGRATION` | `AUTH-002-FINAL-CORRECTED-HEAD-REVIEW-A2-INTEGRATION-001` | `84ad9e322d886f8963c34386f87074a444b3fa2b` | `ACCEPTED_WITH_CONSTRAINTS` | `NONE` |
-
----
-
-## 2. Immutable Historical Evidence (`HISTORICAL_STATE`)
-
-| Consumer Domain | Review Task | Reviewed Head | Historical Disposition | Provenance Status |
-|---|---|---|---|---|
-| `A2-UI` | `AUTH-002-CONSUMER-REVIEW-A2-UI-001` | `7abe17af8e212bd2127160338ea6ef409da02101` | `SPECIFICATION_CONFLICT` | `HISTORICAL_STATE / SUPERSEDED_BY_84AD9E32_REVIEW` |
-| `A2-SECURITY` | `AUTH-002-CONSUMER-REVIEW-A2-SECURITY-001` | `7abe17af8e212bd2127160338ea6ef409da02101` | `REJECTED_WITH_REASON` | `HISTORICAL_STATE / SUPERSEDED_BY_84AD9E32_REVIEW` |
-| `A2-INTEGRATION` | `AUTH-002-CONSUMER-REVIEW-A2-INTEGRATION-001` | `7abe17af8e212bd2127160338ea6ef409da02101` | `ACCEPTED_WITH_CONSTRAINTS` | `HISTORICAL_STATE / SUPERSEDED_BY_84AD9E32_REVIEW` |
-
----
-
-## 3. Reconciled Shared-Registry Evidence
-
-- **Merged PR #31**: `docs(integration): reconcile Auth contract registry consumers`
-  - Implementation commit: `a80145e2648596aef2254f4c3bd833c3a50be761`
-  - Merge commit: `1057ba727a4e825259c5f7772b6d428511a58a37`
-  - Path: `docs/specifications/A2_DATABASE_MANAGER(1).md`
-- **Reconciled Packets**:
-  - `AUTH-DEP-003`: `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED`
-  - `AUTH-ISSUE-002`: `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`
-- **Version-Aware Registry Semantics**:
-  - `CONTRACT-AUTH-001@1.1.0-draft.1` current consumers: `A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND`, `A2-INTEGRATION`.
-  - `A2-DATABASE`: `HISTORICAL_CONSUMER / ACKNOWLEDGED_AND_IMPLEMENTED_FOR_EARLIER_IDENTITY_CONTRACT_BOUNDARY` (`CONTRACT-AUTH-001@1.0.0-draft.2`).
-  - Database is not classified as a current blocking consumer of the 1.1 browser/session additions.
-
----
-
-## 4. Contract Identity & Immutability
-
-- `CONTRACT-AUTH-001.md` SHA-256 / Git Blob Hash: `8ed2154561785566b4b17baa16535e1fad8e662c` (Verified byte-identical before and after task execution).
-- Contract Version: `1.1.0-draft.1` (Unchanged).
-- Non-normative status-provenance supersession: Embedded non-normative consumer status provenance in `CONTRACT-AUTH-001.md` (e.g. "consumer review pending") is superseded for coordination purposes by this authoritative readiness reconciliation. No normative contract rule was changed.
+1. **PKCE Provider Custody & OAuth State Ownership Preservation**:
+   - PKCE remains `REQUIRED`. The PKCE verifier is created and held by the provider integration on the initiating device.
+   - Auth code MUST NOT read the PKCE verifier; UI code MUST NOT read the PKCE verifier; Auth/UI MUST NOT copy, transmit, persist, or log the verifier.
+   - Provider OAuth state generation and validation remain provider-integration-owned and MUST NOT become an Auth application return-path or correlation payload.
+   - Dashboard intended-return state remains a distinct Auth-owned mechanism.
+2. **Callback Correlation Record Separation**:
+   - Callback-correlation records represent Auth-owned attempt/callback-flow correlation and the existing permitted pending intended-return binding.
+   - Provider PKCE-verifier custody and provider OAuth-state generation/validation remain provider-integration-owned and are not transferred into Auth correlation records.
+   - Session-binding records instead represent successful session establishment against an Auth context and Auth-context generation.
+   - The two record types MUST NOT be merged.
+3. **`SIGN_OUT_WINS` Principle**: Physical arrival of stale provider cookie material MUST NEVER qualify as an established or usable Auth session after a newer Auth-context fence exists.
+4. **`ESTABLISHED_AUTH_SESSION` Criteria**: Requires ALL of: (1) valid provider session; (2) current Auth context; (3) valid session binding; (4) no active local sign-out tombstone; (5) verified synchronization authority; (6) no newer sign-out generation.
+5. **Callback Generation Supersession & Same-Generation Concurrent Sign-In**:
+   - A callback MUST fail closed as stale when the Auth-context generation to which its sign-in attempt is bound is no longer the authoritative current generation.
+   - A later sign-in attempt does NOT automatically invalidate an earlier independently correlated attempt when both remain bound to the same current Auth-context generation.
+   - Concurrent independent sign-in attempts MAY exist under the same current Auth-context generation.
+6. **Explicit Sign-Out Tombstone Ordering**:
+   - When `AuthAdapter.signOut()` is requested, Auth MUST establish `LOCAL_SIGN_OUT_TOMBSTONE` BEFORE relying on any cross-runtime `PUBLISH_SIGN_OUT` operation or provider sign-out completion.
+   - Publication failure leaves tombstone active and Auth signed out locally.
+7. **Explicit New Sign-In After Sign-Out Reconciliation**:
+   - New sign-in while tombstone is active requires `PREPARE_SIGN_IN` / Auth-context reconciliation. Tombstone removal occurs ONLY after successful reconciliation.
+8. **Session-Binding Record Exclusions & Response Fence Non-Mutation**:
+   - Binding record MUST NOT contain: access token, refresh token, provider-session bytes, authorization code, PKCE verifier, intended-return path, identity claim, authorization capability.
+   - Callback response MUST NOT mutate context handle or active newer tombstone.
+9. **Reconciled Auth Test Status**:
+   - Auth runtime unit tests: `PRESENT_IN_BASELINE` under `apps/web/src/auth/**` (including `adapter.test.ts`).
+   - `tests/auth/`: `ABSENT`.
+   - AUTH-005 cross-runtime/browser-network acceptance: `NOT_YET_TESTED / FUTURE_INTEGRATION_REQUIREMENT`. Vitest/jsdom-only proof is INSUFFICIENT for stale HTTP response/browser-cookie ordering acceptance.
+10. **Reconciled Auth CSRF / Cookie Status**:
+    - Auth-owned CSRF / cookie foundation: `PRESENT_IN_BASELINE` under `apps/web/src/auth/**` (`csrf.ts`).
+    - Backend CORS implementation: separately `A2-BACKEND-OWNED`.
+    - AUTH-005 session-fence runtime correction: `NOT_YET_AUTHORIZED / NOT_YET_IMPLEMENTED`.
+11. **Reconciled Open Issues Impact Wording**:
+    - Reconciled `AUTH-ISSUE-001` impact statement to distinguish existing merged browser runtime foundations under `apps/web/src/auth/**` from missing hosted UI integration (`/auth/callback`) and separate incomplete Backend runtime boundaries.
 
 ---
 
-## 5. Decision Summary: `AUTH-DEC-053`
+## 2. Decisional Audit Trail (`AUTH-DEC-054` .. `AUTH-DEC-067`)
 
-`AUTH-DEC-053` (`AUTH-002_FINAL_CONSUMER_AND_REGISTRY_COORDINATION_RECONCILED`) records:
-1. Final owner review matrix (all five consumers `ACCEPTED_WITH_CONSTRAINTS` against `84ad9e32`).
-2. Preservation of historical consumer review dispositions against `7abe17af`.
-3. Version-aware shared-registry reconciliation via merged PR #31 (`a80145e2` / `1057ba72`).
-4. Non-normative contract status-provenance supersession for embedded status text in `CONTRACT-AUTH-001.md`.
-5. Explicit prohibition of runtime implementation or release readiness.
-6. PR #29 status as `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`.
+- `AUTH-DEC-054` .. `AUTH-DEC-066`: R1 contract finalization decisions (accepted `AUTH-005` normative corrections, handles, tombstone, UI host boundary, sync authority, integration test requirements, callback generation supersession, tombstone ordering, new sign-in reconciliation, session-binding exclusions).
+- `AUTH-DEC-067`: R2 final targeted review corrections: PKCE provider custody & OAuth state ownership preservation, callback correlation record separation, Auth runtime unit test status reconciliation (`PRESENT_IN_BASELINE`), Auth CSRF/cookie foundation reconciliation (`PRESENT_IN_BASELINE`), and OPEN_ISSUES impact wording fix.
 
 ---
 
-## 6. Preserved Implementation & Release Boundaries
+## 3. Reconciled Runtime Status & Preserved Boundaries
 
-- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
-- Frontend Auth (`apps/web`): `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
-- Backend JWT/JWKS (`apps/api`): `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
+- Existing merged Auth runtime state: Present in baseline `5ffa8994b286e85d9f676336dbe0169cfbc89d2c` under `apps/web/src/auth/**` (including `AuthAdapter`, state machine, correlation, storage boundary, redirect, types, and unit tests).
+- `AUTH-006` runtime modification authorization: `NONE / NO_RUNTIME_MODIFICATION_AUTHORIZED` under this task.
+- `AUTH-003` / `AUTH-005` fence correction runtime implementation: `NOT_YET_AUTHORIZED / NOT_YET_IMPLEMENTED`.
+- Frontend Auth `/auth/callback` route: `NOT_IMPLEMENTED / NOT_AUTHORIZED`
+- Backend JWT/JWKS (`apps/api`): `NOT_IMPLEMENTED / NOT_AUTHORIZED`
 - Provider runtime: `NOT_PROVISIONED / NOT_TESTED`
 - `UI-004`: `NOT_AUTHORIZED`
 - `AUTH-003`: `NOT_AUTHORIZED`
@@ -102,17 +81,18 @@ Decision `AUTH-DEC-053` has been recorded. `CONTRACT-AUTH-001.md` content remain
 
 ---
 
-## 7. Modified Files Summary (Six Authorized Durable Records)
+## 4. Modified Files Summary
 
-1. `docs/components/auth/COMPONENT_STATUS.md` — Updated header metadata, current state table, final owner matrix, non-normative supersession text, and PR #29 status.
-2. `docs/components/auth/DECISION_LOG.md` — Updated header metadata, preamble, and recorded decision `AUTH-DEC-053`.
-3. `docs/components/auth/DEPENDENCY_REQUESTS.md` — Updated header metadata, `AUTH-DEP-003` to `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED`, `AUTH-DEP-011`..`015` status matrix, and summary section.
-4. `docs/components/auth/OPEN_ISSUES.md` — Updated header metadata, `AUTH-ISSUE-002` to `CLOSED / VERSION_AWARE_REGISTRY_RECONCILED`, `AUTH-ISSUE-027` and `AUTH-ISSUE-028` substate, and summary section.
-5. `docs/components/auth/TASK_LEDGER.md` — Updated header metadata and added entry for task `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`.
-6. `docs/components/auth/LATEST_AGENT3_HANDOFF.md` — Overwritten to summarize ONLY this task (`AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`).
+1. `docs/components/auth/CONTRACT-AUTH-001.md` — Replaced defective callback correlation sentence with exact wording establishing PKCE verifier custody & OAuth state verification as provider-integration-owned, distinct from Auth-owned correlation records.
+2. `docs/components/auth/COMPONENT_STATUS.md` — Updated metadata, task ID to R2, state table, reconciled Auth test status (`PRESENT_IN_BASELINE`), and Auth CSRF/cookie foundation status (`PRESENT_IN_BASELINE`).
+3. `docs/components/auth/DECISION_LOG.md` — Appended decision `AUTH-DEC-067` for R2 final targeted review corrections.
+4. `docs/components/auth/DEPENDENCY_REQUESTS.md` — Updated metadata header to task R2.
+5. `docs/components/auth/OPEN_ISSUES.md` — Fixed `AUTH-ISSUE-001` impact statement and reconciled `AUTH-ISSUE-010` test status.
+6. `docs/components/auth/TASK_LEDGER.md` — Updated metadata header, task ledger entry to R2, and reconciled test status summary.
+7. `docs/components/auth/LATEST_AGENT3_HANDOFF.md` — Overwritten to summarize ONLY task `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001-A3-R2`.
 
 ---
 
-## 8. Next Action
+## 5. Next Action
 
-`A2-AUTH` independent review of this non-normative readiness reconciliation package across all six modified files. On approval, `A2-AUTH` and the user handle staging, committing, and pushing to `agent2/auth-002-session-contract`.
+`A2-AUTH` review of this finalized contract package (`CONTRACT-AUTH-001@1.2.0-draft.1`) across all modified durable records.

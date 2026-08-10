@@ -5,43 +5,48 @@
 | Field | Value |
 |---|---|
 | Contract ID | `CONTRACT-AUTH-001` |
-| Version | `1.1.0-draft.1` |
-| Previous version | `1.0.0-draft.2` |
+| Version | `1.2.0-draft.1` |
+| Previous version | `1.1.0-draft.1` |
 | Change category | `ADDITIVE_COMPATIBLE_MINOR` |
-| Status | `DRAFT_FOR_CONSUMER_REVIEW` |
+| Status | `FINALIZED_CONTRACT_DRAFT_FOR_A2_REVIEW` |
 | Implementation readiness | `NOT_IMPLEMENTATION_READY` |
-| Runtime status | `NOT_IMPLEMENTED / NOT_TESTED` |
+| Runtime status | `EXISTING_MERGED_CODE_IN_APPS_WEB_SRC_AUTH / AUTH_006_RUNTIME_MODIFICATION_AUTHORIZED=NONE / FENCE_CORRECTION_RUNTIME=NOT_YET_AUTHORIZED` |
 | Owner | `A2-AUTH` |
 | Historical blocking consumer | `A2-DATABASE` (`DB-002`) — `ACKNOWLEDGED_AND_IMPLEMENTED` |
-| Required consumers for the `1.1.0-draft.1` additions | `A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND`, `A2-INTEGRATION` |
-| Evidence baseline | `006cc885161ff49be582a9fa08f353a70c31c7b1` |
-| Prior evidence baseline | `739a331c9942ed64a1ad8276d611889bbee53a27` |
+| Required consumers for the `1.2.0-draft.1` additions | `A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-INTEGRATION` |
+| Evidence baseline | `5ffa8994b286e85d9f676336dbe0169cfbc89d2c` |
+| Prior evidence baseline | `84ad9e322d886f8963c34386f87074a444b3fa2b` |
 
 This contract defines semantic identity, authorization, and browser-session
 requirements only. It does not implement Auth, Database, Backend, or frontend
 behavior. A2-DATABASE retains ownership of physical table names, ORM classes,
 migrations, constraint names, indexes, PostgreSQL implementation, and migration
 ordering. A2-UI retains ownership of frontend implementation, routes as user
-surfaces, and UX. A2-DEPLOYMENT retains ownership of provider provisioning,
-deployed origins, TLS, callback registration, and secret injection.
+surfaces, host/path/transport/wiring for `/auth/session-fence`, and UX. A2-DEPLOYMENT
+retains ownership of provider provisioning, deployed origins, TLS, callback registration,
+and secret injection.
 
 `A2-DATABASE` is recorded as a `HISTORICAL_BLOCKING_CONSUMER /
 ACKNOWLEDGED_AND_IMPLEMENTED`. `DB-002` is merged (pull request #12,
 implementation `5506ab5`, merge `3701520`) and no Database rereview of the
-`1.0.0-draft.2` semantics is outstanding. Version `1.1.0-draft.1` adds
-browser-session semantics that create no new Database obligation.
+`1.0.0-draft.2` semantics is outstanding. Version `1.1.0-draft.1` added
+browser-session semantics, and version `1.2.0-draft.1` finalizes the contract by
+incorporating the accepted `AUTH-005` normative corrections across `A2-UI`, `A2-SECURITY`,
+`A2-DEPLOYMENT`, and `A2-INTEGRATION` (all `ACCEPTED_WITH_CONSTRAINTS`). Neither creates
+a new Database obligation.
 
-Version `1.1.0-draft.1` is a draft for consumer review. It is not accepted, not
-implementation-ready, not implemented, and not tested. No statement in this
-contract authorizes Auth runtime implementation, frontend implementation,
-provider provisioning, or `UI-004`.
+Version `1.2.0-draft.1` is `FINALIZED_CONTRACT_DRAFT_FOR_A2_REVIEW`. All required consumer reviews for `AUTH-005` additions are complete (`A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-INTEGRATION` all `ACCEPTED_WITH_CONSTRAINTS`). It is not implementation-ready. Merged Auth runtime code exists in baseline under `apps/web/src/auth/**` (including `AuthAdapter`, state machine, correlation, storage boundary, redirect, types, unit tests). This contract finalization task (`AUTH-006`) authorizes NO runtime modification. `AUTH-003` / `AUTH-005` fence correction runtime implementation is NOT YET AUTHORIZED / NOT YET IMPLEMENTED under this task. No statement in this contract authorizes Auth runtime implementation, frontend implementation, provider provisioning, or `UI-004`.
 
-The `1.1.0-draft.1` text incorporates four A2-AUTH manager corrections applied
-before acceptance, recorded as `AUTH-DEC-036` through `AUTH-DEC-039`: fail-closed
-`REFRESH_PENDING` semantics, callback duplicate and replay correlation,
-cross-tab and cross-request refresh limits, and intended-return state binding.
-Each correction restricts behavior that the earlier draft text left permissive
-or ambiguous.
+Version `1.2.0-draft.1` formalizes the `AUTH-005` session fence, Auth-context generation,
+sign-out fence, callback generation binding, stale HTTP callback response fail-closed
+semantics, session restoration rules, access-token fence/binding verification, multi-tab
+fence semantics, production and local process synchronization authority requirements,
+the UI host boundary (`POST /auth/session-fence`), security context/binding handles,
+local sign-out tombstone, security event follow-up (local non-noop sink required, enrichment
+as implementation follow-up), and integration future test requirements.
+
+Historical references to `1.1.0-draft.1` remain historical in past records and past
+decision logs and are not rewritten as though they originally referred to `1.2.0`.
 
 A second A2-AUTH correction round then resolved two defects in that text,
 recorded as `AUTH-DEC-040` and `AUTH-DEC-041`: the callback-correlation record
@@ -722,6 +727,217 @@ placed in durable UI state, must never remain in the URL, query string, or
 fragment after callback processing, and must never appear in logs, error text,
 analytics, or tracing metadata. Browser history must not retain a URL
 containing an authorization code where the framework permits replacing it.
+
+## `AUTH-005` session fence, Auth context, and synchronization authority
+
+This section incorporates the normative corrections authorized under `AUTH-005` and finalized by `AUTH-006`.
+
+### `SIGN_OUT_WINS` principle
+
+Physical arrival of stale provider cookie material (e.g. through delayed network response, browser caching, race conditions, or provider event delivery) MUST NEVER qualify as an established or usable Auth session after a newer Auth-context fence exists. `SIGN_OUT_WINS` is absolute across all runtime contexts.
+
+### `ESTABLISHED_AUTH_SESSION` criteria
+
+An `ESTABLISHED_AUTH_SESSION` exists if and only if ALL of the following six conditions are simultaneously satisfied:
+
+1. **Valid provider session**: A valid, provider-backed session exists. The provider session remains the sole canonical provider credential/session.
+2. **Current Auth context**: The Auth context matches the current generation.
+3. **Valid session binding**: The session binding handle matches the active Auth context.
+4. **No active local sign-out tombstone**: No active `LOCAL_SIGN_OUT_TOMBSTONE` exists for the context.
+5. **Verified synchronization authority**: The synchronization authority confirms validity and generation currency.
+6. **No newer sign-out generation**: No sign-out generation newer than the session binding has been published.
+
+If any of these six conditions fails or is indeterminate, session establishment fails closed.
+
+### OPAQUE_AUTH_CONTEXT_HANDLE, OPAQUE_AUTH_SESSION_BINDING_HANDLE, and LOCAL_SIGN_OUT_TOMBSTONE posture
+
+| Handle / Artifact | Sensitivity & Exposure | Security Constraints |
+|---|---|---|
+| `OPAQUE_AUTH_CONTEXT_HANDLE` | Internal Auth context fence identifier. Never exposed to browser JS, analytics, logs, or tracing. | >=128-bit CSPRNG; opaque; `HttpOnly`; `Secure` outside exact `http://localhost:3000` exception; `SameSite=Lax`; host-only (no `Domain`); `Path=/`; browser-session scoped. |
+| `OPAQUE_AUTH_SESSION_BINDING_HANDLE` | Binds a specific established session to an Auth context. Never exposed to browser JS, analytics, logs, or tracing. | >=128-bit CSPRNG; opaque; `HttpOnly`; `Secure` outside exact `http://localhost:3000` exception; `SameSite=Lax`; host-only (no `Domain`); `Path=/`; lifetime <= Auth context; new handle issued for each successful session establishment. |
+| `LOCAL_SIGN_OUT_TOMBSTONE` | Deny-only local marker indicating an intentional sign-out. | Deny-only; browser-readable; **NOT** `HttpOnly`; `Secure` outside exact `http://localhost:3000` exception; `SameSite=Lax`; host-only (no `Domain`); `Path=/`; browser-session scoped; cannot grant authentication; absence alone proves nothing; stale callbacks cannot clear it; provider events cannot clear it; removal permitted ONLY through successful explicit Auth reconciliation or an authorized Auth-context reset. |
+
+### Session-binding record structure and exclusions
+
+A successful session-binding record binds at minimum:
+- One Auth context;
+- The attempt's Auth-context generation;
+- One sign-in attempt;
+- One callback flow;
+- The successful session-establishment result.
+
+The binding record MUST NOT contain:
+- Access token;
+- Refresh token;
+- Provider-session bytes;
+- Authorization code;
+- PKCE verifier;
+- Intended-return path;
+- Identity claim;
+- Authorization capability.
+
+Callback-correlation records remain distinct from session-binding records.
+
+Callback correlation records represent Auth-owned attempt/callback-flow correlation and the existing permitted pending intended-return binding.
+
+Provider PKCE-verifier custody and provider OAuth-state generation/validation remain provider-integration-owned and are not transferred into Auth correlation records.
+
+Session-binding records instead represent successful session establishment against an Auth context and Auth-context generation.
+
+The two record types MUST NOT be merged.
+
+### Callback response fence non-mutation rules
+
+The callback response MUST NOT create, replace, rotate, clear, overwrite, or otherwise mutate:
+- The authoritative browser Auth-context synchronization handle; or
+- An already active newer `LOCAL_SIGN_OUT_TOMBSTONE`.
+
+A stale callback may physically reintroduce stale provider-session cookie material or an old opaque session-binding handle, but those values MUST fail generation validation and remain unusable.
+
+### New sign-in after sign-out reconciliation
+
+A sign-out tombstone MUST NOT permanently prevent future authentication.
+
+When the user deliberately initiates a NEW sign-in while `LOCAL_SIGN_OUT_TOMBSTONE` is active:
+1. Auth MUST first perform `PREPARE_SIGN_IN` / Auth-context reconciliation with the authoritative synchronization authority;
+2. Reconciliation MUST establish that pre-sign-out generations remain superseded;
+3. Only AFTER successful reconciliation may the local tombstone be removed;
+4. Only AFTER successful reconciliation may provider OAuth initiation proceed;
+5. The new sign-in attempt binds to the then-current Auth-context generation.
+
+If reconciliation is unavailable, fails, or is indeterminate:
+- Provider sign-in MUST NOT proceed;
+- The tombstone remains active;
+- Auth remains fail closed.
+
+### Synchronization Artefact Posture
+
+Synchronization artefacts (handles, tombstones, fence records) are NOT:
+- sessions;
+- credentials;
+- identities;
+- permissions;
+- authorization;
+- token copies; or
+- duplicate provider-session stores.
+
+The provider session remains the sole canonical provider credential and session source. No duplicate session or token store is created or maintained.
+
+### Sign-out fence, generation invalidation, and tombstone ordering
+
+When `AuthAdapter.signOut()` is requested, Auth MUST establish the browser-local deny-only `LOCAL_SIGN_OUT_TOMBSTONE` BEFORE relying on any cross-runtime `PUBLISH_SIGN_OUT` operation or provider sign-out completion.
+
+Required ordering:
+1. User requests sign-out.
+2. `LOCAL_SIGN_OUT_TOMBSTONE` becomes active locally.
+3. Protected Auth eligibility fails closed immediately.
+4. Publish / advance authoritative Auth generation (`PUBLISH_SIGN_OUT`).
+5. Perform existing provider `CURRENT_SESSION_ONLY` sign-out.
+
+If publication fails or synchronization authority is unavailable:
+- `LOCAL_SIGN_OUT_TOMBSTONE` MUST remain active;
+- Local Auth remains signed out;
+- `AUTHENTICATED` MUST NOT be restored;
+- Provider `SIGNED_IN`, `TOKEN_REFRESHED`, or equivalent events MUST NOT clear it;
+- Stale callback or session material MUST NOT clear it;
+- Protected UI remains prohibited;
+- New protected API request preparation remains prohibited.
+
+Do not redefine `SIGN_OUT_FAILED`.
+Do not change `CURRENT_SESSION_ONLY`.
+Do not claim immediate JWT revocation.
+
+Publishing a sign-out fence increments the sign-out generation and creates a new Auth-context fence. Stale provider session material fails closed immediately. Physical cleanup of stale cookies and synchronization artefacts occurs at the first Auth-controlled cookie-mutating opportunity.
+
+### Callback generation binding and stale HTTP callback response semantics
+
+1. **Callback generation binding**: Every callback processing attempt is bound to the Auth-context generation active when `beginSignIn` / `PREPARE_SIGN_IN` was invoked.
+2. **Stale HTTP callback responses**: A callback MUST fail closed as stale when the Auth-context generation to which its sign-in attempt is bound is no longer the authoritative current generation. A later sign-in attempt does NOT, merely by being later in time, invalidate an earlier independently correlated attempt when both remain bound to the same current Auth-context generation.
+3. **Old callback after sign-out and new sign-in**: The required "old callback after new sign-in" case occurs when attempt A begins under generation G, sign-out advances the Auth context beyond G, explicit reconciliation occurs, and attempt B begins under the newer current generation. Any late callback or session response belonging to attempt A remains bound to generation G and MUST NOT establish or restore current Auth.
+4. **Concurrent independent sign-in attempts**: Concurrent independent sign-in attempts MAY exist under the same current Auth-context generation and remain governed by existing attempt-specific callback correlation rules.
+
+### Session restoration and access-token preparation
+
+1. **Session restoration**: Restoring a session (in browser or server context) requires verifying the current fence, session binding, tombstone status, and synchronization authority. Provider-cookie arrival alone is insufficient. Provider events (e.g. `onAuthStateChange`) remain provisional until fence validation succeeds.
+2. **Access-token preparation**: `getAccessTokenForApiRequest` requires current fence and session-binding verification before returning a token for FastAPI requests. If fence or binding verification fails, access-token retrieval fails closed.
+
+### Multi-tab semantics
+
+Multi-tab semantics are preserved. All tabs within the same browser context share the Auth-context fence, session binding, and tombstone state. A sign-out fence published in one tab immediately invalidates session validity across all tabs via shared fence validation.
+
+### Production and local process synchronization authority
+
+1. **Production synchronization authority**:
+   - Environment-isolated;
+   - Highly available;
+   - Shared across every relevant Auth runtime;
+   - Linearizable;
+   - Restart-safe;
+   - Failover-safe;
+   - Fail-closed when unavailable or indeterminate.
+   - Physical provider remains **UNSELECTED**. No concrete provider (such as Redis, Valkey, PostgreSQL, Supabase table, cloud cache) is named or selected.
+
+2. **Local UI-004 process-local authority**:
+   - Permitted ONLY when callback processing, session validation, and sign-out all run in exactly ONE local Next.js/Auth OS process and ONE memory space.
+   - Must have no replicas, clustering, serverless isolates, load balancing, or independently restarted handlers.
+   - On local authority process restart: authority state loss -> **FAIL CLOSED** -> reauthentication.
+   - No production-safety claim may be made from local process memory.
+
+### A2-UI host boundary (`/auth/session-fence`)
+
+The host boundary for session fence operations is frozen as authorized by Agent 1:
+
+- **HTTP method**: `POST`
+- **Path**: `/auth/session-fence`
+- **UI-owned implementation path**: `apps/web/src/app/auth/session-fence/route.ts`
+- **Semantic operations behind the host**:
+  - `PREPARE_SIGN_IN`
+  - `PUBLISH_SIGN_OUT`
+  - `RESOLVE_SESSION`
+- **Ownership split**:
+  - `A2-UI`: host/path/transport/wiring.
+  - `A2-AUTH`: all Auth semantics behind the host endpoint. No Auth semantic ownership transfers to UI.
+- **Request constraints**:
+  - `POST` method only;
+  - Exact approved Dashboard Origin;
+  - Same-origin Fetch Metadata checks where supported;
+  - Existing Auth-owned anti-CSRF boundary;
+  - `Cache-Control: private, no-store`.
+- **Presentation & navigation rule**:
+  `processCallback()` success alone is NOT final proof of current authenticated presentation eligibility after AUTH-005. Final authenticated presentation/navigation requires current fence-resolved Auth eligibility. No new public UI Auth state is introduced.
+
+### Sign-out contract amendment and AuthAdapter operation amendments
+
+- Provider sign-out scope remains `local` / `CURRENT_SESSION_ONLY`.
+- Do NOT claim immediate Backend JWT revocation.
+- Public `AuthAdapter` operation list remains unchanged (`beginSignIn`, `processCallback`, `getSessionSnapshot`, `subscribeToSessionChanges`, `getAccessTokenForApiRequest`, `refreshSession`, `signOut`).
+- Operations are amended behind the public boundary to enforce fence validation, generation verification, and tombstone checks.
+
+### Security event follow-up
+
+- The current UI-004 no-op Security-event sink is **NOT acceptable**.
+- A **LOCAL NON-NOOP sink** is **REQUIRED**.
+- Local durable persistence is **NOT required**.
+- The existing `AuthSecurityEvent` runtime payload/interface may require later Security-envelope enrichment.
+- That enrichment is recorded as an **IMPLEMENTATION FOLLOW-UP** only, and is **NOT** implemented by AUTH-006.
+
+### Integration future acceptance-test requirements
+
+The following are recorded as **FUTURE acceptance-test requirements** (not claimed runtime evidence):
+
+1. Deterministic server/browser response-order control;
+2. Actual browser cookie jar;
+3. Stale response order A;
+4. Stale response order B;
+5. Multi-tab shared browser context;
+6. Faultable synchronization authority;
+7. Deterministic callback response barriers;
+8. Separate assertions for semantic denial versus physical cleanup;
+9. No protected-content flash;
+10. Access-token fail-closed;
+11. Existing callback duplicate/replay regression suite remains green.
+
+Vitest/jsdom-only proof is **INSUFFICIENT** for browser/network ordering acceptance. These tests are future implementation/integration evidence requirements, and are not claimed to have passed.
 
 ## `AUTH-002` session model
 
@@ -1736,64 +1952,22 @@ A breaking change requires a major contract version and coordinated
 A2-DATABASE and A2-INTEGRATION review. Additive clarifications that preserve
 these semantics may use a compatible draft/minor revision.
 
-### Version `1.1.0-draft.1` classification
+### Version `1.2.0-draft.1` classification
 
 | Field | Value |
 |---|---|
-| Old version | `1.0.0-draft.2` |
-| New version | `1.1.0-draft.1` |
+| Old version | `1.1.0-draft.1` |
+| New version | `1.2.0-draft.1` |
 | Change category | `ADDITIVE_COMPATIBLE_MINOR` |
 | Breaking | `NO` |
 
-Verified against this section's own rules. The `AUTH-002` additions change none
-of the listed breaking items: issuer-subject uniqueness is untouched; issuer
-normalization and exact case-sensitive comparison are untouched; no external ID
-becomes an internal ID; no actor type is removed; the exact
-user-installation-repository access tuple is unchanged; no local credential is
-permitted; no cross-installation or cross-repository access is permitted; no
-lifecycle change re-enables denied access; and no organization tenancy or
-generic RBAC is introduced. The additions are confined to browser-session,
-callback, custody, refresh, sign-out, redirect, adapter, error, and Security
-semantics that did not previously exist in this contract.
+Verified against this section's own rules. The `AUTH-005` normative corrections finalized in `1.2.0-draft.1` change none of the listed breaking items: issuer-subject uniqueness is untouched; issuer normalization and exact case-sensitive comparison are untouched; no external ID becomes an internal ID; no actor type is removed; the exact user-installation-repository access tuple is unchanged; no local credential is permitted; no cross-installation or cross-repository access is permitted; no lifecycle change re-enables denied access; and no organization tenancy or generic RBAC is introduced. The additions formalize session fence validation, sign-out fence semantics (`SIGN_OUT_WINS`), context/binding handles, local sign-out tombstone, synchronization authority requirements, UI host boundary (`POST /auth/session-fence`), security event follow-up, and future integration test requirements.
 
-Compatibility impact: existing consumers of `1.0.0-draft.2` require no change.
-`DB-002` requires no migration, no new column, and no new table.
+Historical references to `1.1.0-draft.1` remain historical in past records and past decision logs and are not rewritten as though they originally referred to `1.2.0`.
 
-Consumer-review consequence: the additions introduce new obligations for
-`A2-UI`, `A2-SECURITY`, `A2-DEPLOYMENT`, `A2-BACKEND`, and `A2-INTEGRATION`, so
-each must review this version before it can be treated as accepted. Silence is
-not acceptance. `A2-UI` has responded with `SPECIFICATION_CONFLICT` and
-`A2-SECURITY` with `REJECTED_WITH_REASON`; a response is not an acceptance, and
-the corrected text requires rereview by both. `A2-INTEGRATION` responded
-`ACCEPTED_WITH_CONSTRAINTS` at head `7abe17a`, with its final review still
-pending. `A2-DEPLOYMENT` and `A2-BACKEND` have no reconciled response.
+Compatibility impact: existing consumers of `1.1.0-draft.1` and `1.0.0-draft.2` require no database migration, no new column, and no new table. `DB-002` remains `ACKNOWLEDGED_AND_IMPLEMENTED`.
 
-Freezing the default post-sign-in destination as `/` and the preserved-session
-safe recovery destination as `/` does not change this classification. Both fill
-an explicitly open slot in an unaccepted draft, no accepted consumer implemented
-against a prior value, and neither touches identity semantics, custody
-architecture, callback correlation, or any listed breaking item.
-
-The seven `A2-SECURITY` corrections likewise do not change it, verified item by
-item against the breaking list above. The prohibited-storage list is extended,
-never weakened. No refresh token reaches FastAPI. `Authorization: Bearer`
-remains the only protected-request credential transport, and the frozen CSRF
-boundary reinforces it. PKCE and OAuth-state requirements are retained and
-strengthened. The exact-match callback policy is unchanged and now also gates
-the callback's CSRF exemption. Provider-returned data still controls no
-navigation without Auth-owned validation. No loading state becomes
-authenticated; the live-provider-validation requirement makes preservation
-stricter, not looser. Frontend session state still never overrides a Backend
-decision. And **no error classification is removed, nor is any existing
-classification's retry, reauthentication or Backend-eligibility meaning
-changed**: the four internal codes keep their tabulated semantics in full, and
-`SIGN_IN_FAILED` is an added public presentation boundary over them, not a
-replacement of them. Every Security correction restricts behavior or resolves an
-explicitly open slot in an unaccepted draft.
-
-The version identifier and the `ADDITIVE_COMPATIBLE_MINOR` classification
-therefore stand unchanged, independently verified against this section's own
-rules.
+Consumer-review consequence: all required consumer reviews for `AUTH-005` / `1.2.0-draft.1` are complete: `A2-UI` (`ACCEPTED_WITH_CONSTRAINTS`), `A2-SECURITY` (`ACCEPTED_WITH_CONSTRAINTS`), `A2-DEPLOYMENT` (`ACCEPTED_WITH_CONSTRAINTS`), and `A2-INTEGRATION` (`ACCEPTED_WITH_CONSTRAINTS`). No consumer requested a further normative Auth-contract correction.
 
 ## Conceptual acceptance fixture
 
@@ -1821,6 +1995,11 @@ Required outcomes:
 11. An unauthenticated actor cannot authorize a protected action.
 12. Publication execution has machine attribution and a traceable authorized
     trigger.
+13. Stale provider cookie material arriving after a sign-out fence MUST NOT qualify as an established or usable session (`SIGN_OUT_WINS`).
+14. An old callback response bound to a superseded Auth-context generation (e.g. attempt A under generation G where sign-out and reconciliation advanced context to a newer generation before attempt B) MUST fail closed without establishing a session or clearing a local tombstone. A later sign-in attempt under the same current generation does NOT invalidate an earlier independently correlated attempt.
+15. `getAccessTokenForApiRequest` MUST fail closed when invoked with a stale fence or active tombstone.
+16. Local process-local authority state loss on restart MUST cause session verification to fail closed, requiring reauthentication.
+17. Multi-tab fence invalidation MUST cause all open tabs in a browser context to lose session establishment immediately upon sign-out fence publication.
 
 ## Current limitations and cross-contract dependencies
 

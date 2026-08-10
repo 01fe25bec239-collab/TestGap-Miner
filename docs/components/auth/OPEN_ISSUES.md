@@ -1,22 +1,25 @@
 # Auth Open Issues
 
-- Date: 2026-08-09
+- Date: 2026-08-10
 - Current task:
-  `AUTH-002-FINAL-READINESS-RECONCILIATION-001-A3`
+  `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001-A3-R3`
 - Authorized manager task:
-  `AUTH-002-FINAL-READINESS-RECONCILIATION-001`
+  `AUTH-006-FINALIZE-CONTRACT-AUTH-001-V1.2.0-DRAFT.1-001`
 - Authorizing coordinator:
   `Agent 1`
-- Reviewed head:
-  `84ad9e322d886f8963c34386f87074a444b3fa2b`
-- Pull request: #29 — `OPEN / DRAFT / NOT_MERGED / PENDING_FINAL_AGENT_1_READINESS_DECISION`
-- Shared registry correction: PR #31 — `COMPLETE / VERSION_AWARE_SHARED_REGISTRY_RECONCILED` (`a80145e2` / `1057ba72`)
-- Scope: `AUTH_DURABLE_RECORDS_ONLY`
+- Baseline:
+  `5ffa8994b286e85d9f676336dbe0169cfbc89d2c`
+- Worktree:
+  `/Users/omkar/Documents/TestGap-Miner-wt-auth-contract-1.2-finalization`
+- Branch:
+  `agent2/auth-contract-1.2-finalization`
+- Scope:
+  `AUTH_DURABLE_RECORDS_AND_CONTRACT_ONLY`
 - Evidence: `docs/components/auth/AUTH-001_AUDIT.md`,
   `docs/components/auth/CONTRACT-AUTH-001.md`
 - Auth identity persistence: `VERIFIED_COMPLETE` and merged
-- Auth runtime: `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`
-- `CONTRACT-AUTH-001@1.1.0-draft.1`: `UNCHANGED / FINAL_CONSUMER_REVIEW_COMPLETE / NOT_IMPLEMENTATION_READY`
+- Auth runtime status: `EXISTING_MERGED_CODE_IN_APPS_WEB_SRC_AUTH / AUTH_006_RUNTIME_MODIFICATION_AUTHORIZED=NONE / FENCE_CORRECTION_RUNTIME=NOT_YET_AUTHORIZED`
+- `CONTRACT-AUTH-001@1.2.0-draft.1`: `FINALIZED_CONTRACT_DRAFT_FOR_A2_REVIEW / NOT_IMPLEMENTATION_READY`
 - `ASSUMED`: `NONE`
 
 Severity vocabulary is `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`,
@@ -137,18 +140,8 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
   (`apps/api/app/db/models/auth.py`), Database-owned schema tests
   (`tests/database/test_auth_constraints.py`), and the Auth documentation
   records. `apps/api/app/main.py` is three lines. `apps/web` did not exist.
-- Corrected current evidence at baseline `006cc88`: the "`apps/web` does not
-  exist" statement is `SUPERSEDED`. `apps/web` now exists through merged
-  `UI-002` (PR #26), `UI-003` (PR #27) and the frontend regression foundation
-  (PR #28). It contains no Auth surface: `apps/web/src/app` holds only
-  `layout.tsx`, `page.tsx`, `providers.tsx`, `globals.css` and `page.test.tsx`;
-  there is no `/auth/callback` route, no Auth adapter, no token-storage
-  behavior and no provider integration; and `apps/web/package.json` declares no
-  Supabase dependency. The finding itself is unchanged: Auth runtime remains
-  absent.
-- Impact: No human sign-in, session, JWT validation, GitHub App
-  authentication, webhook verification, authorization enforcement, or
-  publication control exists.
+- Corrected current evidence at baseline `5ffa8994b286e85d9f676336dbe0169cfbc89d2c`: Existing merged Auth runtime code is present in baseline under `apps/web/src/auth/**` (including `AuthAdapter`, correlation, state machine, storage boundary, redirect, types, and unit tests). No `/auth/callback` route exists. `AUTH-006` authorizes NO runtime modification under this task. `AUTH-003` / `AUTH-005` fence correction runtime implementation is `NOT_YET_AUTHORIZED / NOT_YET_IMPLEMENTED` under this task.
+- Impact: Auth-owned browser runtime foundations for sign-in/session behavior exist in the baseline under `apps/web/src/auth/**`. However, the complete hosted end-to-end Auth flow is not established at this baseline because the UI-owned `/auth/callback` host is absent and the AUTH-005 cross-runtime session-fence correction is not yet implemented. Backend JWT validation, GitHub App machine authentication, webhook verification, repository authorization enforcement and publication control remain separate incomplete runtime boundaries where current evidence says so.
 - Owning component: A2-AUTH.
 - Blocking task: `AUTH-002` implementation onward.
 - Resolution path: sequential `AUTH-002`…`AUTH-008` after their dependencies
@@ -157,21 +150,15 @@ container behavior, but actual public or production exposure is `NOT_TESTED`.
 
 ## Issues opened by AUTH-001
 
-### `AUTH-ISSUE-010` — No Auth-specific test suite and no Auth CI gate
+### `AUTH-ISSUE-010` — Auth test coverage status and integration acceptance requirements
 
-- Classification: `UNTESTED_BEHAVIOR`
+- Classification: `RECONCILED`
 - Severity: `MEDIUM`
-- Evidence: `ls -d tests/auth` → `No such file or directory`. CI
-  (`.github/workflows/deployment.yml:24`) runs the full 174-test suite but has
-  no Auth-specific step. The 21 passing tests in
-  `tests/database/test_auth_constraints.py` state in their own header that they
-  test no authorization decision.
-- Impact: Any future Auth control would ship without dedicated coverage.
+- Evidence: `apps/web/src/auth/**` contains Auth runtime unit tests (`adapter.test.ts`, `correlation.test.ts`, `state-machine.test.ts`, `storage-boundary.test.ts`, `supabase.test.ts`, `supabase-cookie-journal.test.ts`). `tests/auth/` directory is `ABSENT`. CI (`.github/workflows/deployment.yml`) runs the full test suite but has no Auth-specific gate.
+- Impact: Auth runtime unit tests exist in baseline, but AUTH-005 cross-runtime/browser-network acceptance remains `NOT_YET_TESTED / FUTURE_INTEGRATION_REQUIREMENT` (Vitest/jsdom-only proof is INSUFFICIENT for stale HTTP response/browser-cookie ordering acceptance).
 - Owning component: A2-AUTH.
 - Blocking task: every `AUTH-002`…`AUTH-008` acceptance.
-- Resolution path: each Auth implementation task creates `tests/auth/**`
-  alongside its control. **AUTH-SPECIFIC TEST SUITE: `NOT_STARTED` /
-  `NOT_TESTED`.**
+- Resolution path: Auth runtime unit tests: `PRESENT_IN_BASELINE` under `apps/web/src/auth/**`. `tests/auth/`: `ABSENT`. `AUTH-005 cross-runtime/browser-network acceptance`: `NOT_YET_TESTED / FUTURE_INTEGRATION_REQUIREMENT`.
 
 ### `AUTH-ISSUE-011` — `CONTRACT-AUTH-001` metadata contradicts merged state
 
@@ -686,4 +673,4 @@ All five current consumer domains (`A2-UI`, `A2-SECURITY`, `A2-BACKEND`, `A2-DEP
 
 `CONTRACT-AUTH-001.md` content remains untouched (`8ed2154561785566b4b17baa16535e1fad8e662c`). Embedded non-normative consumer status provenance is superseded for coordination purposes by this authoritative readiness reconciliation.
 
-Runtime implementation remains explicitly `NOT_AUTHORIZED`: Auth runtime (`NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`), Frontend Auth (`NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`), Provider runtime (`NOT_PROVISIONED / NOT_TESTED`), `UI-004` (`NOT_AUTHORIZED`), Release (`NOT_READY`). PR #29 remains `OPEN / DRAFT / NOT_MERGED` pending final Agent 1 readiness decision.
+Runtime modification under AUTH-006 remains explicitly `NOT_AUTHORIZED`: existing merged Auth runtime code is present in baseline under `apps/web/src/auth/**` (including `AuthAdapter`), but `AUTH-006` authorizes NO runtime modification under this task, and `AUTH-003` / `AUTH-005` fence correction runtime implementation remains `NOT_YET_AUTHORIZED / NOT_YET_IMPLEMENTED`. Frontend Auth `/auth/callback` route remains `NOT_IMPLEMENTED / NOT_AUTHORIZED`, Provider runtime `NOT_PROVISIONED / NOT_TESTED`, `UI-004` `NOT_AUTHORIZED`, Release `NOT_READY`. PR #29 remains `OPEN / DRAFT / NOT_MERGED` pending final Agent 1 readiness decision.
