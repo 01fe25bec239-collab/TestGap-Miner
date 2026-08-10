@@ -1,4 +1,4 @@
-"""DB-002 database test fixtures.
+"""Database migration and DML test fixtures.
 
 Schema work runs as the DDL-capable migration role; every DML assertion runs as
 the test role through `TEST_DATABASE_URL`, exactly as CONTRACT-DEPLOY-001

@@ -1,15 +1,21 @@
-"""DB-002 schema shape, boundary, and secret-storage checks."""
+"""Current schema shape, DB-002 regression, and storage-boundary checks."""
 
 import pytest
 from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 
 from app.db.models import Base
-from support import DB_002_TABLES, FORBIDDEN_TABLES, SECRET_NAME_PATTERN
+from support import (
+    DB_002_TABLES,
+    DB_003_TABLES,
+    DB_CURRENT_TABLES,
+    FORBIDDEN_TABLES,
+    SECRET_NAME_PATTERN,
+)
 
 
-def test_metadata_contains_exactly_the_db_002_tables() -> None:
-    assert set(Base.metadata.tables) == DB_002_TABLES
+def test_metadata_contains_exactly_the_current_tables() -> None:
+    assert set(Base.metadata.tables) == DB_CURRENT_TABLES
 
 
 def test_models_share_one_metadata_instance() -> None:
@@ -34,17 +40,21 @@ def test_every_db_002_table_exists_in_the_database(migrated_engine: Engine) -> N
     assert DB_002_TABLES <= set(inspect(migrated_engine).get_table_names())
 
 
-def test_no_db_003_or_later_table_exists(migrated_engine: Engine) -> None:
+def test_every_db_003_table_exists_in_the_database(migrated_engine: Engine) -> None:
+    assert DB_003_TABLES <= set(inspect(migrated_engine).get_table_names())
+
+
+def test_no_db_004_or_queue_table_exists(migrated_engine: Engine) -> None:
     present = set(inspect(migrated_engine).get_table_names())
     assert present & FORBIDDEN_TABLES == set()
-    assert present - {"alembic_version"} == DB_002_TABLES
+    assert present - {"alembic_version"} == DB_CURRENT_TABLES
 
 
 def test_no_database_column_looks_like_a_secret(migrated_engine: Engine) -> None:
     inspector = inspect(migrated_engine)
     offenders = [
         f"{table}.{column['name']}"
-        for table in DB_002_TABLES
+        for table in DB_CURRENT_TABLES
         for column in inspector.get_columns(table)
         if SECRET_NAME_PATTERN.search(column["name"])
     ]
@@ -53,7 +63,7 @@ def test_no_database_column_looks_like_a_secret(migrated_engine: Engine) -> None
 
 def test_every_primary_key_is_a_uuid(migrated_engine: Engine) -> None:
     inspector = inspect(migrated_engine)
-    for table in DB_002_TABLES:
+    for table in DB_CURRENT_TABLES:
         primary_key = inspector.get_pk_constraint(table)
         assert primary_key["constrained_columns"] == ["id"], table
         types = {c["name"]: str(c["type"]) for c in inspector.get_columns(table)}
@@ -64,7 +74,7 @@ def test_every_timestamp_column_is_timezone_aware(migrated_engine: Engine) -> No
     inspector = inspect(migrated_engine)
     naive = [
         f"{table}.{column['name']}"
-        for table in DB_002_TABLES
+        for table in DB_CURRENT_TABLES
         for column in inspector.get_columns(table)
         if str(column["type"]).startswith("TIMESTAMP")
         and not column["type"].timezone
@@ -186,6 +196,39 @@ def test_repository_access_foreign_keys_are_explicit(migrated_engine: Engine) ->
                 "ck_runs_terminal_actor_matches_state",
                 "ck_runs_terminal_actor_type_allowed",
                 "ck_runs_parent_run_id_not_self",
+            },
+        ),
+        (
+            "workflow_steps",
+            {
+                "ck_workflow_steps_kind_allowed",
+                "ck_workflow_steps_occurrence_positive",
+            },
+        ),
+        (
+            "workflow_step_attempts",
+            {
+                "ck_workflow_step_attempts_attempt_index_non_negative",
+                "ck_workflow_step_attempts_ended_at_not_before_started_at",
+                "ck_workflow_step_attempts_completion_shape",
+                "ck_workflow_step_attempts_actor_type_allowed",
+            },
+        ),
+        (
+            "run_events",
+            {
+                "ck_run_events_sequence_positive",
+                "ck_run_events_transition_state_shape",
+                "ck_run_events_from_state_allowed",
+                "ck_run_events_to_state_allowed",
+                "ck_run_events_transition_pair_allowed",
+                "ck_run_events_step_attribution_shape",
+                "ck_run_events_attempt_attribution_shape",
+                "ck_run_events_actor_type_allowed",
+                "ck_run_events_terminal_reason_matches_target",
+                "ck_run_events_fingerprint_version_positive",
+                "ck_run_events_payload_is_object",
+                "ck_run_events_payload_bounded",
             },
         ),
     ],

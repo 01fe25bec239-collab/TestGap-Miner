@@ -1,4 +1,4 @@
-"""DB-002 models. Importing this package registers every table on the shared
+"""Database models. Importing this package registers every table on the shared
 MetaData used by Alembic autogenerate."""
 
 from app.db.base import Base
@@ -9,7 +9,13 @@ from app.db.models.auth import (
     RepositoryAccess,
     User,
 )
-from app.db.models.workflow import Run, RunRequest
+from app.db.models.workflow import (
+    Run,
+    RunEvent,
+    RunRequest,
+    WorkflowStep,
+    WorkflowStepAttempt,
+)
 
 __all__ = [
     "AuthSubject",
@@ -18,6 +24,9 @@ __all__ = [
     "Repository",
     "RepositoryAccess",
     "Run",
+    "RunEvent",
     "RunRequest",
     "User",
+    "WorkflowStep",
+    "WorkflowStepAttempt",
 ]

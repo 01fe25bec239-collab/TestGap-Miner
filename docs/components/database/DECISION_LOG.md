@@ -1,7 +1,11 @@
 # Database Decision Log
 
-- Date reconciled: 2026-08-02
-- Branch: `agent2/database`
+- Date reconciled: 2026-08-10
+- Branch: `agent2/db-003-workflow-persistence`
+- Current task: `DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001`
+- Authorization: `EXPLICIT_AGENT_1_AUTHORIZATION`
+- Authorized/verified baseline:
+  `f318d9b515a4324b0848e64059f179027d19bd1f`
 - DB-002 implementation baseline:
   `8884b5d540351c735b6cddc01314a7dd9e25af05`
 - Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
@@ -13,8 +17,9 @@
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
 - Database scaffold: `IMPLEMENTED`; DB-DEP-011:
   `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
-- Migration chain: exactly one head, `ad3f80907336`
-- Domain schema: `IMPLEMENTED` for DB-002; DB-002:
+- Migration chain: exactly one head `e7b4c2d9a631`, down revision
+  `ad3f80907336`
+- Domain schema: `IMPLEMENTED` for DB-002 and DB-003; DB-002:
   `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1: `PASS`; DB-002-C2: `PASS`;
   DB-002-MERGE-001: `PASS`
 - DB-002 implementation evidence: pull request #12; implementation commit
@@ -24,13 +29,64 @@
   #13 (`docs(database): close merged DB-002`); head commit
   `861781b1c91cc5eed870653bc35b2d39fc9c1021`; reconciliation merge commit
   `1511f474ee301651b631c8adfe406aeb775327aa`
-- DB-003: `NOT_STARTED` / `NOT_AUTHORIZED`
+- DB-003: `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `DB-DEP-001`: `ACCEPTED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
   `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
 
-## `DB-DEC-015` — Workflow-owner DB-002 reconciliation closure
+## `DB-DEC-016` — DB-003 workflow persistence physical schema
+
+- Date: 2026-08-10
+- Status: `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW`; all work is
+  unstaged, uncommitted, and unpushed.
+- Authorization: `DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001` under
+  `EXPLICIT_AGENT_1_AUTHORIZATION`, baseline
+  `f318d9b515a4324b0848e64059f179027d19bd1f`.
+- Migration decision: revision `e7b4c2d9a631`, down revision
+  `ad3f80907336`, is the sole head and second revision in the linear chain.
+- Table decision: create exactly `workflow_steps`,
+  `workflow_step_attempts`, and `run_events`; no fourth DB-003 table and no
+  DB-004+ or Queue table.
+- Step decision: exact bounded kind vocabulary, positive occurrence,
+  `UNIQUE (run_id, kind, occurrence)`, Database-authored time, bounded opaque
+  immutable input reference/version, and restrictive run foreign key.
+- Attempt decision: internal UUID distinct from Queue identities, zero-based
+  unique index under the step, exact actor type plus opaque actor ID, bounded
+  error/Evidence references, valid interval/completed shape, and trigger-backed
+  immutability after completion. Retry appends under the same occurrence and
+  never changes repair allowance.
+- Event decision: positive per-run sequence, producer-event idempotency,
+  bounded additive event type, exact optional state/step/attempt attribution,
+  producer and Database timestamps, bounded object-shaped JSONB payload,
+  fingerprint/version, and explicit terminal-reason history. Stored transition
+  pairs use the frozen Workflow table only as corruption prevention; Database
+  does not choose transitions.
+- Append decision: `append_run_event` receives an existing `Session`, locks the
+  target run, resolves producer duplicates by fingerprint/version, allocates
+  the next sequence, flushes, and never commits. Identical duplicates return
+  the existing row; conflicting duplicates raise deterministically.
+- Concurrency decision: `compare_and_swap_run` accepts expected state/version,
+  applies only an explicit projection allowlist, updates `updated_at`,
+  increments version exactly once, raises deterministically on a miss, and
+  never commits or decides Workflow semantics.
+- Integrity decision: PostgreSQL triggers reject run-event updates/deletes,
+  reject completed-attempt updates/deletes, protect immutable step bindings,
+  and prevent rewrites of already-terminal run facts. CAS and event append are
+  composable in one caller-owned transaction; rollback restores both.
+- Queue decision: `CONTRACT-QUEUE-001@1.0.0-draft.2`, available on merged main,
+  is consumed only for provider-neutral identity separation. No message,
+  delivery, claim/lease, receipt, acknowledgement, heartbeat, provider,
+  adapter, or Queue runtime field/table exists.
+- Data boundary: payloads/fixtures contain redacted metadata or opaque
+  references only. No raw prompt, repository, patch, log, secret, token,
+  Evidence byte, or artefact byte is persisted. Evidence semantics remain
+  unimplemented.
+- Actor decision: DB-003 reuses the DB-ISSUE-013-compatible bounded opaque
+  attribution approach. `DB-ISSUE-013` remains
+  `OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`; no Auth foreign key is added.
+
+## Historical `DB-DEC-015` — Workflow-owner DB-002 reconciliation closure
 
 - Status: `WORKFLOW-DB002-OWNER-RECONCILIATION-001` is
   `SATISFIED / VERIFIED_COMPLETE / CLOSED`; execution task

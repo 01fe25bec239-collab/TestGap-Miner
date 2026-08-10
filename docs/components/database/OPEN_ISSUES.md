@@ -1,7 +1,11 @@
 # Database Open Issues
 
-- Date: 2026-08-02
-- Branch: `agent2/database`
+- Date: 2026-08-10
+- Branch: `agent2/db-003-workflow-persistence`
+- Current task: `DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001`
+- Authorization: `EXPLICIT_AGENT_1_AUTHORIZATION`
+- Authorized/verified baseline:
+  `f318d9b515a4324b0848e64059f179027d19bd1f`
 - DB-002 implementation baseline:
   `8884b5d540351c735b6cddc01314a7dd9e25af05`
 - Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
@@ -12,8 +16,9 @@
 - DB-001-C1: historical completed continuation
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
 - Database scaffold: `IMPLEMENTED`
-- Migration chain: exactly one head, `ad3f80907336`
-- Domain schema: `IMPLEMENTED` for DB-002; DB-002:
+- Migration chain: exactly one head, `e7b4c2d9a631`, down revision
+  `ad3f80907336`
+- Domain schema: `IMPLEMENTED` for DB-002 and DB-003; DB-002:
   `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1: `PASS`; DB-002-C2: `PASS`;
   DB-002-MERGE-001: `PASS`
 - DB-002 implementation evidence: pull request #12; implementation commit
@@ -28,7 +33,12 @@
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`: `ACKNOWLEDGED_AND_MERGED`
 - `DB-DEP-004`: `ACCEPTED`
 - DB-DEP-011: `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
-- DB-003: `NOT_STARTED` / `NOT_AUTHORIZED`
+- DB-003: `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW`; unstaged,
+  uncommitted, and unpushed
+- `CONTRACT-QUEUE-001@1.0.0-draft.2`: available on merged repository main and
+  consumed only for the provider-neutral identity boundary. Queue runtime,
+  provider, adapter, delivery, claims/leases, and acknowledgement remain
+  `NOT_IMPLEMENTED`.
 - `WORKFLOW-DB002-OWNER-RECONCILIATION-001`:
   `SATISFIED / VERIFIED_COMPLETE / CLOSED` through Workflow PR #16,
   documentation commit `4db0911d5600f852f43edc9e132a48bd817577b3`,
@@ -57,8 +67,10 @@
 - Impact: the direct Auth and Workflow prerequisites are satisfied and the
   DB-002 schema is implemented and merged. DB-002 is
   `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1, DB-002-C2, and
-  DB-002-MERGE-001 are each `PASS`. Later tasks retain their own prerequisites,
-  and no other upstream-owned fields are frozen by this task.
+  DB-002-MERGE-001 are each `PASS`. The provider-neutral Queue boundary needed
+  by DB-003 is also available; DB-003 is implemented pending A2 review. Later
+  tasks retain their own prerequisites, and no other upstream-owned fields are
+  frozen by this task.
 
 ## `DB-ISSUE-003` — No implementation baseline
 
@@ -157,7 +169,8 @@
   the Database domain schema was `NOT_STARTED`, and DB-002 was
   `BLOCKED_PENDING_FINAL_READINESS_ASSESSMENT`.
 - Current state: Workflow runtime remains `NOT_IMPLEMENTED` / `NOT_TESTED`; the
-  seven-table DB-002 Database domain schema is implemented.
+  seven DB-002 tables are preserved and the three DB-003 persistence tables are
+  implemented pending A2 review.
 
 ## `DB-ISSUE-011` — One run per run request is a Database-owned strengthening
 

@@ -1,6 +1,48 @@
 # Database Component Status
 
-## Current state — DB-002
+## Current state — DB-003 implementation handoff
+
+- Date: 2026-08-10
+- Task: `DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001`
+- Authorization: `EXPLICIT_AGENT_1_AUTHORIZATION`
+- Authorized/verified baseline:
+  `f318d9b515a4324b0848e64059f179027d19bd1f`
+- Branch: `agent2/db-003-workflow-persistence`
+- Worktree:
+  `/Users/omkar/Documents/TestGap-Miner-wt-db-003-workflow-persistence`
+- Status: `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW`
+- DB-002: `PASS / VERIFIED_COMPLETE / MERGED`; all seven tables and accepted
+  constraints are preserved.
+- Consumed Workflow contract:
+  `CONTRACT-WORKFLOW-001@1.0.0-draft.1` / `ACKNOWLEDGED_AND_MERGED`.
+- `DB-DEP-006`: provider-neutral boundary supplied by
+  `CONTRACT-QUEUE-001@1.0.0-draft.2`, available on merged repository main and
+  consumed only for Queue/Workflow identity separation. Queue runtime,
+  provider, adapter, claim/lease, delivery, and acknowledgement remain
+  `NOT_IMPLEMENTED`.
+- Migration chain: exactly one head `e7b4c2d9a631`, down revision
+  `ad3f80907336`; two actual revisions in one linear chain.
+- DB-003 tables: `workflow_steps`, `workflow_step_attempts`, `run_events`.
+- Persistence mechanisms: immutable step inputs; attempt immutability after
+  completion; append-only run events; per-run row-locked sequence allocation;
+  producer-event fingerprint idempotency; exact stored transition-pair and
+  terminal-reason integrity; terminal-run fact protection; allowlisted
+  state/version CAS; atomic CAS-plus-event transaction behavior.
+- Migration evidence: fresh base to head, populated DB-002 to DB-003 upgrade,
+  DB-003 to DB-002 downgrade preserving representative DB-002 rows, and
+  DB-002 to DB-003 re-upgrade all `PASS` on PostgreSQL 16.14.
+- Database tests: `PASS`; 221 passed, zero failed/skipped.
+- API regression tests: `PASS`; 42 passed, zero failed/skipped.
+- Full suite: `PASS`; 263 passed, zero failed/skipped.
+- ORM-to-migration comparison: `PASS` / `No new upgrade operations detected`.
+- DB-004 and later domain tables: `ABSENT / NOT_STARTED / NOT_AUTHORIZED`.
+- Workflow runtime: `NOT_MODIFIED`; Evidence persistence: `NOT_IMPLEMENTED`.
+- `DB-ISSUE-013`: remains
+  `OPEN_NON_BLOCKING / DEFERRED_TYPED_CONTRACT`; DB-003 actor attribution uses
+  the accepted bounded opaque representation and adds no Auth foreign key.
+- Git state: `UNSTAGED / UNCOMMITTED / UNPUSHED`; no pull request or merge.
+
+## Historical state — DB-002 before DB-003 authorization
 
 - Date: 2026-08-02
 - Task: `DB-002 — Core identity, repository-context, run-request, and run
@@ -259,7 +301,7 @@ absent.
 - API, Queue, Security, Deployment, and Integration inputs remain scoped constraints where their owned fields or protected files are touched; they are not universal direct contract prerequisites for DB-002.
 - No upstream-owned field is frozen.
 
-## Current database state
+## Historical database state after DB-002
 
 | Area | Classification | Actual state and evidence |
 |---|---|---|

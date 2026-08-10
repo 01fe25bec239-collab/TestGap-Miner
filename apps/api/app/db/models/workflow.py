@@ -1,15 +1,13 @@
-"""Workflow run-request and current-run projections.
+"""Workflow run-request, current-run, and DB-003 history persistence.
 
 Every state value, counter bound, identity rule, and lifecycle meaning below
-comes from ``CONTRACT-WORKFLOW-001@1.0.0-draft.1``. DB-002 owns only the durable
-request record and the current run projection; workflow steps, attempts,
-append-only events, event ordering, transition history, and producer-event
-idempotency belong to DB-003 and are deliberately absent.
+comes from ``CONTRACT-WORKFLOW-001@1.0.0-draft.1``. DB-002 owns the durable
+request record and current run projection. DB-003 owns normalized workflow
+steps, attempts, and ordered append-only run events.
 
 Nothing here orchestrates transitions. The check constraints describe which
-projection rows are representable, not which transition sequences are legal;
-transition legality is enforced by the Workflow runtime against the contract's
-allowed-transition table, which DB-002 does not implement.
+projection rows and stored transition-history pairs are representable; they do
+not decide when a Workflow transition should occur.
 
 No raw prompt, repository byte, patch byte, execution log, or secret is stored.
 """
@@ -18,6 +16,7 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, sql_in
@@ -128,6 +127,84 @@ CANCELLATION_CODES = (
 
 TERMINAL_ACTOR_TYPES = ("SYSTEM", "WORKFLOW", "WORKER", "HUMAN")
 
+WORKFLOW_STEP_KINDS = (
+    "VALIDATE_INPUT",
+    "PLAN",
+    "LOCALISE",
+    "GENERATE_CANDIDATE",
+    "EXECUTE_BUGGY",
+    "EXECUTE_FIXED",
+    "REPAIR_CANDIDATE",
+    "SCORE_EVIDENCE",
+    "PUBLISH_DRAFT",
+    "HUMAN_REVIEW",
+)
+
+ALLOWED_RUN_TRANSITIONS = (
+    ("RECEIVED", "VALIDATING"),
+    ("RECEIVED", "CANCELLED"),
+    ("VALIDATING", "QUEUED"),
+    ("VALIDATING", "FAILED_INPUT"),
+    ("VALIDATING", "FAILED_INFRASTRUCTURE"),
+    ("VALIDATING", "FAILED_SECURITY"),
+    ("VALIDATING", "CANCELLED"),
+    ("QUEUED", "PLANNING"),
+    ("QUEUED", "FAILED_INFRASTRUCTURE"),
+    ("QUEUED", "FAILED_SECURITY"),
+    ("QUEUED", "CANCELLED"),
+    ("PLANNING", "LOCALISING"),
+    ("PLANNING", "ABSTAINED"),
+    ("PLANNING", "FAILED_MODEL"),
+    ("PLANNING", "FAILED_INFRASTRUCTURE"),
+    ("PLANNING", "FAILED_SECURITY"),
+    ("PLANNING", "CANCELLED"),
+    ("LOCALISING", "GENERATING"),
+    ("LOCALISING", "ABSTAINED"),
+    ("LOCALISING", "FAILED_MODEL"),
+    ("LOCALISING", "FAILED_INFRASTRUCTURE"),
+    ("LOCALISING", "FAILED_SECURITY"),
+    ("LOCALISING", "CANCELLED"),
+    ("GENERATING", "EXECUTING_BUGGY"),
+    ("GENERATING", "ABSTAINED"),
+    ("GENERATING", "FAILED_MODEL"),
+    ("GENERATING", "FAILED_INFRASTRUCTURE"),
+    ("GENERATING", "FAILED_SECURITY"),
+    ("GENERATING", "CANCELLED"),
+    ("EXECUTING_BUGGY", "EXECUTING_FIXED"),
+    ("EXECUTING_BUGGY", "REPAIRING"),
+    ("EXECUTING_BUGGY", "ABSTAINED"),
+    ("EXECUTING_BUGGY", "FAILED_EXECUTION"),
+    ("EXECUTING_BUGGY", "FAILED_INFRASTRUCTURE"),
+    ("EXECUTING_BUGGY", "FAILED_SECURITY"),
+    ("EXECUTING_BUGGY", "CANCELLED"),
+    ("EXECUTING_FIXED", "REPAIRING"),
+    ("EXECUTING_FIXED", "SCORING"),
+    ("EXECUTING_FIXED", "ABSTAINED"),
+    ("EXECUTING_FIXED", "FAILED_EXECUTION"),
+    ("EXECUTING_FIXED", "FAILED_INFRASTRUCTURE"),
+    ("EXECUTING_FIXED", "FAILED_SECURITY"),
+    ("EXECUTING_FIXED", "CANCELLED"),
+    ("REPAIRING", "EXECUTING_BUGGY"),
+    ("REPAIRING", "ABSTAINED"),
+    ("REPAIRING", "FAILED_MODEL"),
+    ("REPAIRING", "FAILED_INFRASTRUCTURE"),
+    ("REPAIRING", "FAILED_SECURITY"),
+    ("REPAIRING", "CANCELLED"),
+    ("SCORING", "PUBLISHING"),
+    ("SCORING", "AWAITING_HUMAN_REVIEW"),
+    ("SCORING", "COMPLETED"),
+    ("SCORING", "ABSTAINED"),
+    ("SCORING", "FAILED_INFRASTRUCTURE"),
+    ("SCORING", "FAILED_SECURITY"),
+    ("SCORING", "CANCELLED"),
+    ("PUBLISHING", "AWAITING_HUMAN_REVIEW"),
+    ("PUBLISHING", "COMPLETED"),
+    ("PUBLISHING", "FAILED_INFRASTRUCTURE"),
+    ("PUBLISHING", "FAILED_SECURITY"),
+    ("PUBLISHING", "CANCELLED"),
+    ("AWAITING_HUMAN_REVIEW", "COMPLETED"),
+)
+
 _TERMINAL = sql_in("state", TERMINAL_RUN_STATES)
 
 _FAILURE_CODE_CHECK = (
@@ -138,6 +215,34 @@ _FAILURE_CODE_CHECK = (
         for state, prefix in FAILURE_CODE_PREFIXES.items()
     )
     + " ELSE failure_code IS NULL END"
+)
+
+_ALLOWED_TRANSITION_CHECK = (
+    "event_type <> 'STATE_TRANSITIONED' OR ("
+    + " OR ".join(
+        f"(from_state = {source!r} AND to_state = {target!r})"
+        for source, target in ALLOWED_RUN_TRANSITIONS
+    )
+    + ")"
+)
+
+_EVENT_REASON_CHECK = (
+    "CASE "
+    + " ".join(
+        "WHEN event_type = 'STATE_TRANSITIONED'"
+        f" AND to_state = {state!r} THEN failure_code IS NOT NULL"
+        f" AND failure_code ~ '^{prefix}[A-Z0-9]+(_[A-Z0-9]+)*$'"
+        " AND abstention_code IS NULL AND cancellation_code IS NULL"
+        for state, prefix in FAILURE_CODE_PREFIXES.items()
+    )
+    + " WHEN event_type = 'STATE_TRANSITIONED' AND to_state = 'ABSTAINED'"
+    f" THEN failure_code IS NULL AND {sql_in('abstention_code', ABSTENTION_CODES)}"
+    " AND cancellation_code IS NULL"
+    " WHEN event_type = 'STATE_TRANSITIONED' AND to_state = 'CANCELLED'"
+    f" THEN failure_code IS NULL AND abstention_code IS NULL"
+    f" AND {sql_in('cancellation_code', CANCELLATION_CODES)}"
+    " ELSE failure_code IS NULL AND abstention_code IS NULL"
+    " AND cancellation_code IS NULL END"
 )
 
 
@@ -214,8 +319,7 @@ class RunRequest(Base):
 
 
 class Run(Base):
-    """Current run projection. DB-003 events, once they exist, must be able to
-    reconstruct every column here."""
+    """Current run projection reconstructable from DB-003 transition events."""
 
     __tablename__ = "runs"
     __table_args__ = (
@@ -310,3 +414,159 @@ class Run(Base):
 
     run_request: Mapped[RunRequest] = relationship(back_populates="run")
     parent_run: Mapped["Run | None"] = relationship(remote_side=[id])
+    workflow_steps: Mapped[list["WorkflowStep"]] = relationship(
+        back_populates="run"
+    )
+    events: Mapped[list["RunEvent"]] = relationship(
+        back_populates="run", foreign_keys="RunEvent.run_id"
+    )
+
+
+class WorkflowStep(Base):
+    """One immutable semantic step occurrence within a run."""
+
+    __tablename__ = "workflow_steps"
+    __table_args__ = (
+        sa.UniqueConstraint("run_id", "kind", "occurrence"),
+        # Supports the run/step/kind composite event-attribution foreign key.
+        sa.UniqueConstraint("run_id", "id", "kind"),
+        sa.CheckConstraint(sql_in("kind", WORKFLOW_STEP_KINDS), name="kind_allowed"),
+        sa.CheckConstraint("occurrence > 0", name="occurrence_positive"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("runs.id"), index=True)
+    kind: Mapped[str] = mapped_column(sa.String(64))
+    occurrence: Mapped[int] = mapped_column(sa.Integer)
+    created_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
+    input_reference: Mapped[str] = mapped_column(sa.String(512))
+    input_version: Mapped[str] = mapped_column(sa.String(128))
+
+    run: Mapped[Run] = relationship(back_populates="workflow_steps")
+    attempts: Mapped[list["WorkflowStepAttempt"]] = relationship(
+        back_populates="step"
+    )
+
+
+class WorkflowStepAttempt(Base):
+    """One zero-based attempt under a WorkflowStep occurrence."""
+
+    __tablename__ = "workflow_step_attempts"
+    __table_args__ = (
+        sa.UniqueConstraint("step_id", "attempt_index"),
+        sa.CheckConstraint("attempt_index >= 0", name="attempt_index_non_negative"),
+        sa.CheckConstraint(
+            "ended_at IS NULL OR ended_at >= started_at",
+            name="ended_at_not_before_started_at",
+        ),
+        sa.CheckConstraint(
+            "(ended_at IS NULL AND outcome IS NULL)"
+            " OR (ended_at IS NOT NULL AND outcome IS NOT NULL)",
+            name="completion_shape",
+        ),
+        sa.CheckConstraint(
+            sql_in("actor_type", TERMINAL_ACTOR_TYPES), name="actor_type_allowed"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    step_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("workflow_steps.id"), index=True
+    )
+    attempt_index: Mapped[int] = mapped_column(sa.Integer)
+    started_at: Mapped[datetime]
+    ended_at: Mapped[datetime | None]
+    outcome: Mapped[str | None] = mapped_column(sa.String(128))
+    actor_type: Mapped[str] = mapped_column(sa.String(32))
+    actor_id: Mapped[str] = mapped_column(sa.String(255))
+    error_reference: Mapped[str | None] = mapped_column(sa.String(512))
+    evidence_reference: Mapped[str | None] = mapped_column(sa.String(512))
+
+    step: Mapped[WorkflowStep] = relationship(back_populates="attempts")
+
+
+class RunEvent(Base):
+    """One ordered, producer-idempotent, append-only event in a run timeline."""
+
+    __tablename__ = "run_events"
+    __table_args__ = (
+        sa.UniqueConstraint("run_id", "sequence"),
+        sa.UniqueConstraint("run_id", "producer_event_id"),
+        sa.ForeignKeyConstraint(
+            ("run_id", "step_id", "step_kind"),
+            ("workflow_steps.run_id", "workflow_steps.id", "workflow_steps.kind"),
+        ),
+        sa.ForeignKeyConstraint(
+            ("step_id", "attempt_index"),
+            ("workflow_step_attempts.step_id", "workflow_step_attempts.attempt_index"),
+        ),
+        sa.CheckConstraint("sequence > 0", name="sequence_positive"),
+        sa.CheckConstraint(
+            "CASE WHEN event_type = 'STATE_TRANSITIONED'"
+            " THEN from_state IS NOT NULL AND to_state IS NOT NULL"
+            " ELSE from_state IS NULL AND to_state IS NULL END",
+            name="transition_state_shape",
+        ),
+        sa.CheckConstraint(
+            "from_state IS NULL OR " + sql_in("from_state", RUN_STATES),
+            name="from_state_allowed",
+        ),
+        sa.CheckConstraint(
+            "to_state IS NULL OR " + sql_in("to_state", RUN_STATES),
+            name="to_state_allowed",
+        ),
+        sa.CheckConstraint(_ALLOWED_TRANSITION_CHECK, name="transition_pair_allowed"),
+        sa.CheckConstraint(
+            "(step_id IS NULL) = (step_kind IS NULL)",
+            name="step_attribution_shape",
+        ),
+        sa.CheckConstraint(
+            "attempt_index IS NULL OR (step_id IS NOT NULL AND step_kind IS NOT NULL)",
+            name="attempt_attribution_shape",
+        ),
+        sa.CheckConstraint(
+            sql_in("actor_type", TERMINAL_ACTOR_TYPES), name="actor_type_allowed"
+        ),
+        sa.CheckConstraint(_EVENT_REASON_CHECK, name="terminal_reason_matches_target"),
+        sa.CheckConstraint(
+            "producer_event_fingerprint_version > 0",
+            name="fingerprint_version_positive",
+        ),
+        sa.CheckConstraint(
+            "jsonb_typeof(payload) = 'object'", name="payload_is_object"
+        ),
+        sa.CheckConstraint(
+            "octet_length(payload::text) <= 65536", name="payload_bounded"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("runs.id"), index=True)
+    sequence: Mapped[int] = mapped_column(sa.Integer)
+    event_type: Mapped[str] = mapped_column(sa.String(128))
+    from_state: Mapped[str | None] = mapped_column(sa.String(64))
+    to_state: Mapped[str | None] = mapped_column(sa.String(64))
+    step_id: Mapped[uuid.UUID | None]
+    step_kind: Mapped[str | None] = mapped_column(sa.String(64))
+    attempt_index: Mapped[int | None] = mapped_column(sa.Integer)
+    actor_type: Mapped[str] = mapped_column(sa.String(32))
+    actor_id: Mapped[str] = mapped_column(sa.String(255))
+    occurred_at: Mapped[datetime]
+    recorded_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
+    correlation_id: Mapped[str | None] = mapped_column(sa.String(255))
+    causation_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        sa.ForeignKey("run_events.id")
+    )
+    producer_event_id: Mapped[str] = mapped_column(sa.String(255))
+    contract_version: Mapped[str] = mapped_column(sa.String(64))
+    payload_schema_version: Mapped[str] = mapped_column(sa.String(64))
+    payload: Mapped[dict[str, object]] = mapped_column(
+        JSONB, server_default=sa.text("'{}'::jsonb")
+    )
+    producer_event_fingerprint: Mapped[str] = mapped_column(sa.String(128))
+    producer_event_fingerprint_version: Mapped[int] = mapped_column(sa.Integer)
+    failure_code: Mapped[str | None] = mapped_column(sa.String(128))
+    abstention_code: Mapped[str | None] = mapped_column(sa.String(64))
+    cancellation_code: Mapped[str | None] = mapped_column(sa.String(64))
+
+    run: Mapped[Run] = relationship(back_populates="events", foreign_keys=[run_id])

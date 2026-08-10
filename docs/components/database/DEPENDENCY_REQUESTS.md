@@ -1,7 +1,11 @@
 # Database Dependency Requests
 
-- Date prepared: 2026-08-02
-- Branch: `agent2/database`
+- Date prepared: 2026-08-10
+- Branch: `agent2/db-003-workflow-persistence`
+- Current task: `DB-003-WORKFLOW-PERSISTENCE-IMPLEMENTATION-001`
+- Authorization: `EXPLICIT_AGENT_1_AUTHORIZATION`
+- Authorized/verified baseline:
+  `f318d9b515a4324b0848e64059f179027d19bd1f`
 - DB-002 implementation baseline:
   `8884b5d540351c735b6cddc01314a7dd9e25af05`
 - Current `DB-002-WORKFLOW-OWNER-ACK-001` reconciliation baseline:
@@ -13,8 +17,9 @@
 - Original DB-DEP011 scaffold attempt: historical `DEPENDENCY_BLOCKED`
 - Database scaffold: `IMPLEMENTED`; DB-DEP-011:
   `ACCEPTED / VERIFIED_COMPLETE / CLOSED`
-- Migration chain: exactly one head, `ad3f80907336`
-- Domain schema: `IMPLEMENTED` for DB-002; DB-002:
+- Migration chain: exactly one head `e7b4c2d9a631`, down revision
+  `ad3f80907336`
+- Domain schema: `IMPLEMENTED` for DB-002 and DB-003; DB-002:
   `PASS / VERIFIED_COMPLETE / MERGED`; DB-002-C1: `PASS`; DB-002-C2: `PASS`;
   DB-002-MERGE-001: `PASS`
 - DB-002 implementation evidence: pull request #12; implementation commit
@@ -24,7 +29,7 @@
   #13 (`docs(database): close merged DB-002`); head commit
   `861781b1c91cc5eed870653bc35b2d39fc9c1021`; reconciliation merge commit
   `1511f474ee301651b631c8adfe406aeb775327aa`
-- DB-003: `NOT_STARTED` / `NOT_AUTHORIZED`
+- DB-003: `IMPLEMENTED / TESTED / PENDING_A2_DATABASE_REVIEW`
 - `CONTRACT-AUTH-001@1.0.0-draft.2`: `ACKNOWLEDGED_AND_MERGED`
 - `CONTRACT-WORKFLOW-001@1.0.0-draft.1`:
   `ACKNOWLEDGED_AND_MERGED`; `DB-DEP-004`: `ACCEPTED`
@@ -104,7 +109,8 @@
 - Required change and reason: Publish canonical run states, workflow-step kinds, ordered event shape, retry/repair counters, failure codes, terminal transitions, attribution, and abstention semantics.
 - Contract affected: `CONTRACT-WORKFLOW-001`
 - Historical blocking task: `DB-002` run lifecycle. The dependency is accepted
-  for DB-002; DB-003 remains separately unstarted.
+  for DB-002. DB-003 was separately unstarted at that time and now consumes the
+  same accepted Workflow contract under its explicit implementation task.
 - Backward-compatibility impact: High; enum removal/rename or event-semantic changes require coordinated migrations. Prefer additive versioning.
 - Urgency: `HIGH`
 - Proposed acceptance test: Contract fixtures cover the successful path, one bounded repair, abstention, cancellation, invalid transitions, ordered append-only events, and rejection of more than one automated repair.
@@ -153,15 +159,16 @@
     events, and ordering.
   - Event payloads contain bounded redacted metadata or opaque references only;
     no raw prompts, repository bytes, patch bytes, logs, or secrets.
-  - DB-002 implements and tests stored projection shape only. Allowed-transition
-    execution, compare/update concurrency, event/projection atomicity, terminal
-    update rejection, transition history, regeneration decision events, and
-    Workflow orchestration remain `NOT_IMPLEMENTED` / `NOT_TESTED`.
-  - This reconciliation does not begin or authorize DB-003, persist steps,
-    attempts, run events, ordering, transition history, Queue data, or Evidence
-    data, implement runtime behavior, or authorize an A3-DATABASE DB-003
-    implementation prompt. `CONTRACT-QUEUE-001`: `NOT_CREATED`;
-    `CONTRACT-EVIDENCE-001`: `NOT_CREATED`.
+  - Historical DB-002 boundary: DB-002 implemented and tested stored projection
+    shape only; compare/update concurrency, event/projection atomicity, terminal
+    update rejection, and transition history were not implemented by DB-002.
+    DB-003 now implements those physical mechanisms without implementing
+    allowed-transition execution or Workflow orchestration.
+  - Historical DB-002 reconciliation fact: that reconciliation did not begin or
+    authorize DB-003, and at that time `CONTRACT-QUEUE-001` and
+    `CONTRACT-EVIDENCE-001` were not created. The present DB-003 authorization
+    and Queue contract availability are recorded in the current header and
+    `DB-DEP-006` below.
   - Auth runtime is `NOT_STARTED / NOT_TESTED`; Workflow runtime is
     `NOT_IMPLEMENTED / NOT_TESTED`. PR #17
     (`docs(auth): complete AUTH-001 trust-boundary audit`) is only the Auth
@@ -186,15 +193,25 @@
 
 - Request ID: `DB-DEP-006`
 - Requesting Agent 2: `A2-DATABASE`
-- Owning Agent 2: `A2-AGENT-WORKFLOW`
+- Owning Agent 2: `A2-QUEUE`
 - Required change and reason: Publish job envelope, source event identifiers, idempotency key, attempt/redelivery semantics, worker-result event, correlation ID, and poison/dead-letter handling so uniqueness constraints match at-least-once delivery.
-- Contract affected: `CONTRACT-QUEUE-001`
-- Exact blocking task: `DB-003`. DB-002 did not persist any Queue-owned envelope, lease, visibility-timeout, or redelivery field; all remain deferred to CONTRACT-QUEUE-001.
+- Contract affected: `CONTRACT-QUEUE-001@1.0.0-draft.2`
+- Historical blocking task: `DB-003`; the provider-neutral identity/persistence
+  boundary required by the authorized DB-003 task is now available on merged
+  repository main and has been consumed. Queue runtime behavior remains outside
+  DB-003.
 - Backward-compatibility impact: High; idempotency key changes can create duplicates. Version the envelope/key algorithm.
 - Urgency: `HIGH`
-- Proposed acceptance test: Replaying the same GitHub delivery GUID + repository ID + SHA and the same benchmark tuple links to one run request, while a legitimately different SHA/configuration creates a new request.
-- Approval status: `PENDING`
-- Completion evidence: None; no versioned contract or handoff exists.
+- Acceptance evidence: DB-003 keeps Workflow attempt UUIDs, producer event IDs,
+  correlation IDs, and every Queue message/delivery/claim/provider identity
+  separate; no Queue table or provider-specific column is created.
+- Approval status: `ACCEPTED_FOR_DB003_PROVIDER_NEUTRAL_BOUNDARY`
+- Completion evidence: `CONTRACT-QUEUE-001@1.0.0-draft.2` exists on the merged
+  authorized baseline and supplies the consumed provider-neutral contract
+  layer.
+- Explicit non-claims: Queue runtime `NOT_IMPLEMENTED`; provider
+  `NOT_SELECTED`; adapter/delivery/claim/lease/acknowledgement
+  `NOT_IMPLEMENTED`; Queue release readiness `NOT_CLAIMED`.
 
 ## `DB-DEP-007` — Evaluation contract
 
@@ -217,7 +234,10 @@
 - Owning Agent 2: `A2-SECURITY`
 - Required change and reason: Publish domain data classifications, redaction-result fields, security-event taxonomy, audit immutability requirements, IP/user metadata policy, retention/deletion constraints, and prohibited relational payloads.
 - Contract affected: `CONTRACT-SEC-001`
-- Exact blocking task: security-sensitive portions of DB-003 through DB-007. DB-002 persisted no Security-owned redaction, classification, or event field, and stores no secret-bearing column; retention durations remain deferred to CONTRACT-SEC-001.
+- Exact blocking task: Security-owned event/retention portions of DB-004 through
+  DB-007. DB-003 persists only bounded redacted metadata/opaque references and
+  a caller-provided unkeyed fingerprint field; it invents no signing/MAC,
+  Security event, or key policy. Retention durations remain deferred.
 - Backward-compatibility impact: Security controls may tighten additively; relaxation or event removal requires escalation.
 - Urgency: `HIGH`
 - Proposed acceptance test: Fixtures prove raw secrets and unredacted prompts/logs cannot enter normal relational fields, security events remain searchable and attributable, and artefact deletion preserves required audit metadata.
