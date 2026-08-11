@@ -1,11 +1,10 @@
 # Agent Workflow Decision Log
 
-- Date: 2026-08-10
+- Date: 2026-08-11
 - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` (`ACKNOWLEDGED_AND_MERGED`)
-- Current task: `WORKFLOW-002-DB003-POSTMERGE-STATUS-RECONCILIATION-001`
-  (`DOCUMENTATION_STATUS_RECONCILIATION_ONLY`)
-- Original authorized implementation baseline: `f318d9b515a4324b0848e64059f179027d19bd1f`
-- Reconciled current-main base: `6eb622cf429093f3806dbe0261c3fa86cad607b6`
+- Current task: `WORKFLOW-003-POST-PR40-CURRENT-MAIN-VALIDATION-001`
+- Authorized baseline: `2fe29e466b1c84799ef0d6d6d28fbcadb572c964`
+- Reconciled base: `6b5485368367064e7f36b5837f49734425f284ee`
 
 ## `AGW-DEC-001` — Canonical lifecycle is closed and explicit
 
@@ -267,12 +266,108 @@
 - Preserved distinction: WORKFLOW-002 DB-003 integration remains `NOT_IMPLEMENTED_BY_WORKFLOW_002`. WORKFLOW-002 remains a pure in-process workflow lifecycle foundation. It does NOT yet: persist lifecycle mutations through DB-003, write Workflow events, create DB-003 step occurrences, create DB-003 attempts, perform event/projection atomic commits, integrate checkpoint persistence, or integrate producer-event idempotency.
 - Validation evidence: Workflow suite `487 passed`; API plus Workflow suite `529 passed`; `git diff --check` passed.
 
+## `AGW-DEC-021` — Workflow lifecycle persistence consumes DB-003 atomically
+
+- Status: `IMPLEMENTED` / `TESTED` / `A2_ACCEPTED` /
+  `READY_FOR_GIT_LIFECYCLE`
+- Task: `WORKFLOW-003-LIFECYCLE-PERSISTENCE-INTEGRATION-001`
+- Decision: connect the frozen WORKFLOW-002 lifecycle decision to DB-003 using
+  one Workflow-owned persistence adapter. New accepted work appends one
+  attributable `STATE_TRANSITIONED` event and applies one Run projection CAS in
+  a savepoint inside the caller-owned transaction.
+- Version boundary: only durable `1.0.0-draft.1` maps to domain
+  `CONTRACT-WORKFLOW-001@1.0.0-draft.1`; all other representations fail closed.
+- Idempotency: DB-003 `append_run_event` remains the sole producer-event
+  fingerprint authority. Exact replay is an accepted no-op; conflicting reuse
+  and stale projections do not mutate persistence.
+- Scope: no Queue, Execution, Evidence, API, checkpoint storage, retry
+  scheduler, step orchestration, child-run creation, alternate CAS, or alternate
+  event store.
+- Final accepted evidence: Workflow `556 passed`; DB-003 regressions `157
+  passed`; API plus Workflow `598 passed`; full suite `825 passed`, `1 skipped`.
+- Git state: unstaged, uncommitted, unpushed, no PR.
+
+## `AGW-DEC-022` — Stale probes are non-mutating and durable validation is first
+
+- Status: `HISTORICAL_CORRECTION_COMPLETE` / `A2_ACCEPTED`
+- Task: `WORKFLOW-003-LIFECYCLE-PERSISTENCE-INTEGRATION-001-A3-C1`
+- Decision: after locking and finding the Run, map the current durable Run
+  before any new-work, stale, or replay classification. Invalid mapping returns
+  `INVALID_DURABLE_STATE` with no write.
+- Stale probe: query only for the request's producer event. If absent, return
+  `STALE_PROJECTION` without constructing or flushing a candidate. If present,
+  pass the transient candidate to DB-003 `append_run_event`, which remains the
+  sole fingerprint/version comparison authority.
+- Transaction evidence: `APPLIED` remains a flush result inside the
+  caller-owned transaction; caller rollback removes both event and projection
+  mutation.
+- Evidence: Workflow `547 passed`; DB-003 regressions `157 passed`; API plus
+  Workflow `589 passed`; full suite `816 passed`, `1 skipped`; compile and lock
+  checks passed.
+- Git state: unstaged, uncommitted, unpushed, no PR.
+
+## `AGW-DEC-023` — Durable terminal projection semantics fail closed
+
+- Status: `HISTORICAL_CORRECTION_COMPLETE` / `A2_ACCEPTED`
+- Task: `WORKFLOW-003-LIFECYCLE-PERSISTENCE-INTEGRATION-001-A3-C2`
+- Decision: after `LifecycleSnapshot` validates durable types, ranges, versions,
+  request kind, and state/counter compatibility, reject
+  `FAILED_INFRASTRUCTURE` unless `retry_attempts_used == retry_limit`; reject
+  `ABSTAINED / REPAIR_LIMIT_EXHAUSTED` unless `repair_attempts_used == 1`.
+- Ordering: durable validation remains before stale/replay classification, so a
+  malformed terminal projection with an existing exact producer event returns
+  `INVALID_DURABLE_STATE`, not `IDEMPOTENT_REPLAY`, without mutation.
+- Preservation: C1 is A2-accepted; DB-003 remains fingerprint authority;
+  WORKFLOW-002 pure engine, contract, dependencies, and Database-owned files
+  remain unchanged.
+- Evidence: PostgreSQL 17.10; Workflow `556 passed`; DB-003 regressions `157
+  passed`; API plus Workflow `598 passed`; full suite `825 passed`, `1 skipped`;
+  compile, lock, scope, and diff checks passed.
+- Git state: unstaged, uncommitted, unpushed, no PR.
+
+## `AGW-DEC-024` — WORKFLOW-003 final A2 acceptance reconciled
+
+- Status: `IMPLEMENTED` / `TESTED` / `A2_ACCEPTED` /
+  `READY_FOR_GIT_LIFECYCLE`
+- Task: `WORKFLOW-003-A2-FINAL-ACCEPTANCE-RECONCILIATION-001`
+- Decision: record final A2 result
+  `PASS — WORKFLOW_003_A2_FINAL_REVIEW_COMPLETE`; WORKFLOW-003 C1 and C2 are
+  historical completed corrections accepted by A2.
+- Guarantees accepted: C1 preserves a non-mutating stale producer-event probe,
+  DB-003 producer-fingerprint authority, durable-validation precedence,
+  caller-owned outer rollback, and task-ledger history. C2 requires exhausted
+  retry budget for `FAILED_INFRASTRUCTURE`, consumed repair for
+  `REPAIR_LIMIT_EXHAUSTED`, rejects malformed terminal replay as
+  `INVALID_DURABLE_STATE`, and preserves valid terminal
+  `IDEMPOTENT_REPLAY`.
+- Validation evidence: Workflow `556 passed`; DB-003 regressions `157 passed`;
+  API plus Workflow `598 passed`; full suite `825 passed`, `1 skipped`; real
+  isolated PostgreSQL 17.10 with no Workflow PostgreSQL skips; compile and
+  `git diff --check` passed.
+- Boundary: WORKFLOW-002 pure lifecycle foundation `PASS / MERGED /
+  A2_ACCEPTED`; DB-003 `PASS / MERGED`; full Workflow runtime
+  `NOT_IMPLEMENTED`.
+- Git state: unstaged, uncommitted, unpushed, no PR.
+
+## `AGW-DEC-025` — Post-PR40 current-main reconciliation and PostgreSQL validation
+
+- Status: `IMPLEMENTED` / `TESTED` / `A2_ACCEPTED` /
+  `READY_FOR_GIT_LIFECYCLE`
+- Task: `WORKFLOW-003-POST-PR40-CURRENT-MAIN-VALIDATION-001`
+- Decision: Reconcile current-main base to `6b5485368367064e7f36b5837f49734425f284ee` following merge of PR #40 (`feat(execution): add Java JUnit Defects4J adapters`). Original authorized baseline `2fe29e466b1c84799ef0d6d6d28fbcadb572c964` fast-forwarded successfully.
+- PR #40 scope & isolation: PR #40 changed only `apps/worker/**`. No Workflow-owned runtime, test, contract, persistence-adapter, or durable-record path conflicted or was modified by PR #40.
+- PostgreSQL validation evidence: Real isolated PostgreSQL 17.10 test cluster active with no Workflow PostgreSQL skips. Post-fast-forward suite results: Workflow `556 passed`; DB-003 persistence/constraint regressions `157 passed`; API plus Workflow `598 passed`; full Python suite `826 passed`, `0 skipped`; `uv lock --check`, `python -m compileall app/workflow`, and `git diff --check` passed.
+- Final status preserved: WORKFLOW-003 `IMPLEMENTED / TESTED / A2_ACCEPTED / READY_FOR_GIT_LIFECYCLE`; C1 and C2 `HISTORICAL_CORRECTION_COMPLETE / A2_ACCEPTED`; WORKFLOW-002 pure foundation `PASS / MERGED`; DB-003 `PASS / MERGED`; full Workflow runtime, Queue, Execution, Evidence, and API integrations remain `NOT_IMPLEMENTED`.
+- Git state: unstaged, uncommitted, unpushed, no PR.
+
 ## Explicit labels
 
-- `IMPLEMENTED`: contract decisions, pure lifecycle foundation, and reconciliation records.
-- `TESTED`: pure semantic enforcement plus existing API regression.
-- `A2_ACCEPTED`: WORKFLOW-002 pure foundation, C1, and C2.
-- `READY_FOR_GIT_LIFECYCLE`: WORKFLOW-002 pure foundation.
-- `NOT_TESTED`: external runtime and persistence integration.
-- `BLOCKED`: none in the authorized pure-core scope.
+- `IMPLEMENTED`: contract decisions, pure lifecycle foundation, WORKFLOW-003
+  persistence integration, and reconciliation records.
+- `TESTED`: pure semantic enforcement, real PostgreSQL persistence, DB-003
+  regressions, and API regressions.
+- `A2_ACCEPTED`: WORKFLOW-002 pure foundation, WORKFLOW-003, C1, and C2.
+- `READY_FOR_GIT_LIFECYCLE`: WORKFLOW-002 pure foundation and WORKFLOW-003.
+- `NOT_TESTED`: unauthorized external runtime integrations.
+- `BLOCKED`: none in the authorized WORKFLOW-003 scope.
 - `ASSUMED`: none for the current task; `AGW-DEC-007` remains historical.
