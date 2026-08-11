@@ -1,7 +1,8 @@
-# TestGap worker process-supervision foundation
+# TestGap worker execution foundation
 
 This standalone, standard-library-only Rust crate provides raw execution
-facts for a future worker runtime.
+facts and provider-neutral Java/JUnit/Defects4J adapters for a future worker
+runtime.
 
 ## Implemented
 
@@ -13,6 +14,19 @@ facts for a future worker runtime.
 - deterministic exit/failure classification and duration measurement
 - provider-neutral resource-limit requests and observations
 - a self-contained Rust process fixture and integration tests
+- Java compilation through a configurable `javac` executable, explicit argv,
+  platform-aware classpath joining, and an allowlisted `-d` / `-classpath`
+  surface
+- JUnitCore-style invocation through a configurable Java executable, runner
+  main class, classpaths, and class-level test targets
+- Defects4J `compile`, `test`, and `test -t <class::method>` command invocation
+- deterministic adapter classification for success/failure, unavailable tools,
+  timeouts, cancellation, and runner failures while preserving the complete
+  underlying `ExecutionResult`
+- conservative parsing of JUnitCore `OK (N test[s])` and
+  `Tests run: N, Failures: N` summaries and Defects4J `Failing tests: N`
+- conservative ASCII Java class/method and Defects4J project/test identifier
+  validation, kept separate from opaque filesystem-path handling
 
 Spawn failure wins when no process starts. While a child is active, the
 supervisor checks cancellation before timeout; the first observed terminating
@@ -31,8 +45,12 @@ wall-clock timeout is reported as `SupervisorTimeoutEnforced`.
 - cgroups, namespaces, or descendant process-tree isolation
 - CPU, memory, disk, filesystem, or process-count OS enforcement
 - Queue integration, Workflow orchestration, Database persistence, or Evidence semantics
-- Java, JUnit, Defects4J, or benchmark harnesses
+- Workflow lifecycle transitions or a full Defects4J benchmark harness
 - production worker security or production readiness
 
 `Child::kill` terminates only the direct child and is not a sandbox or a
 portable process-tree guarantee.
+
+The deterministic suite uses the local Rust process fixture; it does not claim
+real local JUnit or Defects4J runtime integration. No JUnit jars or Defects4J
+installation are downloaded or installed.
