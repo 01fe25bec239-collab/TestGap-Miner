@@ -1,4 +1,9 @@
-import type { AuthProvider } from "./types";
+import {
+  authCallbackUrl,
+  prepareAuthSignIn,
+  type AuthSignInDependencies,
+  type PreparedAuthSignIn,
+} from "./sign-in";
 
 export const AUTH_CONTEXT_COOKIE = "testgap-auth-context";
 export const AUTH_SESSION_BINDING_COOKIE = "testgap-auth-session-binding";
@@ -748,34 +753,47 @@ export type AuthResolvedSession =
   | Readonly<{ state: "AUTHENTICATED"; userReference: string }>
   | Readonly<{ state: "UNAUTHENTICATED"; userReference: null }>;
 
+export type AuthSessionFenceHostRequest =
+  | Readonly<{ operation: "PREPARE_SIGN_IN"; intendedReturn?: string }>
+  | Readonly<{ operation: "PUBLISH_SIGN_OUT" }>
+  | Readonly<{ operation: "RESOLVE_SESSION" }>;
+
+export type AuthSessionFenceHostResponse =
+  | PreparedAuthSignIn
+  | Readonly<{ ok: true }>
+  | AuthResolvedSession;
+
 /** Auth-owned semantics behind the future UI-owned POST /auth/session-fence host. */
 export interface AuthSessionFenceHost {
-  prepareSignIn(): Promise<Readonly<{ signInAttemptReference: string }>>;
+  prepareSignIn(intendedReturn?: string): Promise<PreparedAuthSignIn>;
   publishSignOut(): Promise<void>;
   resolveSession(): Promise<AuthResolvedSession>;
 }
 
 export class AuthSessionFenceHostService implements AuthSessionFenceHost {
-  constructor(
-    private readonly fence: AuthSessionFence,
-    private readonly provider: AuthProvider,
-  ) {}
+  #callbackUrl: string;
 
-  prepareSignIn() {
-    return this.fence.prepareSignIn();
+  constructor(private readonly dependencies: AuthSignInDependencies) {
+    this.#callbackUrl = authCallbackUrl(dependencies.applicationOrigin);
+  }
+
+  prepareSignIn(intendedReturn?: string) {
+    return prepareAuthSignIn(this.dependencies, this.#callbackUrl, intendedReturn);
   }
 
   async publishSignOut() {
-    await this.fence.createLocalSignOutTombstone();
-    await this.fence.publishSignOut();
+    await this.dependencies.sessionFence.createLocalSignOutTombstone();
+    await this.dependencies.sessionFence.publishSignOut();
   }
 
   async resolveSession(): Promise<AuthResolvedSession> {
-    const session = await this.provider.getSession().catch(() => null);
+    const session = await this.dependencies.provider.getSession().catch(() => null);
     if (session) {
-      const currentUser = await this.provider.validateCurrentUser().catch(() => null);
+      const currentUser = await this.dependencies.provider
+        .validateCurrentUser()
+        .catch(() => null);
       const fence = currentUser
-        ? await this.fence.resolveFence().catch(() => null)
+        ? await this.dependencies.sessionFence.resolveFence().catch(() => null)
         : null;
       if (fence?.eligible && currentUser?.userReference === session.userReference) {
         return Object.freeze({
@@ -785,11 +803,61 @@ export class AuthSessionFenceHostService implements AuthSessionFenceHost {
       }
     }
     await Promise.all([
-      this.fence.cleanupStaleSessionMaterial().catch(() => undefined),
-      this.provider.signOutLocal().catch(() => undefined),
+      this.dependencies.sessionFence
+        .cleanupStaleSessionMaterial()
+        .catch(() => undefined),
+      this.dependencies.provider.signOutLocal().catch(() => undefined),
     ]);
     return Object.freeze({ state: "UNAUTHENTICATED", userReference: null });
   }
+}
+
+/** Parses and dispatches only the three frozen host operations. */
+export async function executeAuthSessionFenceHostRequest(
+  host: AuthSessionFenceHost,
+  input: unknown,
+): Promise<AuthSessionFenceHostResponse> {
+  const request = parseAuthSessionFenceHostRequest(input);
+  switch (request.operation) {
+    case "PREPARE_SIGN_IN":
+      return host.prepareSignIn(request.intendedReturn);
+    case "PUBLISH_SIGN_OUT":
+      await host.publishSignOut();
+      return Object.freeze({ ok: true });
+    case "RESOLVE_SESSION":
+      return host.resolveSession();
+  }
+}
+
+function parseAuthSessionFenceHostRequest(input: unknown): AuthSessionFenceHostRequest {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new Error("Invalid Auth session-fence request");
+  }
+  const record = input as Record<string, unknown>;
+  if (record.operation === "PREPARE_SIGN_IN") {
+    if (
+      !exactKeys(record, record.intendedReturn === undefined
+        ? ["operation"]
+        : ["operation", "intendedReturn"]) ||
+      (record.intendedReturn !== undefined && typeof record.intendedReturn !== "string")
+    ) {
+      throw new Error("Invalid Auth session-fence request");
+    }
+    return record as AuthSessionFenceHostRequest;
+  }
+  if (
+    (record.operation === "PUBLISH_SIGN_OUT" ||
+      record.operation === "RESOLVE_SESSION") &&
+    exactKeys(record, ["operation"])
+  ) {
+    return record as AuthSessionFenceHostRequest;
+  }
+  throw new Error("Invalid Auth session-fence request");
+}
+
+function exactKeys(record: Record<string, unknown>, expected: readonly string[]) {
+  const keys = Object.keys(record);
+  return keys.length === expected.length && expected.every((key) => keys.includes(key));
 }
 
 const SHARED_LOCAL_AUTHORITY = Symbol.for("testgap.auth.local-process-authority");

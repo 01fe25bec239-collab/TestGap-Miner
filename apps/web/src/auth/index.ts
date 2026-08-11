@@ -1,5 +1,13 @@
 export { createAuthAdapter, type AuthRuntimeDependencies } from "./adapter";
 export {
+  AUTH_SESSION_FENCE_PATH,
+  createAuthBrowserSessionFenceBridge,
+  createBrowserAuthAdapter,
+  type AuthBrowserSessionFenceBridge,
+  type AuthBrowserSessionFenceTransportDependencies,
+  type BrowserAuthAdapterDependencies,
+} from "./browser";
+export {
   COMPLETED_CORRELATION_TTL_MS,
   CORRELATION_COOKIE_PREFIX,
   LocalCorrelationStore,
@@ -29,6 +37,7 @@ export {
   authContextCookie,
   authSessionBindingCookie,
   createOpaqueAuthHandle,
+  executeAuthSessionFenceHostRequest,
   getSharedLocalProcessAuthSynchronizationAuthority,
   localSignOutTombstoneCookie,
   type AuthFenceCookieAccess,
@@ -39,9 +48,12 @@ export {
   type AuthResolvedSession,
   type AuthSessionFence,
   type AuthSessionFenceHost,
+  type AuthSessionFenceHostRequest,
+  type AuthSessionFenceHostResponse,
   type AuthSynchronizationAuthority,
   type AuthSynchronizationAuthorityChange,
 } from "./session-fence";
+export { type AuthSignInDependencies, type PreparedAuthSignIn } from "./sign-in";
 export { AuthStateMachine, InvalidAuthTransition } from "./state-machine";
 export {
   createAuthBrowserClient,
