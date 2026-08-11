@@ -263,6 +263,20 @@ function createHarness(
   };
 }
 
+function createHost(harness: ReturnType<typeof createHarness>) {
+  return new AuthSessionFenceHostService({
+    provider: harness.provider,
+    correlationStore: harness.store,
+    sessionFence: harness.sessionFence,
+    securityPolicyVersion,
+    applicationOrigin: "http://localhost:3000",
+    setCorrelationCookie: (cookie) => {
+      harness.cookies.push(cookie);
+    },
+    deleteCorrelationCookie: () => {},
+  });
+}
+
 async function establishAuthenticatedSession(
   harness: ReturnType<typeof createHarness>,
   session = currentSession(),
@@ -1275,10 +1289,7 @@ describe("AUTH-007 generation fence regressions", () => {
   it("requires provider validity for the complete Auth-owned RESOLVE_SESSION", async () => {
     const harness = createHarness();
     await establishFenceBinding(harness);
-    const host = new AuthSessionFenceHostService(
-      harness.sessionFence,
-      harness.provider,
-    );
+    const host = createHost(harness);
     expect(
       Object.getOwnPropertyNames(AuthSessionFenceHostService.prototype),
     ).toEqual(["constructor", "prepareSignIn", "publishSignOut", "resolveSession"]);
@@ -1312,10 +1323,7 @@ describe("AUTH-007 generation fence regressions", () => {
     await establishFenceBinding(harness);
     harness.provider.session = currentSession("must-not-escape");
     harness.provider.validationGate = deferred();
-    const host = new AuthSessionFenceHostService(
-      harness.sessionFence,
-      harness.provider,
-    );
+    const host = createHost(harness);
     const resolution = host.resolveSession();
     await vi.waitFor(() => expect(harness.provider.validationCalls).toBeGreaterThan(0));
 

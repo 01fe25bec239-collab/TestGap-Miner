@@ -1,19 +1,19 @@
 import {
   completedCorrelationCookie,
-  correlationCookie,
-  createOpaqueCorrelationHandle,
   isValidSecurityPolicyVersion,
-  type CorrelationCookie,
   type CorrelationRecord,
-  type CorrelationStore,
 } from "./correlation";
-import { DEFAULT_AUTH_DESTINATION, validateIntendedReturn } from "./redirect";
+import { DEFAULT_AUTH_DESTINATION } from "./redirect";
 import {
   createOpaqueAuthHandle,
   type AuthFenceEventReferences,
-  type AuthSessionFence,
 } from "./session-fence";
 import { AuthStateMachine } from "./state-machine";
+import {
+  authCallbackUrl,
+  prepareAuthSignIn,
+  type AuthSignInDependencies,
+} from "./sign-in";
 import type {
   AuthAdapter,
   AuthSecurityEvent,
@@ -49,19 +49,11 @@ type CallbackSecurityContext = {
   references: AuthFenceEventReferences | null;
 };
 
-export type AuthRuntimeDependencies = Readonly<{
-  provider: import("./types").AuthProvider;
-  correlationStore: CorrelationStore;
-  sessionFence: AuthSessionFence;
-  securityPolicyVersion: string;
+export type AuthRuntimeDependencies = AuthSignInDependencies & Readonly<{
   environmentClass: AuthSecurityEvent["environmentClass"];
-  applicationOrigin: string;
   redirectToProvider: (url: string) => void | Promise<void>;
-  setCorrelationCookie: (cookie: CorrelationCookie) => void | Promise<void>;
-  deleteCorrelationCookie: (handle: string) => void | Promise<void>;
   clearCallbackUrl: () => void | Promise<void>;
   emitSecurityEvent: (event: AuthSecurityEvent) => void | Promise<void>;
-  now?: () => number;
 }>;
 
 export function createAuthAdapter(dependencies: AuthRuntimeDependencies): AuthAdapter {
@@ -83,7 +75,7 @@ class AuthRuntime implements AuthAdapter {
     if (!isValidSecurityPolicyVersion(dependencies.securityPolicyVersion)) {
       throw new AuthRuntimeError("CONFIGURATION_UNAVAILABLE", true);
     }
-    this.#callbackUrl = callbackUrlForOrigin(dependencies.applicationOrigin);
+    this.#callbackUrl = authCallbackUrl(dependencies.applicationOrigin);
     dependencies.sessionFence.subscribeToFenceChanges(() => {
       this.#verificationEpoch += 1;
       if (this.#signOutPromise || this.#machine.snapshot.state === "SIGN_OUT_PENDING") return;
@@ -121,40 +113,14 @@ class AuthRuntime implements AuthAdapter {
 
   async #beginSignIn(intendedReturn?: string) {
     this.#machine.transition("SIGN_IN_PENDING");
-    let handle: string | null = null;
-    let signInAttemptReference: string | null = null;
     let redirectUrl: string;
     try {
-      ({ signInAttemptReference } = await this.dependencies.sessionFence.prepareSignIn());
-      const providerResult = await this.dependencies.provider.beginGitHubOAuth(
+      ({ redirectUrl } = await prepareAuthSignIn(
+        this.dependencies,
         this.#callbackUrl,
-      );
-      handle = createOpaqueCorrelationHandle();
-      await this.dependencies.correlationStore.createPending({
-        handle,
-        flowId: providerResult.flowId,
-        securityPolicyVersion: this.dependencies.securityPolicyVersion,
-        intendedReturn: validateIntendedReturn(intendedReturn),
-        now: this.#now(),
-      });
-      await this.dependencies.sessionFence.associateSignInAttempt(
-        signInAttemptReference,
-        handle,
-      );
-      await this.dependencies.setCorrelationCookie(
-        correlationCookie(handle, this.dependencies.applicationOrigin),
-      );
-      redirectUrl = providerResult.redirectUrl;
+        intendedReturn,
+      ));
     } catch (error) {
-      if (handle) {
-        await this.dependencies.correlationStore.remove(handle).catch(() => undefined);
-        await Promise.resolve(this.dependencies.deleteCorrelationCookie(handle)).catch(() => undefined);
-      }
-      if (signInAttemptReference) {
-        await this.dependencies.sessionFence
-          .abandonSignInAttempt(signInAttemptReference)
-          .catch(() => undefined);
-      }
       if (this.#machine.snapshot.state !== "TERMINAL_SESSION_ERROR") {
         this.#machine.transition("RECOVERABLE_ERROR");
       }
@@ -891,16 +857,4 @@ function publicCallbackError(
 
 function safeRuntimeError(error: unknown, fallback: PublicAuthError): AuthRuntimeError {
   return error instanceof AuthRuntimeError ? error : new AuthRuntimeError(fallback, true);
-}
-
-function callbackUrlForOrigin(origin: string): string {
-  try {
-    const parsed = new URL(origin);
-    if (parsed.origin !== origin || parsed.pathname !== "/" || parsed.search || parsed.hash) {
-      throw new Error();
-    }
-    return new URL("/auth/callback", parsed).toString();
-  } catch {
-    throw new AuthRuntimeError("CONFIGURATION_UNAVAILABLE", true);
-  }
 }
