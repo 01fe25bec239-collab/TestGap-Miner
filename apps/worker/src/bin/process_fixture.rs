@@ -20,6 +20,10 @@ fn main() {
 }
 
 fn run() -> Result<i32, String> {
+    if env::var_os("TESTGAP_FIXTURE_ADAPTER_MODE").is_some() {
+        return run_adapter_mode();
+    }
+
     let mut arguments = env::args_os().skip(1);
     let operation = required(&mut arguments, "operation")?;
     let operation = operation
@@ -102,6 +106,41 @@ fn run() -> Result<i32, String> {
         }
         _ => Err(format!("unknown operation: {operation}")),
     }
+}
+
+fn run_adapter_mode() -> Result<i32, String> {
+    if let Some(milliseconds) = environment_parse("TESTGAP_FIXTURE_SLEEP_MS")? {
+        thread::sleep(Duration::from_millis(milliseconds));
+    }
+    if let Some(count) = environment_parse("TESTGAP_FIXTURE_STDOUT_BYTES")? {
+        emit(io::stdout().lock(), b'O', count)?;
+    }
+    if let Some(value) = env::var_os("TESTGAP_FIXTURE_STDOUT") {
+        write_os(io::stdout().lock(), value)?;
+    }
+    if let Some(count) = environment_parse("TESTGAP_FIXTURE_STDERR_BYTES")? {
+        emit(io::stderr().lock(), b'E', count)?;
+    }
+    if let Some(value) = env::var_os("TESTGAP_FIXTURE_STDERR") {
+        write_os(io::stderr().lock(), value)?;
+    }
+    Ok(environment_parse("TESTGAP_FIXTURE_EXIT_CODE")?.unwrap_or(0))
+}
+
+fn environment_parse<T>(name: &str) -> Result<Option<T>, String>
+where
+    T: FromStr,
+    T::Err: Display,
+{
+    env::var_os(name)
+        .map(|value| {
+            value
+                .into_string()
+                .map_err(|_| format!("{name} must be valid UTF-8"))?
+                .parse()
+                .map_err(|error| format!("invalid {name}: {error}"))
+        })
+        .transpose()
 }
 
 fn required(
