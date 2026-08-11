@@ -1,11 +1,10 @@
 # Agent Workflow Open Issues
 
-- Date: 2026-08-10
+- Date: 2026-08-11
 - Contract: `CONTRACT-WORKFLOW-001@1.0.0-draft.1` (`ACKNOWLEDGED_AND_MERGED`)
-- Current task: `WORKFLOW-002-DB003-POSTMERGE-STATUS-RECONCILIATION-001`
-  (`DOCUMENTATION_STATUS_RECONCILIATION_ONLY`)
-- Original authorized implementation baseline: `f318d9b515a4324b0848e64059f179027d19bd1f`
-- Reconciled current-main base: `6eb622cf429093f3806dbe0261c3fa86cad607b6`
+- Current task: `WORKFLOW-003-POST-PR40-CURRENT-MAIN-VALIDATION-001`
+- Authorized baseline: `2fe29e466b1c84799ef0d6d6d28fbcadb572c964`
+- Reconciled base: `6b5485368367064e7f36b5837f49734425f284ee`
 
 ## Current blockers
 
@@ -113,13 +112,18 @@ These are not blockers and not open defects. None is authorized by this task.
 ### `AGW-ISSUE-004` — Full Workflow runtime not implemented
 
 - Status: `OPEN`
-- Classification: `PURE_LIFECYCLE_FOUNDATION_IMPLEMENTED` / `A2_ACCEPTED` /
-  `EXTERNAL_RUNTIME_NOT_IMPLEMENTED` / `NOT_AUTHORIZED`
-- Evidence: the pure `app.workflow` semantic engine and direct tests exist and have passed final A2 review (`A2_ACCEPTED`);
-  WORKFLOW-002 DB-003 integration, Queue, model/provider, RAG, Execution, Evidence, publication, and API
-  integrations do not. (DB-003 persistence is merged by A2-DATABASE via PR #37).
-- Next action: WORKFLOW-002 pure foundation is accepted and ready for Git lifecycle. Open external integrations
-  only under separately authorized owner tasks.
+- Classification: `PURE_LIFECYCLE_FOUNDATION_IMPLEMENTED` /
+  `DB003_PERSISTENCE_INTEGRATION_A2_ACCEPTED` /
+  `EXTERNAL_RUNTIME_NOT_IMPLEMENTED`
+- Evidence: WORKFLOW-002 pure lifecycle foundation is `PASS` / `MERGED` /
+  `A2_ACCEPTED`; WORKFLOW-003 lifecycle-transition persistence is `IMPLEMENTED`
+  / `TESTED` / `A2_ACCEPTED`; DB-003 is `PASS` / `MERGED`.
+- Not implemented: Queue, Execution, Evidence, RAG/localisation,
+  model/provider, publication, API routes, `WorkflowStep`,
+  `WorkflowStepAttempt`, persistent retry scheduling, checkpoint storage, and
+  regeneration child-run orchestration.
+- Next action: open external integrations only under separately authorized
+  owner tasks.
 
 ### `AGW-ISSUE-008` — Evidence runtime/persistence not implemented
 
@@ -148,17 +152,23 @@ These are not blockers and not open defects. None is authorized by this task.
   `explicit_abstention`, `cooperative_cancellation`,
   `invalid_and_terminal_transitions`, `checkpoint_resume`, and
   `benchmark_system_completion`.
-- Not implemented by pure core: ordered durable event insertion, request
-  idempotency persistence, identifier persistence/redaction, WORKFLOW-002 DB-003 integration, and
-  Evidence byte handling.
+- Implemented by WORKFLOW-003: ordered durable transition insertion,
+  producer-event idempotency consumption, redacted bounded Workflow metadata,
+  event/projection atomicity, and projection CAS.
+- Not implemented: external Queue, Execution, Evidence, publication, and API
+  acceptance fixtures or Evidence byte handling.
 - Next action: external owners add integration fixtures under separate tasks.
 
-### `AGW-ISSUE-012` — DB-003 merged by A2-DATABASE; WORKFLOW-002 integration pending
+### `AGW-ISSUE-012` — DB-003 merged; Workflow integration implemented
 
-- Status: `CLOSED` / `SUPERSEDED_BY_PR37`
-- Classification: `IMPLEMENTED` / `MERGED_BY_A2_DATABASE`
+- Status: `CLOSED` / `SUPERSEDED_BY_WORKFLOW_003`
+- Classification: DB-003 `IMPLEMENTED` / `MERGED_BY_A2_DATABASE`; Workflow
+  integration `IMPLEMENTED` / `TESTED` / `A2_ACCEPTED` /
+  `READY_FOR_GIT_LIFECYCLE`
 - Evidence: DB-003 workflow persistence was implemented and merged to main via PR #37 (`6eb622cf429093f3806dbe0261c3fa86cad607b6`). Active wording describing DB-003 as `NOT_STARTED` or `NOT_AUTHORIZED` is superseded.
-- Distinction: WORKFLOW-002 DB-003 integration remains `NOT_IMPLEMENTED_BY_WORKFLOW_002`. WORKFLOW-002 remains a pure in-process workflow lifecycle foundation. It does NOT yet: persist lifecycle mutations through DB-003, write Workflow events, create DB-003 step occurrences, create DB-003 attempts, perform event/projection atomic commits, integrate checkpoint persistence, or integrate producer-event idempotency.
+- Distinction: WORKFLOW-002 remains the unchanged pure lifecycle foundation.
+  WORKFLOW-003 adds only lifecycle transition persistence through DB-003;
+  step/attempt orchestration and checkpoint persistence remain unimplemented.
 
 ## Closed baseline note
 
@@ -171,9 +181,12 @@ These are not blockers and not open defects. None is authorized by this task.
 
 ## Explicit labels
 
-- `IMPLEMENTED`: pure Workflow lifecycle foundation and prior contract records.
-- `TESTED`: pure semantic acceptance coverage and existing API regression.
-- `NOT_TESTED`: external runtime and persistence integration.
+- `IMPLEMENTED`: pure Workflow lifecycle foundation, WORKFLOW-003 DB-003
+  transition persistence integration, and prior contract records.
+- `TESTED`: pure semantics, real PostgreSQL persistence integration, Database
+  regressions, and API regressions.
+- `A2_ACCEPTED`: WORKFLOW-002 pure foundation, WORKFLOW-003, C1, and C2.
+- `NOT_TESTED`: unauthorized external runtime integrations.
 - `BLOCKED`: none in the authorized pure-core scope; remaining work is
   deferred or unauthorized.
 - `ASSUMED`: none for the current task.

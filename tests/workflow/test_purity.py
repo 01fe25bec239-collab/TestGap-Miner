@@ -36,7 +36,11 @@ def test_workflow_source_import_graph_excludes_runtime_layers() -> None:
     package_root = Path(workflow.__file__).parent
     imports = {
         module
-        for source in package_root.glob("*.py")
+        for source in (
+            package_root / "types.py",
+            package_root / "engine.py",
+            package_root / "checkpoint.py",
+        )
         for module in imported_modules(source)
     }
 

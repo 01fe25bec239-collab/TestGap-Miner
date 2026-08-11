@@ -1,4 +1,4 @@
-"""Public API for the pure Workflow lifecycle runtime."""
+"""Public API for Workflow lifecycle semantics and persistence integration."""
 
 from .checkpoint import CheckpointSnapshot, ResumeDecision, validate_resume
 from .engine import (
@@ -7,6 +7,17 @@ from .engine import (
     evaluate_transition,
     parse_run_state,
     schedule_retry,
+)
+from .persistence import (
+    DURABLE_WORKFLOW_CONTRACT_VERSION,
+    InvalidDurableStateError,
+    PersistenceConflictReason,
+    PersistentTransitionRequest,
+    PersistentTransitionResult,
+    PersistentTransitionStatus,
+    lifecycle_snapshot_from_run,
+    persist_transition,
+    workflow_contract_version_from_durable,
 )
 from .types import (
     WORKFLOW_CONTRACT_VERSION,
@@ -39,9 +50,15 @@ __all__ = [
     "AttemptId",
     "CancellationCode",
     "CheckpointSnapshot",
+    "DURABLE_WORKFLOW_CONTRACT_VERSION",
     "HumanDisposition",
+    "InvalidDurableStateError",
     "LifecycleSnapshot",
     "RejectionReason",
+    "PersistenceConflictReason",
+    "PersistentTransitionRequest",
+    "PersistentTransitionResult",
+    "PersistentTransitionStatus",
     "RequestKind",
     "ResumeDecision",
     "ResumeMode",
@@ -53,7 +70,10 @@ __all__ = [
     "TransitionDecision",
     "WorkflowStepKind",
     "evaluate_transition",
+    "lifecycle_snapshot_from_run",
     "parse_run_state",
+    "persist_transition",
     "schedule_retry",
     "validate_resume",
+    "workflow_contract_version_from_durable",
 ]
