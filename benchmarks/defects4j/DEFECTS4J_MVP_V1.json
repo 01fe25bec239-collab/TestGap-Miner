@@ -1,0 +1,663 @@
+{
+  "cases": [
+    {
+      "benchmark_case_id": "D4J-CHART-001",
+      "bug_id": 1,
+      "buggy_revision": {
+        "defects4j_version_id": "1b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "CHARTING_RENDERING_DATA",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "1f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Chart",
+      "selected": true,
+      "selection_reason": "FIRST_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-CHART-013",
+      "bug_id": 13,
+      "buggy_revision": {
+        "defects4j_version_id": "13b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "CHARTING_RENDERING_DATA",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "13f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Chart",
+      "selected": true,
+      "selection_reason": "MEDIAN_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-GSON-001",
+      "bug_id": 1,
+      "buggy_revision": {
+        "defects4j_version_id": "1b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "JSON_SERIALIZATION",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "1f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Gson",
+      "selected": true,
+      "selection_reason": "FIRST_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-GSON-009",
+      "bug_id": 9,
+      "buggy_revision": {
+        "defects4j_version_id": "9b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "JSON_SERIALIZATION",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "9f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Gson",
+      "selected": true,
+      "selection_reason": "MEDIAN_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-JSOUP-001",
+      "bug_id": 1,
+      "buggy_revision": {
+        "defects4j_version_id": "1b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "HTML_PARSING_DOM",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "1f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Jsoup",
+      "selected": true,
+      "selection_reason": "FIRST_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-JSOUP-047",
+      "bug_id": 47,
+      "buggy_revision": {
+        "defects4j_version_id": "47b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "HTML_PARSING_DOM",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "47f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Jsoup",
+      "selected": true,
+      "selection_reason": "MEDIAN_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-LANG-001",
+      "bug_id": 1,
+      "buggy_revision": {
+        "defects4j_version_id": "1b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "LANGUAGE_TEXT_UTILITIES",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "1f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Lang",
+      "selected": true,
+      "selection_reason": "FIRST_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-LANG-034",
+      "bug_id": 34,
+      "buggy_revision": {
+        "defects4j_version_id": "34b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "LANGUAGE_TEXT_UTILITIES",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "34f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Lang",
+      "selected": true,
+      "selection_reason": "MEDIAN_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-MATH-001",
+      "bug_id": 1,
+      "buggy_revision": {
+        "defects4j_version_id": "1b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "NUMERIC_ALGORITHMS",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "1f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Math",
+      "selected": true,
+      "selection_reason": "FIRST_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-MATH-053",
+      "bug_id": 53,
+      "buggy_revision": {
+        "defects4j_version_id": "53b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "NUMERIC_ALGORITHMS",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "53f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Math",
+      "selected": true,
+      "selection_reason": "MEDIAN_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-TIME-001",
+      "bug_id": 1,
+      "buggy_revision": {
+        "defects4j_version_id": "1b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "DATE_TIME_LOGIC",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "1f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Time",
+      "selected": true,
+      "selection_reason": "FIRST_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    },
+    {
+      "benchmark_case_id": "D4J-TIME-013",
+      "bug_id": 13,
+      "buggy_revision": {
+        "defects4j_version_id": "13b",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "domain_category": "DATE_TIME_LOGIC",
+      "exclusion_reason": null,
+      "exclusion_state": "NOT_EXCLUDED",
+      "failure_shape": {
+        "status": "UNVERIFIED",
+        "value": null
+      },
+      "fixed_revision": {
+        "defects4j_version_id": "13f",
+        "source_revision": {
+          "status": "UNVERIFIED",
+          "value": null,
+          "vcs": "UNKNOWN"
+        }
+      },
+      "language": "JAVA",
+      "manifest_version": "DEFECTS4J_MVP_V1",
+      "metadata_provenance": {
+        "canonical_revision_ids": "Derived from the documented Defects4J version-id convention: <bug_id>b identifies the buggy revision and <bug_id>f the fixed revision of the same bug",
+        "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1, recorded before any TestGap Miner model benchmark outcome existed",
+        "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+        "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred"
+      },
+      "project": "Time",
+      "selected": true,
+      "selection_reason": "MEDIAN_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "test_ecosystem": "JUNIT",
+      "triggering_tests": {
+        "status": "UNVERIFIED",
+        "values": []
+      }
+    }
+  ],
+  "corpus": "DEFECTS4J_3_0_1",
+  "defects4j_release": "3.0.1",
+  "immutability": {
+    "checksum_algorithm": "SHA-256",
+    "checksum_file": "DEFECTS4J_MVP_V1.sha256",
+    "policy": "After A2 acceptance, DEFECTS4J_MVP_V1.json bytes and DEFECTS4J_MVP_V1.sha256 are immutable. Future runtime verification must be recorded as separately versioned evidence bound to DEFECTS4J_MVP_V1; no UNVERIFIED metadata may be promoted in place. Any golden-manifest change requires a new explicit manifest version (DEFECTS4J_MVP_V2 or later) under future authorization.",
+    "state": "FROZEN_ON_ACCEPTANCE"
+  },
+  "language": "JAVA",
+  "manifest_version": "DEFECTS4J_MVP_V1",
+  "provenance": {
+    "canonical_revision_ids": "Defects4J canonical version-id convention (<bug_id>b / <bug_id>f), validated structurally against each case bug_id",
+    "case_membership": "A2-EVALUATION frozen selection under STRATIFIED_PROJECT_POSITION_V1 (task EVAL-001-BENCHMARK-GOLDEN-MANIFEST-001)",
+    "corpus": "Defects4J",
+    "corpus_release": "3.0.1",
+    "modified_classes": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+    "smoke_execution_evidence": "See docs/evaluation/DEFECTS4J_MVP_V1_SMOKE.md; no smoke execution has been performed because no Defects4J runtime was available",
+    "source_revision_ids": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+    "triggering_tests": "NOT_QUERIED: no usable Defects4J 3.0.1 runtime was available on the authoring host, so this metadata was deliberately left unverified rather than inferred",
+    "upstream_license": "MIT",
+    "upstream_project": "rjust/defects4j"
+  },
+  "required_java_major": 11,
+  "required_timezone": "America/Los_Angeles",
+  "schema_version": "testgap.defects4j.golden-manifest.v1",
+  "selection": {
+    "description": "Stratify the MVP corpus across six Defects4J project domains, then take two active bugs per project purely by ordinal position within that project's Defects4J 3.0.1 active-bug ordering: ordinal 1 and median ordinal floor((N + 1) / 2), which selects the lower of the two middle active bugs when N is even. Position is the only selector. Neither TestGap Miner behaviour, retrieval quality, model identity, generated-test outcome, compile duration nor bug difficulty may influence membership.",
+    "first_ordinal": 1,
+    "frozen_before_model_outcomes": true,
+    "median_even_n_policy": "LOWER_OF_TWO_MIDDLE_ACTIVE_BUGS",
+    "median_ordinal_formula": "floor((N + 1) / 2)",
+    "methodology_id": "STRATIFIED_PROJECT_POSITION_V1",
+    "no_result_cherry_picking": "This corpus was frozen before any TestGap Miner model benchmark outcome existed. A case must never be removed, replaced or substituted because it is difficult, because checkout or compile fails, because a trigger is hard to reproduce, or because a model or retrieval strategy performs badly on it. Those are execution outcomes and are recorded as evidence, never as corpus-selection reasons.",
+    "position_rules": [
+      "FIRST_ACTIVE_BUG_BY_ORDINAL_POSITION",
+      "MEDIAN_ACTIVE_BUG_BY_ORDINAL_POSITION"
+    ],
+    "provenance": {
+      "active_sets": [
+        {
+          "active_bug_count": 26,
+          "active_bug_ids": "1-26",
+          "median_bug_id": 13,
+          "median_ordinal": 13,
+          "project": "Chart"
+        },
+        {
+          "active_bug_count": 18,
+          "active_bug_ids": "1-18",
+          "median_bug_id": 9,
+          "median_ordinal": 9,
+          "project": "Gson"
+        },
+        {
+          "active_bug_count": 93,
+          "active_bug_ids": "1-93",
+          "median_bug_id": 47,
+          "median_ordinal": 47,
+          "project": "Jsoup"
+        },
+        {
+          "active_bug_count": 61,
+          "active_bug_ids": "1,3-17,19-24,26-47,49-65",
+          "median_bug_id": 34,
+          "median_ordinal": 31,
+          "project": "Lang"
+        },
+        {
+          "active_bug_count": 106,
+          "active_bug_ids": "1-106",
+          "median_bug_id": 53,
+          "median_ordinal": 53,
+          "project": "Math"
+        },
+        {
+          "active_bug_count": 26,
+          "active_bug_ids": "1-20,22-27",
+          "median_bug_id": 13,
+          "median_ordinal": 13,
+          "project": "Time"
+        }
+      ],
+      "first_ordinal": 1,
+      "metadata_sources": [
+        "README active-bug table",
+        "framework/projects/<Project>/active-bugs.csv"
+      ],
+      "scope": "CASE_MEMBERSHIP_ONLY",
+      "upstream_project": "rjust/defects4j",
+      "upstream_ref": "v3.0.1",
+      "verification": "INDEPENDENTLY_CHECKED"
+    },
+    "strata": [
+      {
+        "case_count": 2,
+        "domain_category": "CHARTING_RENDERING_DATA",
+        "project": "Chart"
+      },
+      {
+        "case_count": 2,
+        "domain_category": "JSON_SERIALIZATION",
+        "project": "Gson"
+      },
+      {
+        "case_count": 2,
+        "domain_category": "HTML_PARSING_DOM",
+        "project": "Jsoup"
+      },
+      {
+        "case_count": 2,
+        "domain_category": "LANGUAGE_TEXT_UTILITIES",
+        "project": "Lang"
+      },
+      {
+        "case_count": 2,
+        "domain_category": "NUMERIC_ALGORITHMS",
+        "project": "Math"
+      },
+      {
+        "case_count": 2,
+        "domain_category": "DATE_TIME_LOGIC",
+        "project": "Time"
+      }
+    ]
+  },
+  "smoke_case_ids": [
+    "D4J-GSON-001",
+    "D4J-LANG-001",
+    "D4J-MATH-001"
+  ],
+  "test_ecosystem": "JUNIT"
+}
