@@ -147,6 +147,31 @@ export class LocalCorrelationStore implements CorrelationStore {
   }
 }
 
+const SHARED_LOCAL_CORRELATION_STORE = Symbol.for(
+  "testgap.auth.local-process-correlation-store",
+);
+
+/**
+ * LOCAL_NON_PRODUCTION_ONLY: shares correlation across server entrypoint bundles
+ * in one local Next.js process. It is not multi-instance or durable storage.
+ */
+export function getSharedLocalProcessCorrelationStore(input: {
+  applicationOrigin: string;
+  environmentClass: "LOCAL_DEVELOPMENT";
+}) {
+  if (
+    input.applicationOrigin !== "http://localhost:3000" ||
+    input.environmentClass !== "LOCAL_DEVELOPMENT" ||
+    process.env.NODE_ENV === "production"
+  ) {
+    throw new Error("Process-local correlation store is restricted to local development");
+  }
+  const shared = globalThis as typeof globalThis & {
+    [SHARED_LOCAL_CORRELATION_STORE]?: LocalCorrelationStore;
+  };
+  return (shared[SHARED_LOCAL_CORRELATION_STORE] ??= new LocalCorrelationStore());
+}
+
 export function isValidSecurityPolicyVersion(value: string): boolean {
   return typeof value === "string" && SECURITY_POLICY_VERSION.test(value);
 }
