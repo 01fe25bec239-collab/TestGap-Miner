@@ -20,6 +20,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import AuthStatus from "./AuthStatus";
 
 const drawerWidth = 264;
 const mobileNavigationId = "mobile-primary-navigation";
@@ -109,6 +110,8 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           <Typography component="p" variant="h6" sx={{ fontWeight: 750, letterSpacing: "-0.02em" }}>
             TestGap Miner
           </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <AuthStatus />
         </Toolbar>
       </AppBar>
 

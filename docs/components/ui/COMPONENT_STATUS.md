@@ -1,16 +1,16 @@
 # UI Component Status
 
-- Date: 2026-08-08
+- Date: 2026-08-11
 - Agent 2: `A2-UI`
 - Paired Agent 3: `A3-UI`
-- Current task: `UI-AUTH002-CONSUMER-CONFLICT-RECONCILIATION-001-A3`
-- Parent manager task: `UI-AUTH002-CONSUMER-CONFLICT-RECONCILIATION-001`
-- Prompt type: `DOCUMENTATION_ONLY / CONFLICT_RESOLUTION / MERGED_FRONTEND_STATE_RECONCILIATION`
-- Scope: `UNCOMMITTED_DOCUMENTATION_EDITS_ONLY`
+- Current task: `UI-004-FINAL-ACCEPTANCE-DURABLE-RECONCILIATION-001`
+- Parent manager task: `UI-004-AUTH008-MERGED-INTERFACE-INTEGRATION-001`
+- Prompt type: `DOCUMENTATION_STATUS_RECONCILIATION_ONLY`
+- Scope: `DURABLE_UI_RECORD_STATUS_RECONCILIATION_ONLY`
 - Repository: `01fe25bec239-collab/TestGap-Miner`
-- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-auth002-conflict-reconciliation`
-- Branch: `agent2/ui-auth002-conflict-reconciliation`
-- Current evidence baseline: `006cc885161ff49be582a9fa08f353a70c31c7b1`
+- Worktree: `/Users/omkar/Documents/TestGap-Miner-wt-ui-004-local-auth-integration`
+- Branch: `agent2/ui-004-local-auth-integration`
+- Current evidence baseline: `dfca07e69b2da77f864d2259541147b419be7c00`
 - Historical API-reconciliation baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - Historical bootstrap baseline: `9ac5a242bfbfad839dd41cd51171b4f81db1be85`
 - Specification snapshot: `docs/specifications/A2_UI_MANAGER.md` — preserved, not reconciled by this task
@@ -27,6 +27,82 @@ A2-UI has since merged the frontend foundation through PR #26, PR #27 and PR
 #28. That foundation is frontend evidence only. **It is not evidence that Auth,
 the provider, the callback, or any session behavior works.**
 
+## `UI-004` local Auth integration result — 2026-08-09
+
+Task `UI-004-LOCAL-AUTH-INTEGRATION-001-A3`, branch
+`agent2/ui-004-local-auth-integration`, baseline
+`2a708afebec23e71ce1a0b6c5f6efd3df8c92496`. Changes are **unstaged and
+uncommitted** and await independent A2-UI review.
+
+- Disposition: `IMPLEMENTED / DETERMINISTICALLY_TESTED / UNSTAGED /
+  PENDING_INDEPENDENT_A2_UI_REVIEW`.
+- Scope implemented: UI-owned sign-in control, `SIGN_IN_PENDING` presentation,
+  `/auth/callback` route surface with loading, success and failure
+  presentation, authenticated/unauthenticated shell presentation, protected
+  content mounting and unmounting, sign-out control, error-state presentation,
+  and frontend interaction tests.
+- Auth runtime is **consumed, not UI-owned**. `apps/web/src/auth/**` merged
+  through PR #32 and has **zero changes** in this task. Every Auth operation
+  goes through `AuthAdapter.beginSignIn`, `AuthAdapter.processCallback`,
+  `AuthAdapter.getSessionSnapshot`, `AuthAdapter.subscribeToSessionChanges`,
+  `AuthAdapter.refreshSession` and `AuthAdapter.signOut`.
+- Architecture consequence recorded for review: the merged runtime issues an
+  `httpOnly` correlation cookie scoped to `/auth/callback` and correlates
+  attempts through a process-local store. Sign-in initiation and callback
+  processing therefore run server-side (`/auth/sign-in` route handler and the
+  `/auth/callback` server action), and session presentation runs from a browser
+  Auth runtime. No correlation handle, access token or refresh token reaches
+  browser state, storage or context.
+- `TESTED` means deterministic frontend tests only: `npm test` 120 tests across
+  11 files, `npm run lint`, `npm run typecheck` and `npm run build` all pass at
+  this working tree.
+- `E2E_BROWSER_OAUTH`: `NOT_TESTED`. No local Auth environment values are
+  present in the worktree or runtime environment, so no real GitHub OAuth
+  browser flow was executed. Deterministic test evidence is **not** evidence
+  that provider sign-in works.
+- `UI-004` created no provider configuration, no Backend authorization, no API
+  client, and no deployment. `AUTH-003`, `UI-005` and production deployment
+  remain out of scope and unimplemented.
+
+This section supersedes the `UI-004`, `Frontend Auth behavior`,
+`Frontend Auth tests`, `Reserved route /auth/callback` and `Auth runtime` rows
+as they read before 2026-08-09. Every other historical disposition below is
+preserved unchanged.
+
+## `UI-004` AUTH-008 merged-interface continuation — 2026-08-11
+
+Task `UI-004-AUTH008-MERGED-INTERFACE-INTEGRATION-001`, branch
+`agent2/ui-004-local-auth-integration`, base
+`dfca07e69b2da77f864d2259541147b419be7c00`. Changes remain **unstaged and
+uncommitted** following completed A2-UI acceptance.
+
+- Disposition: `IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / UNSTAGED / UNCOMMITTED / UNPUSHED / NO_PR`.
+- Final A2 disposition: `PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED` (`A3_RESULT: PASS`, `A2_INDEPENDENT_REVIEW: PASS`).
+- The browser now consumes Auth-owned `createAuthBrowserSessionFenceBridge`
+  and `createBrowserAuthAdapter`; the obsolete browser `createAuthAdapter`
+  construction and duplicate POST sign-in composition are absent.
+- UI-owned `POST /auth/session-fence` applies the existing Auth-owned mutation
+  validation and delegates only `PREPARE_SIGN_IN`, `PUBLISH_SIGN_OUT` and
+  `RESOLVE_SESSION` to `AuthSessionFenceHostService` through
+  `executeAuthSessionFenceHostRequest`.
+- Callback `ok:true` is provisional. The callback view presents success and
+  follows only the Auth-returned destination after a current
+  `RESOLVE_SESSION == AUTHENTICATED`; `UNAUTHENTICATED` fails closed to the
+  existing generic signed-out presentation.
+- The local UI integration now uses a non-noop, process-local bounded
+  `AuthSecurityEvent` sink. Deterministic tests prove `INVALID_CALLBACK`
+  retention, Auth-owned field preservation, bounded eviction, secret-free
+  payloads and observable sink failure.
+- `ProtectedRegion` remains governed only by
+  `snapshot.canRenderProtectedContent`; browser provider events remain
+  provisional, and sign-out remains current-session-only through the
+  Auth-owned browser/host composition.
+- Validation: `npm test` passed 209 tests across 16 files; `npm run lint`,
+  `npm run typecheck`, `npm run build`, and `git diff --check` passed. Auth-owned
+  paths and package files have zero changes.
+- `FULL_BROWSER_NETWORK_RESPONSE_ORDER_ACCEPTANCE`: `NOT_TESTED`; this remains
+  a future A2-INTEGRATION evidence gate.
+
 ## Current state
 
 | Area | State | Evidence / next action |
@@ -38,29 +114,30 @@ the provider, the callback, or any session behavior works.**
 | Frontend foundation | `PRODUCTION_BUILDABLE` | Established by the merged `validate` checks on PR #26, PR #27 and PR #28. Buildability is not Auth, provider, or runtime session evidence. |
 | `AUTH-DEP-004` | `ACCEPTED_WITH_CONSTRAINTS / MERGED_VIA_PR_20 / SATISFIED_FOR_AUTH_CONTRACT_AND_DESIGN` | Deployment decision merged through PR #20; accepted values are design-only. |
 | `AUTH-DEP-010` | `ACCEPTED_WITH_CONSTRAINTS / ACKNOWLEDGED_BY_A2_AUTH / UI_OWNERSHIP_ESTABLISHED_VIA_PR_19 / AUTH_RECONCILED_VIA_PR_21` | A2-AUTH reconciled the UI ownership boundary through PR #21. |
-| `AUTH-002` contract/design | `DRAFTED / DRAFT_FOR_CONSUMER_REVIEW / SPECIFICATION_CONFLICT / NOT_IMPLEMENTATION_READY` | `CONTRACT-AUTH-001@1.1.0-draft.1` has already been drafted by A2-AUTH under its own separate authorization. Auth PR #29 is `OPEN / DRAFT / NOT_MERGED`; reviewed Auth head `7abe17af8e212bd2127160338ea6ef409da02101`. A2-UI consumer review returned `SPECIFICATION_CONFLICT`. The UI-owned correction is applied by `UI-DEC-026`. The Auth-owned correction remains required, A2-SECURITY acceptance remains pending, and A2-UI rereview of the corrected head remains required. The contract is **not** accepted. `AUTH-002` frontend implementation remains `NOT_AUTHORIZED` and `AUTH-002` Auth runtime implementation remains `NOT_AUTHORIZED`. Supersedes the historical `READY_FOR_AUTH_002_CONTRACT_AND_DESIGN` readiness milestone recorded by `UI-DEC-023`. |
+| `AUTH-002` contract/design history | `HISTORICAL_SPECIFICATION_CONFLICT / PRESERVED` | The reviewed PR #29 head and `UI-DEC-026` conflict record remain historical evidence; they are not rewritten by this continuation. Current implementation evidence comes from the subsequently merged Auth runtime and AUTH-008 interfaces on the current base. |
 | `AUTH-002` frontend implementation | `NOT_AUTHORIZED` | No frontend work is authorized by dependency acceptance. |
-| `AUTH-002` runtime implementation | `NOT_AUTHORIZED` | No Auth runtime work is authorized by dependency acceptance. |
-| Auth runtime | `NOT_IMPLEMENTED / NOT_TESTED` | No callback exchange, session establishment, refresh, sign-out, PKCE, or OAuth-state behavior exists or has been executed anywhere in the repository. The merged frontend foundation does not change this. |
+| `AUTH-002` runtime implementation history | `SUPERSEDED_BY_MERGED_A2_AUTH_RUNTIME` | The earlier `NOT_AUTHORIZED` disposition is preserved in historical sections; current base `dfca07e6` contains the accepted AUTH-008 interfaces. |
+| `AUTH-008` | `PASS / IMPLEMENTED / A2_AUTH_ACCEPTED / MERGED / DURABLE_ON_MAIN` | Browser bridge, browser adapter and session-fence host interfaces are present on the authoritative base and consumed without Auth-owned modifications. |
+| Auth runtime | `IMPLEMENTED_BY_A2_AUTH / AUTH008_MERGED / CONSUMED_BY_UI_004 / NOT_UI_OWNED` | Base `dfca07e69b2da77f864d2259541147b419be7c00` provides the merged browser bridge, browser adapter and session-fence host interfaces. `UI-004` consumes them and changed no `apps/web/src/auth/**` path. Historical disposition before PR #32 was `NOT_IMPLEMENTED / NOT_TESTED`. Merged runtime code is not evidence that a real provider sign-in has been executed. |
 | `CONTRACT-API-001@0.1.0-draft.1` | `PRESENT / DRAFT_FOR_CONSUMER_REVIEW / NOT_IMPLEMENTATION_READY` | A2-UI completed manager-level consumer review. The draft is documentary input, not an accepted runtime contract. |
-| `UI-DEP-BACKEND-001` | `PARTIALLY_SATISFIED_BY_CONTRACT_API_001_DRAFT / CONSUMER_REVIEW_AND_EXTERNAL_OWNER_INPUTS_PENDING / RUNTIME_NOT_IMPLEMENTED_OR_TESTED` | Shared transport conventions are documented; final Auth, Security, Deployment, owner projection, fixture, and runtime inputs remain unresolved. |
-| API runtime | `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED` | No API route, schema, middleware, OpenAPI snapshot, client fixture, or runtime behavior is proven or authorized. |
+| `UI-DEP-BACKEND-001` | `PARTIALLY_SATISFIED_BY_CONTRACT_API_001_DRAFT / CONSUMER_REVIEW_AND_EXTERNAL_OWNER_INPUTS_PENDING / UI_CONSUMER_CONTRACT_NOT_IMPLEMENTATION_READY` | Shared transport conventions are documented, but final Auth, Security, Deployment, owner projection, and validating client-fixture inputs remain unresolved. Backend runtime existence does not make the UI consumer contract implementation-ready. |
+| API runtime | `BACKEND_RUNTIME_PRESENT_ON_CURRENT_MAIN / UI_TYPED_CLIENT_NOT_IMPLEMENTED / UI005_NOT_AUTHORIZED / UI_CONSUMER_CONTRACT_NOT_IMPLEMENTATION_READY` | Current main contains Backend runtime material, including the FastAPI application and middleware, plus later Workflow/runtime integration. A2-UI is neither classifying nor certifying Backend completeness; runtime existence is not `UI-005` readiness. |
 | Provider | `SUPABASE_AUTH_WITH_GITHUB_OAUTH` | Accepted for contract and design only. |
 | Provider architecture | `APPROVED_FOR_AUTH_CONTRACT_AND_DESIGN` | Issuer, audience, JWKS, and callback templates are accepted design values. |
-| Provider runtime | `NOT_PROVISIONED / NOT_TESTED` | No Supabase project, GitHub OAuth configuration, callback registration, deployed domain, TLS, environment value, or secret injection is proven. |
+| Provider runtime | `LOCAL_PROVIDER_PROVISIONING_COMPLETED_EXTERNALLY / NOT_REVERIFIED_BY_UI004 / REAL_BROWSER_OAUTH_NOT_TESTED / PRODUCTION_DEPLOYMENT_NOT_PROVEN` | External local provider provisioning is established project history but was not reverified by `UI-004`, which executed no real browser OAuth flow. Production provider/domain/TLS/callback/environment/secret deployment remains outside `UI-004` and is not proven here. |
 | `apps/web` | `PRESENT` | Eighteen tracked files under `apps/web` at baseline `006cc88`, including `package.json`, `package-lock.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs` and `vitest.config.ts`. |
 | Next.js App Router | `IMPLEMENTED` | `apps/web/src/app/layout.tsx`, `page.tsx`, `providers.tsx`, `globals.css`. |
 | TypeScript | `IMPLEMENTED` | `apps/web/tsconfig.json` and TypeScript sources throughout `apps/web/src`. |
 | MUI theme and application shell | `IMPLEMENTED` | `apps/web/src/theme.ts` and `apps/web/src/components/AppShell.tsx`. |
 | Frontend automated regression tests | `IMPLEMENTED` | `apps/web/vitest.config.ts`, `src/test/setup.ts`, `src/test/renderWithTheme.tsx`, `src/app/page.test.tsx`, `src/components/AppShell.test.tsx`. |
-| Frontend Auth behavior | `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED` | No browser or server Auth client, session code, provider client, protected route, or Auth-aware component exists. The merged foundation contains none. |
-| Frontend Auth tests | `NOT_STARTED / NOT_TESTED` | No frontend Auth test exists or is authorized. The merged regression tests exercise the shell and page only. |
+| Frontend Auth behavior | `IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / BROWSER_NETWORK_GATE_NOT_TESTED / UNSTAGED` | Includes `src/app/auth/session-fence/route.ts`, merged browser adapter/bridge consumption, callback `RESOLVE_SESSION` gating and `src/providers/securityEventSink.ts`, while preserving the existing shell and callback presentation. Historical disposition before 2026-08-09 was `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED`. |
+| Frontend Auth tests | `IMPLEMENTED / 209_TESTS_ACROSS_16_FILES_PASS / DETERMINISTIC_ONLY` | Tests cover browser composition, the three-operation session-fence route, same-origin/CSRF/cache policy, callback fail-closed gating, provider-event provisionality, protected-region removal, bounded security-event retention and failure observability. They are not full browser/network response-order evidence. Historical disposition before 2026-08-09 was `NOT_STARTED / NOT_TESTED`. |
 | API client | `NOT_IMPLEMENTED / NOT_AUTHORIZED` | `UI-005` remains blocked; no typed client, transport, or error-envelope handling exists. |
-| Reserved route `/auth/callback` | `RESERVED / NOT_IMPLEMENTED` | A2-UI owns the route and UX; A2-AUTH owns semantics; A2-DEPLOYMENT owns deployed registration. No route, page, or handler exists in the merged `apps/web`. |
-| `UI-004` | `BLOCKED / NOT_AUTHORIZED` | `UI-002` and `UI-003` no longer block it. Remaining blockers are separate Agent 1 authorization, complete A2-AUTH semantics, A2-SECURITY cookie/CSRF/OAuth-state acceptance under `AUTH-DEP-011`, and A2-DEPLOYMENT runtime provisioning. |
-| Auth PR #29 — `docs(auth): define dashboard sign-in and session contract` | `OPEN / DRAFT / AUTH_CONTRACT_CONSUMER_REVIEW_IN_PROGRESS` | Reviewed head `7abe17af8e212bd2127160338ea6ef409da02101`; branch `agent2/auth-002-session-contract`. Not accepted, not merged, and not modified by this task. |
-| A2-UI consumer review of `CONTRACT-AUTH-001@1.1.0-draft.1` | `SPECIFICATION_CONFLICT / CORRECTIONS_AUTHORIZED / REREVIEW_REQUIRED` | Agent 1 confirmed the cookie-custody conflict and authorized the UI-owned correction only. The Auth-owned correction and A2-UI rereview both remain outstanding. |
-| UI durable records | `MERGED_THROUGH_PR_25 / CURRENT_AUTH002_RECONCILIATION_UNSTAGED` | Six UI records are being reconciled for A2-UI review; no staging or commit is authorized. |
+| Route `/auth/callback` | `IMPLEMENTED / UI_OWNED_SURFACE / AUTH_OWNED_SEMANTICS / UNSTAGED` | `src/app/auth/callback/page.tsx`, `AuthCallbackView.tsx` and `actions.ts`. The route owns existence, loading, success, failure, accessibility and safe navigation only; it delegates every semantic to `AuthAdapter.processCallback`. A2-DEPLOYMENT still owns deployed registration. Historical disposition before 2026-08-09 was `RESERVED / NOT_IMPLEMENTED`. |
+| `UI-004` | `IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / UNSTAGED / UNCOMMITTED / UNPUSHED / NO_PR` | See the two `UI-004` result sections above. Final A2 disposition recorded: `PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`. Historical disposition before 2026-08-09 was `BLOCKED / NOT_AUTHORIZED`. Full browser/network response-order acceptance remains `NOT_TESTED`. |
+| Auth PR #29 — `docs(auth): define dashboard sign-in and session contract` | `HISTORICAL_SNAPSHOT / PRESERVED` | Reviewed head `7abe17af8e212bd2127160338ea6ef409da02101`; branch `agent2/auth-002-session-contract`. This task does not rewrite that earlier review state. |
+| A2-UI consumer review of `CONTRACT-AUTH-001@1.1.0-draft.1` | `HISTORICAL_SPECIFICATION_CONFLICT / PRESERVED` | Agent 1's earlier cookie-custody disposition remains recorded as history; AUTH-008 is the authoritative current interface baseline. |
+| UI durable records | `MERGED_HISTORY_PRESERVED / CURRENT_UI004_AUTH008_RECONCILIATION_UNSTAGED` | These two UI records reflect the current local integration; no staging or commit is authorized. |
 
 ## API draft consumer-review state
 
@@ -91,10 +168,12 @@ Exact classifications:
 - CORS: `UNRESOLVED / DEPLOYMENT_AND_SECURITY_INPUT_REQUIRED /
   BACKEND_CONFIGURATION_NOT_DEFINED`.
 
-Still unresolved: final Auth-owned authenticated context; exact denial
-disclosure; CORS; a validating OpenAPI/client fixture; endpoint-specific
-Workflow, Evidence, Evaluation, Queue, and DB-003 projections/actions; API
-runtime; and frontend runtime.
+Still unresolved for the UI consumer: final Auth-owned authenticated context;
+exact denial disclosure; CORS; a validating OpenAPI/client fixture;
+endpoint-specific Workflow, Evidence, Evaluation, Queue, and DB-003
+projections/actions; implementation-ready consumer contracts; and frontend
+runtime. Backend runtime material exists on current main; A2-UI does not
+classify or certify its completeness.
 
 ## Accepted provider design values
 
@@ -110,10 +189,10 @@ runtime; and frontend runtime.
 - Issuer comparison is exact and case-sensitive; independent issuer
   normalization is prohibited.
 
-These are accepted design values only. They are not proof of a provisioned
-provider, configured GitHub OAuth, deployed Vercel project, production
-hostname, TLS, callback registration, injected environment values or secrets,
-or working callback/session behavior.
+These design records alone are not runtime evidence. External local provider
+provisioning was subsequently completed, but `UI-004` did not reverify it or
+execute a real browser OAuth flow. No production provider/domain/TLS/callback,
+environment-value, or secret deployment is proven by this UI-owned record.
 
 ## Ownership and binding constraints
 
@@ -138,7 +217,12 @@ or working callback/session behavior.
 - A3-AUTH may not modify UI-owned paths without A2-UI coordination; A3-UI may
   not modify Auth-owned paths.
 
-## `AUTH-002` consumer-review state
+## Historical `AUTH-002` consumer-review snapshot — preserved
+
+**HISTORICAL SNAPSHOT — 2026-08-08 / reviewed Auth PR #29 head
+`7abe17af8e212bd2127160338ea6ef409da02101`.** The original dispositions below
+are preserved as the state at that reviewed head; they are not current project
+status.
 
 A2-UI's consumer review of `CONTRACT-AUTH-001@1.1.0-draft.1`, at reviewed Auth
 PR #29 head `7abe17af8e212bd2127160338ea6ef409da02101`, returned
@@ -157,17 +241,21 @@ PR #29 head `7abe17af8e212bd2127160338ea6ef409da02101`, returned
 The UI-owned correction does not by itself make Auth PR #29 acceptable, and it
 is not A2-SECURITY acceptance of a browser-readable cookie.
 
+For current implementation purposes, this snapshot was subsequently
+superseded by corrected/merged Auth contract history, merged Auth runtime,
+`AUTH-007`, and `AUTH-008`. The historical dispositions above remain unchanged.
+
 ## Remaining blockers
 
 | Blocker | Owner | Blocks |
 |---|---|---|
-| Provider provisioning, production domain, TLS, callback registration, environment values, secret injection, and test-provider configuration | A2-DEPLOYMENT | `UI-004` verification and `UI-010` |
-| Complete session/callback, PKCE, OAuth-state, refresh, and sign-out semantics | A2-AUTH | `UI-004` |
+| Real browser OAuth execution evidence | A2-INTEGRATION | `UI-004` evidence limitation; currently `NOT_TESTED` |
+| Full browser/network response-order acceptance | A2-INTEGRATION | Final `UI-004` browser evidence; currently `NOT_TESTED` |
+| Production provider/domain/TLS/callback/environment/secret deployment evidence | A2-DEPLOYMENT | `UI-010`; outside `UI-004` and not proven by this record |
 | Cookie, CSRF, and OAuth-state security acceptance | A2-SECURITY with A2-AUTH | `UI-004`, `UI-010` |
 | Implementation-ready API contract, validating OpenAPI/client fixture, final Auth context, denial disclosure, CORS, endpoint models, and runtime | A2-BACKEND with A2-AUTH, A2-SECURITY, A2-DEPLOYMENT, and domain owners | `UI-005` through `UI-009` |
 | Workflow, Evidence, and Evaluation UI projections | A2-AGENT-WORKFLOW and A2-EVALUATION | `UI-006` through `UI-009` |
-| Separate authorization for `UI-001` and every remaining implementation task | A2-UI / Agent 1 as applicable | All future UI work. `UI-002` and `UI-003` were separately authorized and are merged; that authorization does not extend to `UI-004` or later. |
-| `AUTH-002` cookie-custody conflict: Auth-owned correction, then A2-UI rereview of the corrected PR #29 head | A2-AUTH, then A2-UI | `AUTH-DEP-012` acceptance; `UI-004` |
+| Separate authorization for `UI-001` and every remaining implementation task | A2-UI / Agent 1 as applicable | All future UI work after this explicitly authorized `UI-004` continuation. |
 
 ## Historical bootstrap state — preserved
 
@@ -205,8 +293,7 @@ task.
 
 ## Next action
 
-A2-UI independently reviews the six unstaged, uncommitted `AUTH-002`
-consumer-conflict and merged-frontend-state reconciliation edits. After A2-UI
-acceptance and merge of this UI-owned correction, and after A2-AUTH pushes the
-Auth-owned correction, A2-UI rereviews the corrected Auth PR #29 head. `UI-004`,
-API, Auth, Queue, and DB-003 implementation remain unauthorized.
+A2-UI has completed independent review and accepted the UI-004 integration (`PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`).
+The complete `UI-004` diff remains unstaged and uncommitted on branch `agent2/ui-004-local-auth-integration`.
+The full browser/network response-order gate remains `NOT_TESTED` for future A2-INTEGRATION evidence.
+No staging, commit, push or PR action has occurred.
