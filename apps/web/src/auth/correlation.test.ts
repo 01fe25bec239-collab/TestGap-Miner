@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   COMPLETED_CORRELATION_TTL_MS,
   LocalCorrelationStore,
@@ -6,6 +6,7 @@ import {
   completedCorrelationCookie,
   correlationCookie,
   createOpaqueCorrelationHandle,
+  getSharedLocalProcessCorrelationStore,
   readCorrelationHandles,
 } from "./correlation";
 import { createAuthCsrfToken, validateAuthMutationRequest } from "./csrf";
@@ -15,7 +16,119 @@ const handle = "a".repeat(64);
 const flowId = "flow_12345678";
 const securityPolicyVersion = "test-policy@1.0";
 
+const serverMocks = vi.hoisted(() => {
+  const state = {
+    cookies: new Map<string, string>(),
+    exchangeCalls: 0,
+    session: null as null | {
+      userReference: string;
+      accessToken: string;
+      expiresAt: number;
+    },
+  };
+  const provider = {
+    beginGitHubOAuth: async () => ({
+      redirectUrl: "https://provider.example/authorize",
+      flowId: "flow_12345678",
+    }),
+    getSession: async () => state.session,
+    validateCurrentUser: async () =>
+      state.session ? { userReference: state.session.userReference } : null,
+    validatePreExistingSession: async () => null,
+    refresh: async () => {
+      throw new Error("unused");
+    },
+    signOutLocal: async () => {
+      state.session = null;
+    },
+    onSessionChange: () => () => {},
+  };
+  return {
+    state,
+    prepareProvider: {
+      ...provider,
+      exchangeCode: async () => {
+        throw new Error("unused");
+      },
+    },
+    callbackProvider: {
+      ...provider,
+      exchangeCode: async () => {
+        state.exchangeCalls += 1;
+        const session = {
+          userReference: "user-1",
+          accessToken: "provider-owned-token",
+          expiresAt: Date.now() + 60_000,
+        };
+        return {
+          session,
+          prepareSessionCommit: async () => {},
+          commitSession: async () => {
+            state.session = session;
+          },
+          discardSession: async () => {},
+        };
+      },
+    },
+  };
+});
+
+vi.mock("next/headers", () => ({
+  cookies: async () => ({
+    getAll: () =>
+      [...serverMocks.state.cookies].map(([name, value]) => ({ name, value })),
+    set: (name: string, value: string, options?: { maxAge?: number }) => {
+      if (options?.maxAge === 0) serverMocks.state.cookies.delete(name);
+      else serverMocks.state.cookies.set(name, value);
+    },
+    delete: ({ name }: { name: string }) => serverMocks.state.cookies.delete(name),
+  }),
+}));
+
+vi.mock("@/auth", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/auth")>()),
+  createSupabaseAuthProvider: () => serverMocks.prepareProvider,
+}));
+
+vi.mock("@/auth/supabase-server", () => ({
+  createAuthServerClient: async () => ({}),
+  createAuthCallbackProvider: async () => serverMocks.callbackProvider,
+}));
+
 describe("correlation and intended return", () => {
+  it("survives PREPARE_SIGN_IN and callback in separate server module contexts", async () => {
+    serverMocks.state.cookies.clear();
+    serverMocks.state.exchangeCalls = 0;
+    serverMocks.state.session = null;
+
+    vi.resetModules();
+    const entrypointA = await import("../providers/authServer");
+    const prepared = await (await entrypointA.createAuthSessionFenceHost()).prepareSignIn(
+      "/cross-entrypoint",
+    );
+    const correlationCookies = [...serverMocks.state.cookies].filter(([name]) =>
+      name.startsWith("testgap-auth-correlation-"),
+    );
+    expect(correlationCookies).toHaveLength(1);
+    const handle = correlationCookies[0][1];
+    expect(handle).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify({ prepared, correlationCookies })).not.toMatch(
+      /PENDING_ATTEMPT_CORRELATION|COMPLETED_CALLBACK_CORRELATION|intendedReturn|flow_12345678|testgap-local-auth@1/,
+    );
+
+    vi.resetModules();
+    const entrypointB = await import("../providers/authServer");
+    await expect(
+      entrypointB.processAuthCallback(`?code=valid-code-1234567890&sb_flow_id=${flowId}`),
+    ).resolves.toEqual({ ok: true, destination: "/cross-entrypoint" });
+    expect(serverMocks.state.exchangeCalls).toBe(1);
+
+    await getSharedLocalProcessCorrelationStore({
+      applicationOrigin: "http://localhost:3000",
+      environmentClass: "LOCAL_DEVELOPMENT",
+    }).remove(handle);
+  });
+
   it("creates opaque random handles without embedded state", () => {
     const first = createOpaqueCorrelationHandle();
     const second = createOpaqueCorrelationHandle();

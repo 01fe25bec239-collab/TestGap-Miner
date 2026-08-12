@@ -3,7 +3,6 @@ import {
   AuthFenceCookieStateStore,
   AuthSessionFenceHostService,
   AuthSessionFenceService,
-  LocalCorrelationStore,
   correlationCookie,
   createAuthAdapter,
   createSupabaseAuthProvider,
@@ -11,6 +10,7 @@ import {
   readCorrelationHandles,
   type AuthRuntimeDependencies,
 } from "@/auth";
+import { getSharedLocalProcessCorrelationStore } from "@/auth/correlation";
 import {
   createAuthCallbackProvider,
   createAuthServerClient,
@@ -22,13 +22,6 @@ import {
   callbackRequest,
 } from "./authConfig";
 import { localAuthSecurityEventSink } from "./securityEventSink";
-
-/**
- * Sign-in initiation and callback processing must share one correlation store,
- * so the process-local store the Auth runtime provides is held for the lifetime
- * of the server process. Correlation records never reach the browser.
- */
-const correlationStore = new LocalCorrelationStore();
 
 type CookieWriter = Awaited<ReturnType<typeof cookies>>;
 
@@ -45,7 +38,10 @@ function correlationDependencies(
   | "clearCallbackUrl"
 > {
   return {
-    correlationStore,
+    correlationStore: getSharedLocalProcessCorrelationStore({
+      applicationOrigin: origin,
+      environmentClass: "LOCAL_DEVELOPMENT",
+    }),
     securityPolicyVersion: AUTH_SECURITY_POLICY_VERSION,
     applicationOrigin: origin,
     setCorrelationCookie: (cookie) => {
