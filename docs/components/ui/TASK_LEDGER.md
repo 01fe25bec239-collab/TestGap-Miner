@@ -1,18 +1,18 @@
 # UI Task Ledger
 
-- Date: 2026-08-11
+- Date: 2026-08-12
 - Agent 2: `A2-UI`
 - Paired Agent 3: `A3-UI`
-- Current task: `UI-004-FINAL-ACCEPTANCE-DURABLE-RECONCILIATION-001`
-- Parent manager task: `UI-004-AUTH008-MERGED-INTERFACE-INTEGRATION-001`
-- Prompt type: `DOCUMENTATION_STATUS_RECONCILIATION_ONLY`
-- Current evidence baseline: `dfca07e69b2da77f864d2259541147b419be7c00`
+- Current task: `UI-004-POSTMERGE-DURABLE-CLOSURE-001`
+- Parent manager task: `UI-004-LOCAL-AUTH-INTEGRATION-001`
+- Prompt type: `POST_MERGE_DOCUMENTATION_CLOSURE_ONLY`
+- Current evidence baseline: `a6376591bbff7cc280a4432dc1d43e2df258c22e`
 - Historical API-reconciliation baseline: `ab60d4573d398fb610bc2ebb813f76d0c95b33d7`
 - A2-UI manager: `INITIALIZED / DURABLE_RECORDS_MERGED`
 - `apps/web`: `PRESENT`
 - Frontend foundation: `PRODUCTION_BUILDABLE`
-- Frontend Auth behavior: `IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED /
-  DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / UNSTAGED`
+- Frontend Auth behavior: `IMPLEMENTED / AUTH008_INTEGRATED /
+  DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / COMMITTED / PUSHED / PR_43_MERGED / DURABLE_ON_MAIN`
   (historically `NOT_IMPLEMENTED / NOT_TESTED / NOT_AUTHORIZED` before
   2026-08-09)
 - Auth runtime: `IMPLEMENTED_BY_A2_AUTH / AUTH008_MERGED_ON_CURRENT_BASE / CONSUMED_BY_UI_004`
@@ -25,7 +25,7 @@
   UI005_NOT_AUTHORIZED / UI_CONSUMER_CONTRACT_NOT_IMPLEMENTATION_READY` —
   A2-UI does not certify Backend completeness
 - Full browser/network response-order acceptance: `NOT_TESTED`
-- `UI-004`: `IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / UNSTAGED / UNCOMMITTED / UNPUSHED / NO_PR` (historically
+- `UI-004`: `IMPLEMENTED / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / COMMITTED / PUSHED / PR_43_MERGED / DURABLE_ON_MAIN` (historically
   `BLOCKED / NOT_AUTHORIZED`)
 - `ASSUMED`: `NONE`
 
@@ -57,20 +57,20 @@ The frontend foundation is `PRODUCTION_BUILDABLE`. That is frontend evidence
 only. It proves nothing about Auth, the provider, the callback, sessions, or
 any runtime behavior behind them.
 
-## `UI-004` local Auth integration — current implementation state, unstaged
+## `UI-004` local Auth integration — completed durable implementation state
 
 | Task | Status | Evidence |
 |---|---|---|
-| `UI-004-LOCAL-AUTH-INTEGRATION-001-A3` — local authenticated Dashboard experience | `IMPLEMENTED / DETERMINISTICALLY_TESTED / UNSTAGED / UNCOMMITTED / PENDING_INDEPENDENT_A2_UI_REVIEW` | Branch `agent2/ui-004-local-auth-integration`, baseline `2a708afebec23e71ce1a0b6c5f6efd3df8c92496`. Adds `src/providers/authConfig.ts`, `src/providers/authServer.ts`, `src/providers/AuthSessionProvider.tsx`, `src/providers/navigation.ts`, `src/components/AuthStatus.tsx`, `src/components/ProtectedRegion.tsx`, `src/app/auth/sign-in/route.ts`, `src/app/auth/callback/{page.tsx,AuthCallbackView.tsx,actions.ts}` and three test files; modifies `src/app/providers.tsx`, `src/app/page.tsx`, `src/components/AppShell.tsx` and the two existing regression tests. `apps/web/src/auth/**`, `package.json` and `package-lock.json` have zero changes. |
-| `UI-004-AUTH008-MERGED-INTERFACE-INTEGRATION-001` — AUTH-008 consumer and security-sink continuation | `IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / UNSTAGED / UNCOMMITTED / UNPUSHED / NO_PR` | Base `dfca07e69b2da77f864d2259541147b419be7c00`. Final A2 disposition recorded: `PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`. Adds UI-owned `POST /auth/session-fence` and a bounded local `AuthSecurityEvent` sink; consumes Auth-owned `createAuthBrowserSessionFenceBridge`, `createBrowserAuthAdapter`, `AuthSessionFenceHostService` and `executeAuthSessionFenceHostRequest`; removes the duplicate POST sign-in composition; gates callback success on `RESOLVE_SESSION == AUTHENTICATED`; preserves `ProtectedRegion` snapshot gating and the existing visual UI. Auth-owned and package paths remain unchanged. |
+| `UI-004-LOCAL-AUTH-INTEGRATION-001-A3` — local authenticated Dashboard experience | `IMPLEMENTED / DETERMINISTICALLY_TESTED / UNSTAGED / UNCOMMITTED / PENDING_INDEPENDENT_A2_UI_REVIEW` | Branch `agent2/ui-004-local-auth-integration`, baseline `2a708afebec23e71ce1a0b6c5f6efd3df8c92496`. Adds `src/providers/authConfig.ts`, `src/providers/authServer.ts`, `src/providers/AuthSessionProvider.tsx`, `src/providers/navigation.ts`, `src/components/AuthStatus.tsx`, `src/components/ProtectedRegion.tsx`, `src/app/auth/sign-in/route.ts`, `src/app/auth/callback/{page.tsx,AuthCallbackView.tsx,actions.ts}` and three test files; modifies `src/app/providers.tsx`, `src/app/page.tsx`, `src/components/AppShell.tsx` and the two existing regression tests. `apps/web/src/auth/**`, `package.json` and `package-lock.json` have zero changes. Historical subtask snapshot before PR #43 merge. |
+| `UI-004-AUTH008-MERGED-INTERFACE-INTEGRATION-001` — AUTH-008 consumer and security-sink continuation | `IMPLEMENTED / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / COMMITTED / PUSHED / PR_43_MERGED / DURABLE_ON_MAIN` | Base `dfca07e69b2da77f864d2259541147b419be7c00`. Implementation commit `d07371e279be427216427569cd4fbc9e44bb6ed5`. Merged via PR `#43` (`feat(ui): integrate auth session fence`, state `MERGED`, method `NORMAL MERGE COMMIT`) at merge commit `a6376591bbff7cc280a4432dc1d43e2df258c22e`. Final A2 disposition recorded: `PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`. Adds UI-owned `POST /auth/session-fence` and a bounded local `AuthSecurityEvent` sink; consumes Auth-owned `createAuthBrowserSessionFenceBridge`, `createBrowserAuthAdapter`, `AuthSessionFenceHostService` and `executeAuthSessionFenceHostRequest`; removes the duplicate POST sign-in composition; gates callback success on `RESOLVE_SESSION == AUTHENTICATED`; preserves `ProtectedRegion` snapshot gating and the existing visual UI. Auth-owned and package paths remain unchanged. |
 
-Validation at this working tree: `npm test` 209 tests across 16 files passed,
-`npm run lint` passed, `npm run typecheck` passed, `npm run build` passed, and
-`git diff --check` returned clean.
+Accepted UI-004 implementation validation evidence:
+`npm test` passed 209 tests across 16 files; `npm run lint` passed;
+`npm run typecheck` passed; `npm run build` passed; `git diff --check` passed.
 
 `IMPLEMENTED` and deterministic `TESTED` are separate claims from browser OAuth
 evidence. `E2E_BROWSER_OAUTH` is `NOT_TESTED`: no local Auth environment values
-were present in the worktree or runtime environment, so no real GitHub OAuth
+were present in the UI-004 implementation worktree or runtime environment, so no real GitHub OAuth
 flow was executed. Full browser/network response-order acceptance is also
 `NOT_TESTED` and remains an A2-INTEGRATION gate. External local provider
 provisioning was completed but not reverified by `UI-004`. `UI-004` created no
@@ -84,7 +84,7 @@ provider configuration, implemented no Backend authorization, implemented no
 | `UI-001` — Frontend and contract reconciliation | `NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION` | Documentation bootstrap is merged, but no continuation or implementation authority is implied. This inspection-only task must be authorized separately. |
 | `UI-002` — `apps/web` Next.js App Router + TypeScript scaffold, npm manifest and lockfile | `IMPLEMENTED / A2_UI_REVIEWED / COMMITTED / PUSHED / PR_CHECKS_PASSED / MERGED` | Complete. See **Completed implementation tasks** above — PR #26, merge commit `c5d4c8a462f6e76aa1dd4929e59012fb2823c999`. |
 | `UI-003` — MUI theme, layout shell, navigation, accessibility baseline | `IMPLEMENTED / A2_UI_REVIEWED / ACCESSIBILITY_CORRECTION_APPLIED / COMMITTED / PUSHED / PR_CHECKS_PASSED / MERGED` | Complete. See **Completed implementation tasks** above — PR #27, merge commit `e7de96fc96e665fc32163dc9f26986e0e56e5510`, plus the PR #28 regression-test foundation at merge commit `006cc885161ff49be582a9fa08f353a70c31c7b1`. |
-| `UI-004` — Authenticated session UX, `/auth/callback` route and callback UX, route protection as defense-in-depth | `IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / UNSTAGED / UNCOMMITTED / UNPUSHED / NO_PR` | See **`UI-004` local Auth integration** above. Final A2 disposition recorded: `PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`. AUTH-008 browser and host interfaces are consumed without modifying Auth-owned files. Historical disposition before 2026-08-09 was `BLOCKED / NOT_AUTHORIZED / AUTH_002_CONSUMER_CONFLICT_RECONCILIATION_IN_PROGRESS`. Still outstanding and **not** claimed: full browser/network response-order acceptance, real browser OAuth evidence, A2-DEPLOYMENT registration/domain/TLS/secret injection, and Backend authorization. |
+| `UI-004` — Authenticated session UX, `/auth/callback` route and callback UX, route protection as defense-in-depth | `IMPLEMENTED / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS / A2_FINAL_ACCEPTED / COMMITTED / PUSHED / PR_43_MERGED / DURABLE_ON_MAIN` | Implementation commit `d07371e279be427216427569cd4fbc9e44bb6ed5`. Merged via PR `#43` (`feat(ui): integrate auth session fence`) at merge commit `a6376591bbff7cc280a4432dc1d43e2df258c22e`. Final A2 disposition recorded: `PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`. AUTH-008 browser and host interfaces are consumed without modifying Auth-owned files. Historical disposition before 2026-08-09 was `BLOCKED / NOT_AUTHORIZED / AUTH_002_CONSUMER_CONFLICT_RECONCILIATION_IN_PROGRESS`. Still outstanding and **not** claimed: full browser/network response-order acceptance, real browser OAuth evidence, A2-DEPLOYMENT registration/domain/TLS/secret injection, and Backend authorization. |
 | `UI-005` — Typed API client, bearer transport, error-envelope handling, request correlation | `BLOCKED / NOT_AUTHORIZED / DRAFT_INPUT_AVAILABLE` | Draft inputs cover `/api/v1`, bearer access-token transport, refresh-token exclusion, safe errors, request/correlation IDs, and shared cursor pagination. Backend runtime material exists on current main, but that is not UI-consumer readiness and A2-UI does not certify Backend completeness. The contract remains draft-only; no validating OpenAPI/client fixture exists; final authenticated context, exact `403`/concealed-`404` policy, CORS, complete endpoint models, and separate implementation authorization remain unresolved. |
 | `UI-006` — Run intake, run list, run detail, workflow-state presentation | `BLOCKED / NOT_AUTHORIZED / PLACEHOLDER_SURFACE_AVAILABLE` | Draft run create/list/detail placeholders and polling `Location` behavior exist, but Workflow projections, endpoint-specific fields/actions, Queue delivery, DB-003 inputs, runtime, `UI-005`, and authorization remain blockers. |
 | `UI-007` — Evidence-card UI and artefact presentation | `BLOCKED / NOT_AUTHORIZED` | Blocked by `UI-005`, `UI-006`, and absent UI-facing `CONTRACT-EVIDENCE-001` projection. |
@@ -110,9 +110,10 @@ implementation-ready; A2-UI does not certify Backend completeness.
 `PRESENT` and the frontend foundation is `PRODUCTION_BUILDABLE`.
 
 `UI-001` is `NOT_STARTED` and needs separate authorization. `UI-004` is
-`IMPLEMENTED_LOCALLY / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS /
-A2_FINAL_ACCEPTED / UNSTAGED / UNCOMMITTED / UNPUSHED / NO_PR` following final
-A2-UI acceptance (`PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`).
+`IMPLEMENTED / AUTH008_INTEGRATED / DETERMINISTIC_VALIDATION_PASS /
+A2_FINAL_ACCEPTED / COMMITTED / PUSHED / PR_43_MERGED / DURABLE_ON_MAIN`
+following final A2-UI acceptance (`PASS — UI_004_AUTH008_MERGED_INTERFACE_INTEGRATION_ACCEPTED`)
+and PR #43 merge at merge commit `a6376591bbff7cc280a4432dc1d43e2df258c22e` (implementation commit `d07371e279be427216427569cd4fbc9e44bb6ed5`).
 `UI-005` through `UI-010` retain their
 actual remaining dependency and authorization blockers and are unchanged by
 `UI-004`.
