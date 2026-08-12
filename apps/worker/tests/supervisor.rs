@@ -69,6 +69,95 @@ impl Drop for TestDirectory {
     }
 }
 
+#[cfg(unix)]
+const SIGKILL: i32 = 9;
+
+#[cfg(unix)]
+struct DescendantGuard(Option<i32>);
+
+#[cfg(unix)]
+impl DescendantGuard {
+    fn new(process_id: i32) -> Self {
+        Self(Some(process_id))
+    }
+
+    fn disarm(&mut self) {
+        self.0 = None;
+    }
+}
+
+#[cfg(unix)]
+impl Drop for DescendantGuard {
+    fn drop(&mut self) {
+        if let Some(process_id) = self.0 {
+            // SAFETY: the positive PID came from the fixture's freshly written
+            // descendant marker; SIGKILL is a bounded panic-cleanup fallback.
+            unsafe {
+                kill(process_id, SIGKILL);
+            }
+        }
+    }
+}
+
+#[cfg(unix)]
+fn wait_for_descendant(path: &Path, deadline: Instant) -> i32 {
+    while Instant::now() < deadline {
+        if let Ok(contents) = fs::read_to_string(path) {
+            let process_id = contents.parse().unwrap();
+            if process_is_alive(process_id) {
+                return process_id;
+            }
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+    panic!("fixture did not create a live descendant before the deadline");
+}
+
+#[cfg(unix)]
+fn wait_for_process_exit(process_id: i32, deadline: Instant) -> bool {
+    while Instant::now() < deadline {
+        if !process_is_alive(process_id) {
+            return true;
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+    !process_is_alive(process_id)
+}
+
+#[cfg(unix)]
+fn process_is_alive(process_id: i32) -> bool {
+    #[cfg(target_os = "linux")]
+    if fs::read_to_string(format!("/proc/{process_id}/stat"))
+        .ok()
+        .and_then(|stat| {
+            stat.rsplit_once(") ")
+                .and_then(|(_, rest)| rest.chars().next())
+        })
+        == Some('Z')
+    {
+        return false;
+    }
+
+    // kill(pid, 0) has an unavoidable PID-reuse race; these tests minimize it
+    // by probing only freshly spawned PIDs and disarming cleanup immediately.
+    // SAFETY: signal 0 performs no termination and process_id is positive.
+    let result = unsafe { kill(process_id, 0) };
+    if result == 0 {
+        return true;
+    }
+
+    match std::io::Error::last_os_error().raw_os_error() {
+        Some(1) => true,  // EPERM: the process exists.
+        Some(3) => false, // ESRCH: the process no longer exists.
+        error => panic!("unexpected kill(pid, 0) error: {error:?}"),
+    }
+}
+
+#[cfg(unix)]
+unsafe extern "C" {
+    fn kill(pid: i32, signal: i32) -> i32;
+}
+
 #[test]
 fn cancellation_token_handles_share_state() {
     let token = CancellationToken::new();
@@ -239,6 +328,110 @@ fn cancellation_terminates_and_reaps_direct_child() {
         result.primary_failure(),
         Some(ExecutionFailure::Cancelled)
     ));
+}
+
+#[cfg(unix)]
+#[test]
+fn timeout_terminates_real_descendant_tree() {
+    let directory = TestDirectory::new("timeout-descendant");
+    let descendant_path = directory.path().join("descendant-pid");
+    let mut request = request(vec![
+        OsString::from("spawn_descendant"),
+        descendant_path.clone().into_os_string(),
+        OsString::from("5000"),
+    ]);
+    request.resource_limits.timeout = Some(Duration::from_millis(500));
+
+    let started_at = Instant::now();
+    let execution = thread::spawn(move || ProcessSupervisor.execute(request));
+    let descendant_id = wait_for_descendant(
+        &descendant_path,
+        Instant::now() + Duration::from_millis(400),
+    );
+    let mut descendant_guard = DescendantGuard::new(descendant_id);
+    let result = execution.join().unwrap();
+    let direct_child_id = i32::try_from(result.runtime_metadata.process_id.unwrap()).unwrap();
+
+    assert!(started_at.elapsed() < Duration::from_secs(2));
+    assert!(matches!(
+        result.process_exit,
+        ProcessExit::TerminatedBySupervisor {
+            reason: SupervisorTermination::Timeout,
+            ..
+        }
+    ));
+    assert_eq!(
+        result.timeout,
+        TimeoutOutcome::Triggered {
+            limit: Duration::from_millis(500)
+        }
+    );
+    assert_eq!(result.cancellation, CancellationOutcome::NotSelected);
+    assert!(matches!(
+        result.primary_failure(),
+        Some(ExecutionFailure::Timeout)
+    ));
+    assert!(wait_for_process_exit(
+        direct_child_id,
+        Instant::now() + Duration::from_secs(1)
+    ));
+    assert!(wait_for_process_exit(
+        descendant_id,
+        Instant::now() + Duration::from_secs(1)
+    ));
+    descendant_guard.disarm();
+}
+
+#[cfg(unix)]
+#[test]
+fn cancellation_terminates_real_descendant_tree() {
+    let directory = TestDirectory::new("cancellation-descendant");
+    let descendant_path = directory.path().join("descendant-pid");
+    let mut request = request(vec![
+        OsString::from("spawn_descendant"),
+        descendant_path.clone().into_os_string(),
+        OsString::from("5000"),
+    ]);
+    request.resource_limits.timeout = Some(Duration::from_secs(2));
+    let token = request.cancellation.clone();
+
+    let started_at = Instant::now();
+    let execution = thread::spawn(move || ProcessSupervisor.execute(request));
+    let descendant_id =
+        wait_for_descendant(&descendant_path, Instant::now() + Duration::from_secs(1));
+    let mut descendant_guard = DescendantGuard::new(descendant_id);
+    token.cancel();
+    let result = execution.join().unwrap();
+    let direct_child_id = i32::try_from(result.runtime_metadata.process_id.unwrap()).unwrap();
+
+    assert!(started_at.elapsed() < Duration::from_secs(1));
+    assert!(matches!(
+        result.process_exit,
+        ProcessExit::TerminatedBySupervisor {
+            reason: SupervisorTermination::Cancellation,
+            ..
+        }
+    ));
+    assert_eq!(result.cancellation, CancellationOutcome::Selected);
+    assert_eq!(
+        result.timeout,
+        TimeoutOutcome::NotTriggered {
+            limit: Duration::from_secs(2)
+        }
+    );
+    assert!(matches!(
+        result.primary_failure(),
+        Some(ExecutionFailure::Cancelled)
+    ));
+    assert!(wait_for_process_exit(
+        direct_child_id,
+        Instant::now() + Duration::from_secs(1)
+    ));
+    assert!(wait_for_process_exit(
+        descendant_id,
+        Instant::now() + Duration::from_secs(1)
+    ));
+    descendant_guard.disarm();
 }
 
 #[test]
