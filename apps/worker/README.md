@@ -27,6 +27,14 @@ runtime.
   `Tests run: N, Failures: N` summaries and Defects4J `Failing tests: N`
 - conservative ASCII Java class/method and Defects4J project/test identifier
   validation, kept separate from opaque filesystem-path handling
+- a bounded `runtime_conformance` binary that probes local Java, javac, JUnitCore,
+  and Defects4J through `ProcessSupervisor`, preserves raw execution facts, and
+  distinguishes `TESTED`, `ENVIRONMENT_BLOCKED`, and `FAIL`
+- real Java compilation, marker execution, timeout, cancellation, and bounded
+  output checks when Java and javac are locally available
+- opt-in real JUnitCore checks from `TESTGAP_JUNIT_CLASSPATH` and opt-in
+  Defects4J compile/test checks from `TESTGAP_DEFECTS4J_WORKDIR`; neither input
+  is searched for or downloaded
 
 Spawn failure wins when no process starts. While a child is active, the
 supervisor checks cancellation before timeout; the first observed terminating
@@ -51,6 +59,26 @@ wall-clock timeout is reported as `SupervisorTimeoutEnforced`.
 `Child::kill` terminates only the direct child and is not a sandbox or a
 portable process-tree guarantee.
 
-The deterministic suite uses the local Rust process fixture; it does not claim
-real local JUnit or Defects4J runtime integration. No JUnit jars or Defects4J
-installation are downloaded or installed.
+The deterministic `cargo test` suite uses controlled local Rust behavior and
+does not require external runtimes. Run local conformance separately:
+
+```text
+cargo run --bin runtime_conformance
+```
+
+`TESTGAP_JUNIT_CLASSPATH` supplies an existing local JUnit classpath.
+`TESTGAP_DEFECTS4J_BIN` may select an existing Defects4J executable, and
+`TESTGAP_DEFECTS4J_WORKDIR` supplies an existing checkout for compile/test.
+
+Report meanings are deliberately narrow:
+
+- `IMPLEMENTED`: the bounded local conformance harness and detection paths
+- `TESTED`: the applicable external runtime operation was actually invoked in
+  that report run
+- `ENVIRONMENT_BLOCKED`: a required executable, classpath, or checkout was not
+  available or configured; this is not a fabricated pass
+- `NOT IMPLEMENTED`: secure sandboxing, production resource isolation, Queue,
+  Workflow, Database, Evidence, Evaluation, Security, and Deployment behavior
+
+No JUnit jars, Java runtime, or Defects4J installation are downloaded,
+installed, or treated as a permanent project guarantee.

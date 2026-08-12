@@ -4,9 +4,11 @@
 //! does not own queue, workflow, evidence, or persistence semantics.
 
 mod adapters;
+mod conformance;
 mod model;
 mod supervisor;
 
 pub use adapters::*;
+pub use conformance::*;
 pub use model::*;
 pub use supervisor::ProcessSupervisor;
