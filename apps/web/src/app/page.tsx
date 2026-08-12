@@ -5,6 +5,7 @@ import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import ProtectedRegion from "@/components/ProtectedRegion";
 
 const foundationStatus = [
   {
@@ -15,9 +16,9 @@ const foundationStatus = [
   },
   {
     title: "Authentication",
-    status: "Not connected",
-    detail: "Sign-in and session behavior belong to a later implementation phase.",
-    ready: false,
+    status: "Implemented",
+    detail: "GitHub sign-in, callback handling, and sign-out run through the Auth session runtime.",
+    ready: true,
   },
   {
     title: "API connection",
@@ -80,38 +81,40 @@ export default function Home() {
           </Typography>
         </Stack>
 
-        <Box
-          sx={{
-            display: "grid",
-            gap: 2,
-            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
-          }}
-        >
-          {foundationStatus.map(({ title, status, detail, ready }) => (
-            <Paper key={title} variant="outlined" sx={{ p: 3 }}>
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-                {ready ? (
-                  <CheckCircleRounded color="success" aria-hidden="true" />
-                ) : (
-                  <ScheduleRounded color="action" aria-hidden="true" />
-                )}
-                <Box>
-                  <Typography variant="h3">{title}</Typography>
-                  <Typography
-                    variant="body2"
-                    color={ready ? "success.dark" : "text.secondary"}
-                    sx={{ fontWeight: 700, mt: 0.5 }}
-                  >
-                    {status}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    {detail}
-                  </Typography>
-                </Box>
-              </Stack>
-            </Paper>
-          ))}
-        </Box>
+        <ProtectedRegion>
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+            }}
+          >
+            {foundationStatus.map(({ title, status, detail, ready }) => (
+              <Paper key={title} variant="outlined" sx={{ p: 3 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+                  {ready ? (
+                    <CheckCircleRounded color="success" aria-hidden="true" />
+                  ) : (
+                    <ScheduleRounded color="action" aria-hidden="true" />
+                  )}
+                  <Box>
+                    <Typography variant="h3">{title}</Typography>
+                    <Typography
+                      variant="body2"
+                      color={ready ? "success.dark" : "text.secondary"}
+                      sx={{ fontWeight: 700, mt: 0.5 }}
+                    >
+                      {status}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {detail}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            ))}
+          </Box>
+        </ProtectedRegion>
       </Box>
     </Stack>
   );
