@@ -135,6 +135,7 @@ def safe_401(response) -> None:  # type: ignore[no-untyped-def]
     }
     assert "detail" not in response.json()
     assert len(request_id) == 32
+    assert response.headers["x-correlation-id"] == request_id
 
 
 def test_real_app_exact_audience_produces_typed_context_and_keeps_cors_and_cache(
@@ -275,6 +276,24 @@ def test_missing_or_malformed_authorization_is_safe_401(
 ) -> None:
     with protected_client(verifier(settings, lambda: {"key-1": jwk(signing_key, "key-1")})) as client:
         safe_401(client.get("/__test__/protected", headers=headers))
+
+
+def test_safe_401_uses_the_effective_request_id(
+    settings: Settings, signing_key: rsa.RSAPrivateKey
+) -> None:
+    with protected_client(verifier(settings, lambda: {"key-1": jwk(signing_key, "key-1")})) as client:
+        response = client.get(
+            "/__test__/protected",
+            headers={
+                "X-Request-ID": "request.auth-1",
+                "X-Correlation-ID": "correlation.auth-1",
+            },
+        )
+
+    assert response.headers["x-request-id"] == "request.auth-1"
+    assert response.headers["x-correlation-id"] == "correlation.auth-1"
+    assert response.headers["www-authenticate"] == "Bearer"
+    assert response.json()["error"]["request_id"] == "request.auth-1"
 
 
 @pytest.mark.parametrize(

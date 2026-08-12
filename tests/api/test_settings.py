@@ -48,7 +48,18 @@ def test_settings_only_define_the_ordinary_database_url() -> None:
         "auth_jwt_audience",
         "auth_jwks_url",
         "dashboard_origin",
+        "readiness_timeout_seconds",
     }
+
+
+@pytest.mark.parametrize("timeout", ["0", "31"])
+def test_readiness_timeout_is_bounded(
+    monkeypatch: pytest.MonkeyPatch, timeout: str
+) -> None:
+    monkeypatch.setenv("READINESS_TIMEOUT_SECONDS", timeout)
+
+    with pytest.raises(ValidationError):
+        Settings()
 
 
 @pytest.mark.parametrize(

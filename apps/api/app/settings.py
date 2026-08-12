@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from pydantic import SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic.networks import AnyUrl, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     auth_jwt_audience: str
     auth_jwks_url: AnyUrl
     dashboard_origin: str
+    readiness_timeout_seconds: float = Field(default=2.0, gt=0, le=30)
 
     @model_validator(mode="before")
     @classmethod
