@@ -1,4 +1,4 @@
-"""Public API for Workflow lifecycle semantics and persistence integration."""
+"""Public API for Workflow domain semantics and persistence integration."""
 
 from .checkpoint import CheckpointSnapshot, ResumeDecision, validate_resume
 from .engine import (
@@ -7,6 +7,27 @@ from .engine import (
     evaluate_transition,
     parse_run_state,
     schedule_retry,
+)
+from .model_domain import (
+    ModelBudget,
+    ModelDomainError,
+    ModelDomainErrorCode,
+    ModelFailureClass,
+    ModelIdentity,
+    ModelRequest,
+    ModelResult,
+    ModelResultStatus,
+    PromptDefinition,
+    PromptRegistry,
+    PromptTemplateRef,
+    PromptVariables,
+    StructuredField,
+    StructuredFieldType,
+    StructuredOutputSchema,
+    StructuredValidationResult,
+    StructuredValidationStatus,
+    validate_model_request,
+    validate_structured_output,
 )
 from .persistence import (
     DURABLE_WORKFLOW_CONTRACT_VERSION,
@@ -54,11 +75,23 @@ __all__ = [
     "HumanDisposition",
     "InvalidDurableStateError",
     "LifecycleSnapshot",
+    "ModelBudget",
+    "ModelDomainError",
+    "ModelDomainErrorCode",
+    "ModelFailureClass",
+    "ModelIdentity",
+    "ModelRequest",
+    "ModelResult",
+    "ModelResultStatus",
     "RejectionReason",
     "PersistenceConflictReason",
     "PersistentTransitionRequest",
     "PersistentTransitionResult",
     "PersistentTransitionStatus",
+    "PromptDefinition",
+    "PromptRegistry",
+    "PromptTemplateRef",
+    "PromptVariables",
     "RequestKind",
     "ResumeDecision",
     "ResumeMode",
@@ -66,6 +99,11 @@ __all__ = [
     "RetryKind",
     "RunState",
     "StateParseResult",
+    "StructuredField",
+    "StructuredFieldType",
+    "StructuredOutputSchema",
+    "StructuredValidationResult",
+    "StructuredValidationStatus",
     "TransitionContext",
     "TransitionDecision",
     "WorkflowStepKind",
@@ -75,5 +113,7 @@ __all__ = [
     "persist_transition",
     "schedule_retry",
     "validate_resume",
+    "validate_model_request",
+    "validate_structured_output",
     "workflow_contract_version_from_durable",
 ]
