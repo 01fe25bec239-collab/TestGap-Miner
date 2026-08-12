@@ -4,7 +4,7 @@ use std::fmt::Display;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
-use std::process;
+use std::process::{self, Command};
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
@@ -87,6 +87,18 @@ fn run() -> Result<i32, String> {
             let marker = PathBuf::from(required(&mut arguments, "marker path")?);
             thread::sleep(Duration::from_millis(milliseconds));
             fs::write(marker, b"written").map_err(io_error)?;
+            Ok(0)
+        }
+        "spawn_descendant" => {
+            let marker = PathBuf::from(required(&mut arguments, "descendant PID path")?);
+            let milliseconds = required(&mut arguments, "descendant lifetime milliseconds")?;
+            let mut descendant = Command::new(env::current_exe().map_err(io_error)?)
+                .arg("sleep_ms")
+                .arg(milliseconds)
+                .spawn()
+                .map_err(io_error)?;
+            fs::write(marker, descendant.id().to_string()).map_err(io_error)?;
+            descendant.wait().map_err(io_error)?;
             Ok(0)
         }
         "snapshot" => {

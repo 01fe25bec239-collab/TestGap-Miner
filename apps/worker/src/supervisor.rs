@@ -10,6 +10,9 @@ use std::process::{Child, Command, ExitStatus, Stdio};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
+
 const POLL_INTERVAL: Duration = Duration::from_millis(5);
 
 #[derive(Debug, Default)]
@@ -24,6 +27,9 @@ impl ProcessSupervisor {
             .current_dir(&request.command.working_directory)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
+
+        #[cfg(unix)]
+        command.process_group(0);
 
         match &request.command.environment {
             EnvironmentPolicy::ClearAndSet(values) => {
@@ -244,11 +250,26 @@ fn terminate_and_reap(
     reason: SupervisorTermination,
     failures: &mut Vec<ExecutionFailure>,
 ) -> ProcessExit {
-    if let Err(error) = child.kill() {
+    if let Err(error) = terminate_process_tree(child) {
         failures.push(ExecutionFailure::TerminationFailure {
             kind: error.kind(),
-            message: error.to_string(),
+            message: format!(
+                "{} termination failed: {error}",
+                if cfg!(unix) {
+                    "process-group"
+                } else {
+                    "direct-child"
+                }
+            ),
         });
+
+        #[cfg(unix)]
+        if let Err(error) = child.kill() {
+            failures.push(ExecutionFailure::TerminationFailure {
+                kind: error.kind(),
+                message: format!("direct-child fallback termination failed: {error}"),
+            });
+        }
     }
 
     let code = match child.wait() {
@@ -263,6 +284,36 @@ fn terminate_and_reap(
     };
 
     ProcessExit::TerminatedBySupervisor { reason, code }
+}
+
+#[cfg(unix)]
+fn terminate_process_tree(child: &mut Child) -> io::Result<()> {
+    const SIGKILL: i32 = 9;
+
+    let process_group = i32::try_from(child.id())
+        .ok()
+        .filter(|process_group| *process_group > 0)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid child process ID"))?;
+
+    // SAFETY: every Unix child is spawned above with process_group(0), so its
+    // positive PID names an isolated group owned by this supervisor. Negating
+    // that checked PID targets only that group and can never select group 0.
+    let result = unsafe { kill(-process_group, SIGKILL) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+#[cfg(not(unix))]
+fn terminate_process_tree(child: &mut Child) -> io::Result<()> {
+    child.kill()
+}
+
+#[cfg(unix)]
+unsafe extern "C" {
+    fn kill(pid: i32, signal: i32) -> i32;
 }
 
 struct CaptureOutcome {
