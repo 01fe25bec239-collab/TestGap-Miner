@@ -1,5 +1,17 @@
 """Public Evidence-domain API."""
 
+from .candidate import (
+    CandidateFinalizationState,
+    CandidatePatch,
+    CandidatePatchId,
+    CandidateVersion,
+    ChangedFile,
+    GenerationProvenance,
+    compare_candidate_patches,
+    compare_candidate_versions,
+    validate_candidate_lineage,
+    validate_candidate_patch_version,
+)
 from .execution import (
     EVIDENCE_CONTRACT_VERSION,
     ArtefactId,
@@ -44,7 +56,12 @@ __all__ = [
     "ArtefactId",
     "ArtefactReference",
     "ArtefactType",
+    "CandidateFinalizationState",
+    "CandidatePatch",
+    "CandidatePatchId",
+    "CandidateVersion",
     "CandidateVersionId",
+    "ChangedFile",
     "CompileStatus",
     "CompileResult",
     "CorrelationId",
@@ -59,6 +76,7 @@ __all__ = [
     "ExecutionTiming",
     "FailureCategory",
     "FailureEvidence",
+    "GenerationProvenance",
     "IntegrityMetadata",
     "OpaqueReference",
     "ProcessExit",
@@ -75,5 +93,9 @@ __all__ = [
     "TestResult",
     "TimeoutMetadata",
     "WorkflowAttemptId",
+    "compare_candidate_patches",
+    "compare_candidate_versions",
     "compare_execution_evidence",
+    "validate_candidate_lineage",
+    "validate_candidate_patch_version",
 ]
