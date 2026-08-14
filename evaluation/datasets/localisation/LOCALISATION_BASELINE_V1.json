@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "case_id": "RAG-BASELINE-001",
+      "query": "Locate the provider-neutral model identity and token-budget domain definitions.",
+      "relevant_file_identities": [
+        "apps/api/app/workflow/model_domain.py"
+      ],
+      "repository_id": "01fe25bec239-collab/TestGap-Miner",
+      "revision_id": "1c5b8e9be0068c40df1f0144d6c42e53eda7d3e4"
+    },
+    {
+      "case_id": "RAG-BASELINE-002",
+      "query": "Locate the Queue envelope validation and Queue-owned identity definitions.",
+      "relevant_file_identities": [
+        "apps/api/app/queue/envelope.py",
+        "apps/api/app/queue/identities.py"
+      ],
+      "repository_id": "01fe25bec239-collab/TestGap-Miner",
+      "revision_id": "1c5b8e9be0068c40df1f0144d6c42e53eda7d3e4"
+    }
+  ],
+  "dataset_id": "LOCALISATION_BASELINE_V1",
+  "schema_version": "testgap.localisation-baseline.v1"
+}
