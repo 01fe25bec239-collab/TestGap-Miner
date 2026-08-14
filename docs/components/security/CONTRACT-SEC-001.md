@@ -6,7 +6,7 @@
 |---|---|
 | Contract ID | `CONTRACT-SEC-001` |
 | Version | `1.0.0-draft.1` |
-| Status | `DRAFT / A3_CORRECTION_COMPLETE / A2_SECURITY_REVIEW_PENDING` |
+| Status | `DRAFT / A2_SECURITY_REVIEW_PASSED / A4_REVIEW_PASSED` |
 | Owner | `A2-SECURITY — Security Component Manager` |
 | Authoring Subordinate | `A3-SECURITY — Subordinate Security Contract Authoring Agent` |
 | Task | `SEC-001-CONTRACT-SEC-001-DRAFT-001-A3-CORRECTION-002` |
@@ -17,7 +17,7 @@
 | Worktree | `/Users/omkar/Documents/TestGap-Miner-wt-security-contract-sec-001-draft` |
 | Implementation Readiness | `NOT_IMPLEMENTATION_READY` |
 | Runtime Status | `NO_RUNTIME_CODE_AUTHORIZED / UNTOUCHED` |
-| Security Acceptance Status | `NOT_ACCEPTED / DRAFT_ONLY` |
+| Security Acceptance Status | `CONTRACT_DRAFT_ACCEPTED / FINAL_SYSTEM_SECURITY_ACCEPTANCE_NOT_GRANTED` |
 | Production Readiness | `NO` |
 
 The terms **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** in this document are normative as defined in RFC 2119.
