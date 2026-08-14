@@ -6,7 +6,7 @@
 |---|---|
 | Contract ID | `CONTRACT-RAG-001` |
 | Version | `1.0.0-draft.1` |
-| Status | `DRAFT / INITIAL_IMPLEMENTATION / A2_RAG_REVIEW_REQUIRED / NOT_A4_REVIEWED` |
+| Status | `DRAFT / A2_RAG_REVIEW_PASSED / A4_REVIEW_PASSED` |
 | Owner | `A2-RAG — Repository Retrieval, Localisation, Ranking, and Context Assembly Component Manager` |
 | Implementation agent | `A3-RAG — Repository Retrieval / Localisation Implementation Agent` |
 | Consumer | `A2-AGENT-WORKFLOW`, without ownership of RAG definitions |
