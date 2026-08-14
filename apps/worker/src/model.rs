@@ -197,7 +197,7 @@ pub enum ExecutionFailure {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResourceLimitKind {
     CpuTime,
     MemoryBytes,
@@ -210,7 +210,7 @@ pub enum ResourceLimitKind {
     Other(String),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResourceLimitValue {
     Duration(Duration),
     Bytes(u64),
@@ -218,14 +218,15 @@ pub enum ResourceLimitValue {
     Custom { value: u64, unit: String },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResourceEnforcementStatus {
     NotEnforced,
     CaptureBoundEnforced,
     SupervisorTimeoutEnforced,
+    RuntimeLimitEnforced,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ResourceLimitObservation {
     pub kind: ResourceLimitKind,
     pub configured_limit: ResourceLimitValue,
