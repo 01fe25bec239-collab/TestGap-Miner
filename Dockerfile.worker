@@ -1,0 +1,20 @@
+FROM rust:1.97-bookworm AS build
+
+WORKDIR /build
+COPY apps/worker/Cargo.toml apps/worker/Cargo.lock ./
+COPY apps/worker/src ./src
+RUN cargo build --locked --release --bins
+
+FROM debian:bookworm-slim
+
+RUN groupadd --system worker \
+    && useradd --system --gid worker --home-dir /workspace worker \
+    && mkdir /workspace \
+    && chown worker:worker /workspace
+COPY --from=build /build/target/release/runtime_conformance /usr/local/bin/runtime_conformance
+COPY --from=build /build/target/release/process_fixture /usr/local/bin/process_fixture
+
+ENV HOME=/workspace
+USER worker
+WORKDIR /workspace
+CMD ["runtime_conformance"]

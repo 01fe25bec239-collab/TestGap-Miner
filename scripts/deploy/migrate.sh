@@ -11,9 +11,9 @@ if [ ! -f apps/api/alembic.ini ]; then
   exit 1
 fi
 
-if ! uv run --project apps/api alembic --version >/dev/null 2>&1; then
+if ! /opt/venv/bin/alembic --version >/dev/null 2>&1; then
   echo "Alembic is not available in the locked API project" >&2
   exit 1
 fi
 
-uv run --project apps/api alembic -c apps/api/alembic.ini upgrade head
+/opt/venv/bin/alembic -c apps/api/alembic.ini upgrade head
