@@ -8,6 +8,7 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
 
 COPY --from=uv /uv /uvx /bin/
 COPY apps/api /app/apps/api
+COPY scripts/deploy/migrate.sh /app/scripts/deploy/migrate.sh
 RUN uv sync --project /app/apps/api --locked --no-dev
 RUN groupadd --system app && useradd --system --gid app app && chown -R app:app /app /opt/venv
 

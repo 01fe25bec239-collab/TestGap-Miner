@@ -3,6 +3,7 @@ name: testgap-miner
 services:
   postgres:
     image: postgres:16.14-alpine3.24
+    user: postgres
     environment:
       POSTGRES_DB: testgap
       POSTGRES_USER: postgres
@@ -11,17 +12,146 @@ services:
       POSTGRES_MIGRATION_PASSWORD: ${POSTGRES_MIGRATION_PASSWORD:?POSTGRES_MIGRATION_PASSWORD must be set}
       POSTGRES_TEST_PASSWORD: ${POSTGRES_TEST_PASSWORD:?POSTGRES_TEST_PASSWORD must be set}
       TESTGAP_RUNTIME: ${TESTGAP_RUNTIME:?TESTGAP_RUNTIME must be local or ci}
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+      - name: postgres
+        target: 5432
+        published: "${POSTGRES_HOST_PORT:-5432}"
+        host_ip: 127.0.0.1
+        protocol: tcp
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init/10-create-test-database.sh:/docker-entrypoint-initdb.d/10-create-test-database.sh:ro
+    networks:
+      - runtime
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /var/run/postgresql:size=16m,mode=3775,uid=70,gid=70
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 1.0
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d testgap"]
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "testgap"]
       interval: 5s
       timeout: 3s
       retries: 12
       start_period: 5s
 
+  api:
+    image: testgap-api:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://testgap_app:${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD must be set}@postgres:5432/testgap
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-https://auth.local.invalid}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE:-testgap-local}
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-https://auth.local.invalid/.well-known/jwks.json}
+      DASHBOARD_ORIGIN: ${DASHBOARD_ORIGIN:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - name: api
+        target: 8000
+        published: "${API_HOST_PORT:-8000}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    networks:
+      - runtime
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=2).read()"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  migrate:
+    profiles: ["tools"]
+    image: testgap-api:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    command: ["/app/scripts/deploy/migrate.sh"]
+    environment:
+      MIGRATION_DATABASE_URL: postgresql+psycopg://testgap_migrator:${POSTGRES_MIGRATION_PASSWORD:?POSTGRES_MIGRATION_PASSWORD must be set}@postgres:5432/testgap
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - runtime
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+
+  worker:
+    profiles: ["tools"]
+    image: testgap-worker:local
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    network_mode: none
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+      - /workspace:size=256m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 2.0
+
+  runner:
+    profiles: ["tools"]
+    image: testgap-defects4j-runner:3.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile.runner
+    network_mode: none
+    init: true
+    read_only: true
+    volumes:
+      - runner-workspace:/workspace
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 512
+    mem_limit: 4g
+    cpus: 2.0
+
 volumes:
   postgres-data:
+  runner-workspace:
+
+networks:
+  runtime:
+    driver: bridge

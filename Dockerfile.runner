@@ -1,0 +1,43 @@
+FROM eclipse-temurin:11-jdk-jammy
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG DEFECTS4J_VERSION=3.0.1
+ARG DEFECTS4J_COMMIT=6d54320e0db5a357f9ab38a8e4d2e5aead7e1c09
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cpanminus \
+        curl \
+        git \
+        make \
+        perl \
+        subversion \
+        tzdata \
+        unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV DEFECTS4J_HOME=/opt/defects4j \
+    PATH="/opt/defects4j/framework/bin:${PATH}" \
+    TZ=America/Los_Angeles
+
+RUN git clone --branch "v${DEFECTS4J_VERSION}" --depth 1 \
+        https://github.com/rjust/defects4j.git "${DEFECTS4J_HOME}" \
+    && test "$(git -C "${DEFECTS4J_HOME}" rev-parse HEAD)" = "${DEFECTS4J_COMMIT}" \
+    && cd "${DEFECTS4J_HOME}" \
+    && cpanm --installdeps . \
+    && ./init.sh \
+    && java -version 2>&1 | grep 'version "11' \
+    && defects4j info -p Lang >/dev/null
+
+RUN groupadd --system runner \
+    && useradd --system --gid runner --home-dir /workspace runner \
+    && mkdir /workspace \
+    && chown runner:runner /workspace \
+    && chown -R runner:runner "${DEFECTS4J_HOME}/project_repos"
+
+ENV HOME=/workspace
+USER runner
+WORKDIR /workspace
+CMD ["defects4j", "info", "-p", "Lang"]
