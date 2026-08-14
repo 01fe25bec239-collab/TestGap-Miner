@@ -12,6 +12,15 @@ from .candidate import (
     validate_candidate_lineage,
     validate_candidate_patch_version,
 )
+from .decision import (
+    DecisionDisposition,
+    EvidenceBundleId,
+    EvidenceCardId,
+    HumanDecisionId,
+    HumanDecisionLink,
+    HumanDecisionLinkId,
+    compare_human_decision_links,
+)
 from .execution import (
     EVIDENCE_CONTRACT_VERSION,
     ArtefactId,
@@ -65,7 +74,10 @@ __all__ = [
     "CompileStatus",
     "CompileResult",
     "CorrelationId",
+    "DecisionDisposition",
     "EvidenceAvailability",
+    "EvidenceBundleId",
+    "EvidenceCardId",
     "EvidenceComparison",
     "EvidenceCompleteness",
     "EvidenceIntegrityState",
@@ -77,6 +89,9 @@ __all__ = [
     "FailureCategory",
     "FailureEvidence",
     "GenerationProvenance",
+    "HumanDecisionId",
+    "HumanDecisionLink",
+    "HumanDecisionLinkId",
     "IntegrityMetadata",
     "OpaqueReference",
     "ProcessExit",
@@ -96,6 +111,7 @@ __all__ = [
     "compare_candidate_patches",
     "compare_candidate_versions",
     "compare_execution_evidence",
+    "compare_human_decision_links",
     "validate_candidate_lineage",
     "validate_candidate_patch_version",
 ]
