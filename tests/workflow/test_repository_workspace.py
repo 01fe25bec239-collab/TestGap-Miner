@@ -21,6 +21,9 @@ REVISION_A = RevisionIdentity("a" * 40)
 REVISION_B = RevisionIdentity("b" * 40)
 ROOT_A = PurePosixPath("/workspaces/a")
 ROOT_B = PurePosixPath("/workspaces/b")
+PRODUCTION_MODULE_PATH = (
+    Path(__file__).resolve().parents[2] / "apps/api/app/workflow/repository_workspace.py"
+)
 
 
 def _make(**overrides: object) -> PreparedRepositoryWorkspace:
@@ -101,7 +104,7 @@ def test_absolute_root_rejected_for_str() -> None:
 
 
 def test_no_string_to_path_coercion() -> None:
-    source = Path("app/workflow/repository_workspace.py").read_text()
+    source = PRODUCTION_MODULE_PATH.read_text()
     assert "PurePosixPath(value)" not in source
     assert "PureWindowsPath(value)" not in source
     assert "Path(value)" not in source
@@ -127,13 +130,13 @@ def test_windows_relative_root_rejected() -> None:
 
 
 def test_no_head_inference() -> None:
-    source = Path("app/workflow/repository_workspace.py").read_text()
+    source = PRODUCTION_MODULE_PATH.read_text()
     assert "HEAD" not in source
     assert "head" not in source.lower()
 
 
 def test_no_branch_name_inference() -> None:
-    source = Path("app/workflow/repository_workspace.py").read_text()
+    source = PRODUCTION_MODULE_PATH.read_text()
     assert "branch" not in source.lower()
 
 
@@ -208,31 +211,30 @@ def test_no_raw_source_byte_field() -> None:
 
 
 def test_no_identifier_generation() -> None:
-    source = Path("app/workflow/repository_workspace.py").read_text()
+    source = PRODUCTION_MODULE_PATH.read_text()
     assert "uuid" not in source.lower()
 
 
 def test_no_network_or_provider_assumptions() -> None:
-    source = Path("app/workflow/repository_workspace.py").read_text()
+    source = PRODUCTION_MODULE_PATH.read_text()
     for term in ("socket", "requests", "httpx", "urllib", "subprocess", "os.system"):
         assert term not in source
 
 
 def test_no_execution_dependency() -> None:
-    source = Path("app/workflow/repository_workspace.py").read_text()
+    source = PRODUCTION_MODULE_PATH.read_text()
     assert "ExecutionCommand" not in source
     assert "ExecutionResult" not in source
 
 
 def test_no_rag_indexing_behavior() -> None:
-    source = Path("app/workflow/repository_workspace.py").read_text()
+    source = PRODUCTION_MODULE_PATH.read_text()
     for term in ("glob", "rglob", "iterdir", ".resolve(", ".exists(", ".is_dir("):
         assert term not in source
 
 
 def test_production_module_does_not_import_app_retrieval() -> None:
-    source_path = Path("app/workflow/repository_workspace.py")
-    tree = ast.parse(source_path.read_text())
+    tree = ast.parse(PRODUCTION_MODULE_PATH.read_text())
     imported_modules: list[str] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -251,6 +253,15 @@ def test_production_module_does_not_import_app_retrieval() -> None:
         assert not any(
             module == prefix or module.startswith(prefix + ".") for prefix in forbidden_prefixes
         )
+
+
+def test_production_module_path_is_cwd_independent(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    assert PRODUCTION_MODULE_PATH.name == "repository_workspace.py"
+    assert PRODUCTION_MODULE_PATH.parent.name == "workflow"
+    monkeypatch.chdir(tmp_path)
+    assert "class PreparedRepositoryWorkspace" in PRODUCTION_MODULE_PATH.read_text()
 
 
 def test_module_imports_independently() -> None:
