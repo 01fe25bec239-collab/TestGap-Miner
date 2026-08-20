@@ -244,10 +244,15 @@ def _walk(
         if stat.S_ISLNK(metadata.st_mode):
             exclusions.append(ExcludedEntry(relative_path, ExclusionReason.SYMLINK))
             continue
+        reason = _EXCLUDED_DIRECTORIES.get(entry.name)
+        # ponytail: VCS metadata is excluded by name even when it is a regular
+        # file, because a Git worktree stores ".git" as a pointer file.
+        if reason is not None and (
+            stat.S_ISDIR(metadata.st_mode) or reason is ExclusionReason.VCS_METADATA
+        ):
+            exclusions.append(ExcludedEntry(relative_path, reason))
+            continue
         if stat.S_ISDIR(metadata.st_mode):
-            if reason := _EXCLUDED_DIRECTORIES.get(entry.name):
-                exclusions.append(ExcludedEntry(relative_path, reason))
-                continue
             if depth >= MAX_INDEX_DEPTH:
                 raise RepositoryIndexingError(
                     IndexingErrorCode.DEPTH_LIMIT_EXCEEDED,

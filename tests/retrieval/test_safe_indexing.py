@@ -191,6 +191,48 @@ def test_explicit_directory_exclusions(tmp_path: Path, excluded: str) -> None:
     assert paths(index_repository(workspace(root))) == ["visible.py"]
 
 
+GIT_POINTER = "gitdir: /some/host/path/.git/worktrees/example\n"
+
+
+@pytest.mark.parametrize("name", [".git", ".hg", ".svn"])
+def test_vcs_metadata_pointer_file_is_excluded_like_its_directory(
+    tmp_path: Path, name: str
+) -> None:
+    root = tmp_path / "source"
+    root.mkdir()
+    (root / name).write_text(GIT_POINTER)
+    (root / "visible.py").write_text("pass\n")
+
+    result = index_repository(workspace(root))
+
+    assert [(item.relative_path, item.reason) for item in result.exclusions] == [
+        (name, ExclusionReason.VCS_METADATA)
+    ]
+    assert paths(result) == ["visible.py"]
+    assert [item.file_identity.value for item in result.manifest.files] == ["visible.py"]
+    pointer_digest = hashlib.sha256(GIT_POINTER.encode()).hexdigest()
+    assert pointer_digest not in result.manifest.canonical_json()
+
+
+def test_worktree_pointer_file_and_directory_exclusions_stay_ordered(tmp_path: Path) -> None:
+    root = tmp_path / "source"
+    (root / "node_modules").mkdir(parents=True)
+    (root / ".git").write_text(GIT_POINTER)
+    (root / "__pycache__").mkdir()
+    (root / "visible.py").write_text("pass\n")
+
+    first = index_repository(workspace(root))
+    second = index_repository(workspace(root))
+
+    assert first.exclusions == second.exclusions
+    assert [(item.relative_path, item.reason) for item in first.exclusions] == [
+        (".git", ExclusionReason.VCS_METADATA),
+        ("__pycache__", ExclusionReason.CACHE),
+        ("node_modules", ExclusionReason.VENDOR_DEPENDENCY),
+    ]
+    assert paths(first) == ["visible.py"]
+
+
 def test_exclusion_metadata_is_deterministic_and_content_stays_out_of_manifest(
     tmp_path: Path,
 ) -> None:
