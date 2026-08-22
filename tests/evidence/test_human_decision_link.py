@@ -423,7 +423,6 @@ def test_no_direct_out_of_contract_linkage_or_authority_semantics_exist() -> Non
 
 
 def test_out_of_scope_evidence_aggregates_and_human_decision_are_not_implemented() -> None:
-    assert not hasattr(evidence_domain, "EvidenceBundle")
     assert not hasattr(evidence_domain, "EvidenceCard")
     assert not hasattr(evidence_domain, "HumanDecision")
 
