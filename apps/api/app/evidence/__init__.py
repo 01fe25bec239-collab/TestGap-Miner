@@ -1,5 +1,17 @@
 """Public Evidence-domain API."""
 
+from .artefact import (
+    ARTEFACT_MANIFEST_CARDINALITY_BOUND,
+    ARTEFACT_MANIFEST_SCHEMA_VERSION,
+    ArtefactId,
+    ArtefactManifest,
+    ArtefactManifestFinalizationState,
+    ArtefactManifestId,
+    ArtefactReference,
+    ArtefactType,
+    compare_artefact_manifests,
+    compare_artefact_references,
+)
 from .candidate import (
     CandidateFinalizationState,
     CandidatePatch,
@@ -23,9 +35,6 @@ from .decision import (
 )
 from .execution import (
     EVIDENCE_CONTRACT_VERSION,
-    ArtefactId,
-    ArtefactReference,
-    ArtefactType,
     CandidateVersionId,
     CompileStatus,
     CompileResult,
@@ -61,8 +70,13 @@ from .execution import (
 )
 
 __all__ = [
+    "ARTEFACT_MANIFEST_CARDINALITY_BOUND",
+    "ARTEFACT_MANIFEST_SCHEMA_VERSION",
     "EVIDENCE_CONTRACT_VERSION",
     "ArtefactId",
+    "ArtefactManifest",
+    "ArtefactManifestFinalizationState",
+    "ArtefactManifestId",
     "ArtefactReference",
     "ArtefactType",
     "CandidateFinalizationState",
@@ -108,6 +122,8 @@ __all__ = [
     "TestResult",
     "TimeoutMetadata",
     "WorkflowAttemptId",
+    "compare_artefact_manifests",
+    "compare_artefact_references",
     "compare_candidate_patches",
     "compare_candidate_versions",
     "compare_execution_evidence",
