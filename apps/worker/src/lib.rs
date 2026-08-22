@@ -7,10 +7,12 @@ mod adapters;
 mod conformance;
 mod model;
 mod producer_result;
+mod producer_result_adapter;
 mod supervisor;
 
 pub use adapters::*;
 pub use conformance::*;
 pub use model::*;
 pub use producer_result::*;
+pub use producer_result_adapter::*;
 pub use supervisor::ProcessSupervisor;
