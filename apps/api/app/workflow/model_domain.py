@@ -72,6 +72,7 @@ class StructuredValidationStatus(StrEnum):
 class ModelResultStatus(StrEnum):
     SUCCESS = "SUCCESS"
     REFUSAL = "REFUSAL"
+    ABSTENTION = "ABSTENTION"
     PROVIDER_OR_MODEL_FAILURE = "PROVIDER_OR_MODEL_FAILURE"
     INVALID_STRUCTURED_OUTPUT = "INVALID_STRUCTURED_OUTPUT"
     BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
@@ -257,19 +258,16 @@ class PromptRegistry:
                 )
             previous = by_ref.get(definition.ref)
             if previous is not None:
-                code = (
-                    ModelDomainErrorCode.INVALID_PROMPT_DEFINITION
-                    if previous == definition
-                    else ModelDomainErrorCode.PROMPT_VERSION_CONFLICT
-                )
-                _raise(
-                    code,
-                    f"duplicate prompt identity {definition.ref.template_id}@{definition.ref.version}",
-                )
+                if previous != definition:
+                    _raise(
+                        ModelDomainErrorCode.PROMPT_VERSION_CONFLICT,
+                        f"conflicting prompt identity {definition.ref.template_id}@{definition.ref.version}",
+                    )
+                continue
             by_ref[definition.ref] = definition
         ordered = tuple(
             sorted(
-                supplied,
+                by_ref.values(),
                 key=lambda entry: (entry.ref.template_id, entry.ref.version),
             )
         )
