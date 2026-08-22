@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import Iterable
 from dataclasses import dataclass, fields, is_dataclass
 from datetime import datetime, timedelta, timezone
 from enum import StrEnum
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 
 EVIDENCE_CONTRACT_VERSION: Final = "CONTRACT-EVIDENCE-001@1.0.0-draft.3"
-_ARTEFACT_ID_PATTERN: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:@+-]*")
+
+if TYPE_CHECKING:
+    from .artefact import ArtefactId, ArtefactReference, ArtefactType
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,17 +55,6 @@ class QueueDeliveryId(_Identifier):
 
 class CorrelationId(_Identifier):
     """Opaque cross-component tracing identity."""
-
-
-class ArtefactId(_Identifier):
-    """Evidence-owned opaque logical identity, never a physical locator."""
-
-    def __post_init__(self) -> None:
-        _Identifier.__post_init__(self)
-        if _ARTEFACT_ID_PATTERN.fullmatch(self.value) is None:
-            raise ValueError(
-                "artefact identity must use the opaque logical-ID grammar, not a storage locator"
-            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -147,28 +137,6 @@ class IntegrityMetadata:
             and self.verification_reference is None
         ):
             raise ValueError("VERIFIED integrity requires a verification reference")
-
-
-class ArtefactType(StrEnum):
-    COMPILE_LOG = "COMPILE_LOG"
-    TEST_STDOUT = "TEST_STDOUT"
-    TEST_STDERR = "TEST_STDERR"
-    EXECUTION_LOG = "EXECUTION_LOG"
-    CUSTOM_OUTPUT = "CUSTOM_OUTPUT"
-
-
-@dataclass(frozen=True, slots=True)
-class ArtefactReference:
-    artefact_id: ArtefactId
-    artefact_type: ArtefactType
-    availability: EvidenceAvailability
-    integrity: IntegrityMetadata
-
-    def __post_init__(self) -> None:
-        _require_type(self.artefact_id, ArtefactId, "artefact_id")
-        _require_type(self.artefact_type, ArtefactType, "artefact_type")
-        _require_type(self.availability, EvidenceAvailability, "availability")
-        _require_type(self.integrity, IntegrityMetadata, "integrity")
 
 
 @dataclass(frozen=True, slots=True)
@@ -369,6 +337,8 @@ class CompileResult:
     diagnostic_artefacts: tuple[ArtefactReference, ...] = ()
 
     def __post_init__(self) -> None:
+        from .artefact import ArtefactReference
+
         _require_type(self.status, CompileStatus, "status")
         for name in ("error_count", "warning_count"):
             value = getattr(self, name)
@@ -548,6 +518,8 @@ class ExecutionEvidence:
     contract_version: str = EVIDENCE_CONTRACT_VERSION
 
     def __post_init__(self) -> None:
+        from .artefact import ArtefactReference
+
         for name, expected in (
             ("execution_evidence_id", ExecutionEvidenceId),
             ("producer_result_id", ProducerResultId),
@@ -727,6 +699,8 @@ class ExecutionEvidence:
             raise ValueError("RESOURCE_BREACH requires an explicitly supplied breach fact")
 
     def _validate_artefacts(self) -> None:
+        from .artefact import ArtefactType
+
         artefacts = self._all_artefacts()
         artefact_ids = [artefact.artefact_id for artefact in artefacts]
         if len(artefact_ids) != len(set(artefact_ids)):
@@ -878,3 +852,17 @@ def _domain_value(value: object) -> object:
     if isinstance(value, tuple):
         return [_domain_value(item) for item in value]
     return value
+
+
+_COMPAT_ARTEFACT_NAMES: Final = frozenset(
+    {"ArtefactId", "ArtefactReference", "ArtefactType"}
+)
+
+
+def __getattr__(name: str) -> object:
+    """Re-export the one canonical artefact domain implementation on demand."""
+    if name in _COMPAT_ARTEFACT_NAMES:
+        from . import artefact as artefact_domain
+
+        return getattr(artefact_domain, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

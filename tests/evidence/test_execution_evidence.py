@@ -44,6 +44,7 @@ from app.evidence import (
 
 STARTED_AT = datetime(2026, 8, 12, 8, 0, tzinfo=timezone.utc)
 ENDED_AT = STARTED_AT + timedelta(seconds=3)
+ARTEFACT_CREATED_AT = datetime(2026, 8, 12, 7, 55, tzinfo=timezone.utc)
 
 
 def verified(reference: str) -> IntegrityMetadata:
@@ -70,6 +71,13 @@ def artefact(
         artefact_type,
         availability,
         IntegrityMetadata(integrity_state, integrity_reference),
+        content_digest=OpaqueReference(f"digest:{identity}"),
+        digest_algorithm=OpaqueReference("digest-algorithm:configured"),
+        byte_size=64,
+        media_type="text/plain",
+        producer_id=OpaqueReference("producer:execution-runner"),
+        creation_timestamp=ARTEFACT_CREATED_AT,
+        storage_locator=f"locator:{identity}",
     )
 
 
