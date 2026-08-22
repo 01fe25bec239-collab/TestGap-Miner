@@ -12,6 +12,12 @@ from .artefact import (
     compare_artefact_manifests,
     compare_artefact_references,
 )
+from .bundle import (
+    QUEUE_CONTRACT_VERSION,
+    WORKFLOW_CONTRACT_VERSION,
+    EvidenceBundle,
+    compare_evidence_bundles,
+)
 from .candidate import (
     CandidateFinalizationState,
     CandidatePatch,
@@ -73,6 +79,8 @@ __all__ = [
     "ARTEFACT_MANIFEST_CARDINALITY_BOUND",
     "ARTEFACT_MANIFEST_SCHEMA_VERSION",
     "EVIDENCE_CONTRACT_VERSION",
+    "QUEUE_CONTRACT_VERSION",
+    "WORKFLOW_CONTRACT_VERSION",
     "ArtefactId",
     "ArtefactManifest",
     "ArtefactManifestFinalizationState",
@@ -90,6 +98,7 @@ __all__ = [
     "CorrelationId",
     "DecisionDisposition",
     "EvidenceAvailability",
+    "EvidenceBundle",
     "EvidenceBundleId",
     "EvidenceCardId",
     "EvidenceComparison",
@@ -126,6 +135,7 @@ __all__ = [
     "compare_artefact_references",
     "compare_candidate_patches",
     "compare_candidate_versions",
+    "compare_evidence_bundles",
     "compare_execution_evidence",
     "compare_human_decision_links",
     "validate_candidate_lineage",
