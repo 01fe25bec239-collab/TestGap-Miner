@@ -278,12 +278,16 @@ def test_registry_entry_count_boundaries() -> None:
     )
 
 
-def test_registry_rejects_exact_duplicates_and_version_conflicts() -> None:
+def test_registry_identical_duplicates_converge_and_conflicts_fail_closed() -> None:
     definition = prompt_definition()
-    assert_error(
-        ModelDomainErrorCode.INVALID_PROMPT_DEFINITION,
-        lambda: PromptRegistry.build([definition, definition]),
+    converged = PromptRegistry.build([definition, definition])
+    assert converged.entries == (definition,)
+    assert converged.lookup(PROMPT_REF) is definition
+    equivalent = prompt_definition(
+        variables=["language", "project"],
+        metadata={"purpose": "planning"},
     )
+    assert PromptRegistry.build([definition, equivalent]).entries == (definition,)
     assert_error(
         ModelDomainErrorCode.PROMPT_VERSION_CONFLICT,
         lambda: PromptRegistry.build(
@@ -783,6 +787,9 @@ def test_all_model_result_outcomes_have_valid_distinct_shapes() -> None:
             structured_validation=valid,
         ),
         ModelResult(ModelResultStatus.REFUSAL, refusal_reason="policy refusal"),
+        ModelResult(
+            ModelResultStatus.ABSTENTION, detail="insufficient task context"
+        ),
         ModelResult(
             ModelResultStatus.PROVIDER_OR_MODEL_FAILURE,
             failure_class=ModelFailureClass.TRANSPORT_FAILURE,
