@@ -949,17 +949,99 @@ def test_reciprocal_rank_is_exact_and_position_based() -> None:
     assert reciprocal_rank(predicted, frozenset({"z.py"})) == (0, 1)
 
 
+def test_macro_metric_aggregation_over_actual_predictions_is_exact(tmp_path: Path) -> None:
+    """Macro recall/MRR derivation stays proven without the historical workspace."""
+
+    root = build_fixture(
+        tmp_path / "source",
+        {
+            "alpha/QueryEnvelope.py": b"envelope validation\n",
+            "beta/QueryIdentities.py": b"identity definitions\n",
+            "gamma/unrelated.py": b"nothing relevant lives here\n",
+        },
+    )
+    prepared = prepared_workspace(root)
+    index = index_repository(prepared)
+
+    cases = (
+        ("synthetic-001", "envelope", frozenset({"alpha/QueryEnvelope.py"})),
+        (
+            "synthetic-002",
+            "identity definitions",
+            frozenset({"alpha/QueryEnvelope.py", "beta/QueryIdentities.py"}),
+        ),
+    )
+    predictions = {}
+    for case_id, query, _relevant in cases:
+        result = generate_candidates(
+            prepared, index, CandidateGenerationInput(query=query, candidate_limit=5)
+        )
+        predictions[case_id] = tuple(candidate.file_identity.value for candidate in result)
+
+    recalls = {
+        k: sum(
+            (
+                recall_at_k(predictions[case_id], relevant, k)
+                for case_id, _query, relevant in cases
+            ),
+            Fraction(0),
+        )
+        / len(cases)
+        for k in (1, 3, 5)
+    }
+    mrr = sum(
+        (
+            Fraction(*reciprocal_rank(predictions[case_id], relevant))
+            for case_id, _query, relevant in cases
+        ),
+        Fraction(0),
+    ) / len(cases)
+
+    # Case 001 retrieves its single relevant file first; case 002 retrieves
+    # exactly one of its two relevant files (rank one), so every Recall@K >= 1
+    # is 3/4 and MRR is (1/1 + 1/1) / 2.
+    assert recalls[1] == Fraction(3, 4)
+    assert recalls[3] == Fraction(3, 4)
+    assert recalls[5] == Fraction(3, 4)
+    assert mrr == Fraction(1)
+
+
 # --------------------------------------------------------------------------
 # Baseline evidence (evaluation/datasets/localisation/LOCALISATION_BASELINE_V1.json)
 # --------------------------------------------------------------------------
 
 
+BASELINE_REPOSITORY_ID = RepositoryIdentity("01fe25bec239-collab/TestGap-Miner")
+BASELINE_REVISION_ID = RevisionIdentity("1c5b8e9be0068c40df1f0144d6c42e53eda7d3e4")
+HISTORICAL_WORKSPACE_VARIABLE = "RAG003_BASELINE_WORKSPACE"
+
+
 @pytest.fixture(scope="module")
 def baseline_index():
+    """Bind the pinned baseline revision to an independently prepared workspace.
+
+    The dataset pins revision 1c5b8e9be0068c40df1f0144d6c42e53eda7d3e4, whose
+    source bytes are not the bytes of this checkout, so REPO_ROOT must never
+    stand in for that revision. The root of a workspace prepared at exactly
+    that revision (for example a detached Git worktree or a ``git archive``
+    extraction) is supplied through the RAG003_BASELINE_WORKSPACE environment
+    variable. When it is absent the historical integration tests skip instead
+    of silently asserting that the current checkout is the pinned revision.
+    """
+
+    supplied = os.environ.get(HISTORICAL_WORKSPACE_VARIABLE)
+    if not supplied:
+        pytest.skip("historical pinned baseline workspace not supplied")
+    root = Path(supplied).resolve()
+    if not root.is_dir():
+        pytest.fail(
+            f"{HISTORICAL_WORKSPACE_VARIABLE} must point at the prepared "
+            f"historical workspace directory, got: {root}"
+        )
     prepared = PreparedRepositoryWorkspace(
-        RepositoryIdentity("01fe25bec239-collab/TestGap-Miner"),
-        RevisionIdentity("1c5b8e9be0068c40df1f0144d6c42e53eda7d3e4"),
-        REPO_ROOT,
+        BASELINE_REPOSITORY_ID,
+        BASELINE_REVISION_ID,
+        root,
         WorkspaceMode.READ_ONLY,
     )
     return prepared, index_repository(prepared)
@@ -981,8 +1063,9 @@ def test_baseline_single_relevant_case_is_retrieved(baseline_index) -> None:
     predicted = baseline_predictions(baseline_index, case)
     relevant = frozenset(value.value for value in case.relevant_file_identities)
 
-    assert recall_at_k(predicted, relevant, 2) == Fraction(0)
-    assert recall_at_k(predicted, relevant, 3) == Fraction(1)
+    # On the pinned historical tree the single relevant file is ranked first.
+    assert recall_at_k(predicted, relevant, 1) == Fraction(1)
+    assert recall_at_k(predicted, relevant, 5) == Fraction(1)
 
 
 def test_baseline_multi_relevant_case_has_partial_top_five_recall(baseline_index) -> None:
@@ -993,8 +1076,10 @@ def test_baseline_multi_relevant_case_has_partial_top_five_recall(baseline_index
     predicted = baseline_predictions(baseline_index, case)
     relevant = frozenset(value.value for value in case.relevant_file_identities)
 
-    # One of the two relevant files is retrieved within the first five
-    # predictions, so true Recall@K is exactly one half, not a hit rate of 1.
+    # On the pinned historical tree exactly one of the two relevant files
+    # appears within the first five predictions, so true Recall@K is exactly
+    # one half, not a hit rate of 1.
+    assert recall_at_k(predicted, relevant, 1) == Fraction(1, 2)
     assert recall_at_k(predicted, relevant, 3) == Fraction(1, 2)
     assert recall_at_k(predicted, relevant, 5) == Fraction(1, 2)
 
@@ -1034,15 +1119,16 @@ def test_baseline_macro_metrics_are_derived_from_actual_predictions(baseline_ind
         / len(dataset.cases)
     )
 
-    # Regression pins for the current candidate order. Each value follows from
-    # the generated rankings: case 001 places its single relevant file third;
-    # case 002 retrieves exactly one of its two relevant files (rank two), so
-    # every Recall@K >= 3 is 3/4 and MRR is (1/3 + 1/2) / 2.
+    # Regression pins measured against the pinned historical revision
+    # 1c5b8e9be0068c40df1f0144d6c42e53eda7d3e4. Each value follows from the
+    # generated rankings on that tree: case 001 places its single relevant
+    # file first; case 002 retrieves exactly one of its two relevant files
+    # (rank one), so every Recall@K >= 1 is 3/4 and MRR is (1/1 + 1/1) / 2.
     assert index.manifest.repository_id.value == "01fe25bec239-collab/TestGap-Miner"
-    assert recalls[1] == Fraction(0)
+    assert recalls[1] == Fraction(3, 4)
     assert recalls[3] == Fraction(3, 4)
     assert recalls[5] == Fraction(3, 4)
-    assert mrr == Fraction(5, 12)
+    assert mrr == Fraction(1)
 
 
 def test_baseline_score_breakdown_is_deterministic(baseline_index) -> None:
