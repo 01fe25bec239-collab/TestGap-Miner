@@ -611,7 +611,9 @@ fn invalid_executable_is_a_typed_spawn_failure() {
 #[test]
 fn resource_observations_preserve_units_and_enforcement_truth() {
     let mut request = request(strings(&["stdout_text", "abc"]));
-    request.resource_limits.cpu_time = Some(Duration::from_secs(2));
+    // NOTE: cpu_time is exercised by the dedicated EXEC-007C tests because a
+    // requested CPU limit now changes whether/how the target starts per
+    // platform (Linux enforces child-locally; macOS fails closed).
     request.resource_limits.memory_bytes = Some(10_000);
     request.resource_limits.disk_temp_workspace_bytes = Some(20_000);
     request.resource_limits.process_count = Some(3);
@@ -622,7 +624,6 @@ fn resource_observations_preserve_units_and_enforcement_truth() {
     let result = ProcessSupervisor.execute(request);
 
     for kind in [
-        ResourceLimitKind::CpuTime,
         ResourceLimitKind::MemoryBytes,
         ResourceLimitKind::DiskTempWorkspaceBytes,
         ResourceLimitKind::ProcessCount,
@@ -637,10 +638,6 @@ fn resource_observations_preserve_units_and_enforcement_truth() {
         assert!(!observation.terminated_execution);
     }
 
-    assert_eq!(
-        observation(&result, &ResourceLimitKind::CpuTime).configured_limit,
-        ResourceLimitValue::Duration(Duration::from_secs(2))
-    );
     assert_eq!(
         observation(&result, &ResourceLimitKind::MemoryBytes).configured_limit,
         ResourceLimitValue::Bytes(10_000)
@@ -748,4 +745,503 @@ fn repeated_executions_do_not_leak_request_state() {
         second_result.stdout.captured_bytes,
         second_expected.as_bytes()
     );
+}
+
+// ===========================================================================
+// EXEC-007C: hard CPU runtime-limit enforcement (Linux) and fail-closed
+// rejection elsewhere (macOS). See resource_limits.rs for the frozen policy.
+// ===========================================================================
+
+/// Generous wall-clock safety net for CPU-burn fixtures. It exists only to
+/// bound a broken test; the asserted enforcement facts never come from it.
+const CPU_TEST_WALL_SAFETY: Duration = Duration::from_secs(30);
+
+/// Upper wall bound a healthy bounded CPU burner must stay under. With a 1s
+/// caller request, soft = 1 CPU second and hard = 2 CPU seconds, so even
+/// heavy CI contention leaves an order of magnitude of headroom.
+#[cfg_attr(
+    not(all(target_os = "linux", target_pointer_width = "64")),
+    expect(dead_code)
+)]
+const BOUNDED_BURN_WALL_CEILING: Duration = Duration::from_secs(20);
+
+/// Conservative wall-clock LOWER bound separating soft-boundary termination
+/// from the finite hard backstop for a burner requested at 1 CPU second
+/// (kernel soft = 1s, kernel hard = 2s).
+///
+/// A process cannot consume 2 full CPU seconds in less than 2 wall seconds
+/// (wall time always dominates CPU time for these single-threaded burners),
+/// whereas a burner terminated AT the soft boundary exits near 1 wall second.
+/// The threshold therefore sits safely above any possible soft-bound kill yet
+/// far below the physical hard-ceiling minimum, so it is generous in the
+/// passing direction while still discriminating between the two outcomes.
+#[cfg_attr(
+    not(all(target_os = "linux", target_pointer_width = "64")),
+    expect(dead_code)
+)]
+const HARD_BACKSTOP_WALL_FLOOR: Duration = Duration::from_millis(1500);
+
+fn request_with_cpu(arguments: Vec<OsString>, cpu_time: Option<Duration>) -> ExecutionRequest {
+    let mut execution_request = request(arguments);
+    execution_request.resource_limits.cpu_time = cpu_time;
+    execution_request
+}
+
+fn assert_never_started_spawn_failure(result: &testgap_worker::ExecutionResult) {
+    assert_eq!(result.process_exit, ProcessExit::NeverStarted);
+    assert_eq!(result.runtime_metadata.process_id, None);
+    assert!(matches!(
+        result.primary_failure(),
+        Some(ExecutionFailure::SpawnFailure { .. })
+    ));
+    assert!(result.stdout.captured_bytes.is_empty());
+    assert!(result.stderr.captured_bytes.is_empty());
+    let cpu = observation(result, &ResourceLimitKind::CpuTime);
+    assert_eq!(
+        cpu.enforcement_status,
+        ResourceEnforcementStatus::NotEnforced,
+        "a target that never ran must never claim RuntimeLimitEnforced"
+    );
+    assert!(!cpu.terminated_execution);
+}
+
+#[test]
+fn no_cpu_request_preserves_plain_execution() {
+    let result = execute_with_cpu(&["exit", "0"], None);
+
+    assert!(result.is_success());
+    assert_eq!(result.process_exit, ProcessExit::ExitedWithCode(0));
+    assert!(result.failures.is_empty());
+}
+
+fn execute_with_cpu(
+    arguments: &[&str],
+    cpu_time: Option<Duration>,
+) -> testgap_worker::ExecutionResult {
+    ProcessSupervisor.execute(request_with_cpu(strings(arguments), cpu_time))
+}
+
+#[test]
+fn zero_cpu_duration_fails_closed_before_spawn() {
+    let directory = TestDirectory::new("cpu-zero-fail-closed");
+    let marker = directory.path().join("marker");
+    let mut zero_request = request_with_cpu(
+        vec![
+            OsString::from("sleep_then_write"),
+            OsString::from("0"),
+            marker.clone().into_os_string(),
+        ],
+        Some(Duration::ZERO),
+    );
+    zero_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
+    let result = ProcessSupervisor.execute(zero_request);
+
+    assert_never_started_spawn_failure(&result);
+    thread::sleep(Duration::from_millis(200));
+    assert!(!marker.exists(), "rejected target must not execute");
+}
+
+#[test]
+fn overflow_cpu_duration_fails_closed_before_spawn() {
+    let directory = TestDirectory::new("cpu-overflow-fail-closed");
+    let marker = directory.path().join("marker");
+    let mut overflow_request = request_with_cpu(
+        vec![
+            OsString::from("sleep_then_write"),
+            OsString::from("0"),
+            marker.clone().into_os_string(),
+        ],
+        Some(Duration::MAX),
+    );
+    overflow_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
+    let result = ProcessSupervisor.execute(overflow_request);
+
+    assert_never_started_spawn_failure(&result);
+    thread::sleep(Duration::from_millis(200));
+    assert!(!marker.exists(), "rejected target must not execute");
+}
+
+#[cfg(target_os = "macos")]
+mod macos_cpu_rejection {
+    use super::*;
+
+    #[test]
+    fn macos_cpu_request_fails_closed_and_target_never_executes() {
+        let directory = TestDirectory::new("macos-cpu-reject");
+        let marker = directory.path().join("marker");
+        let mut rejected = request_with_cpu(
+            vec![
+                OsString::from("sleep_then_write"),
+                OsString::from("0"),
+                marker.clone().into_os_string(),
+            ],
+            Some(Duration::from_secs(1)),
+        );
+        rejected.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
+        rejected.command.working_directory = directory.path().to_path_buf();
+        let result = ProcessSupervisor.execute(rejected);
+
+        assert_never_started_spawn_failure(&result);
+        assert!(matches!(
+            result.primary_failure(),
+            Some(ExecutionFailure::SpawnFailure {
+                kind: std::io::ErrorKind::Unsupported,
+                ..
+            })
+        ));
+        thread::sleep(Duration::from_millis(200));
+        assert!(!marker.exists(), "rejected target must not execute");
+
+        // The worker itself stays fully usable for unlimited children.
+        let subsequent = execute(&["exit", "0"]);
+        assert!(subsequent.is_success());
+    }
+}
+
+#[cfg(all(target_os = "linux", target_pointer_width = "64"))]
+mod linux_cpu_enforcement {
+    use super::*;
+    use std::ffi::{c_int, c_ulong};
+
+    #[repr(C)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    struct RLimit {
+        rlim_cur: c_ulong,
+        rlim_max: c_ulong,
+    }
+
+    const RLIMIT_CPU: c_int = 0;
+
+    unsafe extern "C" {
+        fn getrlimit(resource: c_int, rlim: *mut RLimit) -> c_int;
+    }
+
+    fn parent_rlimit_cpu() -> RLimit {
+        let mut limits = RLimit {
+            rlim_cur: 0,
+            rlim_max: 0,
+        };
+        // SAFETY: `getrlimit` receives RLIMIT_CPU's stable Linux number and a
+        // valid initialized pointer whose repr(C) layout mirrors LP64 Linux's
+        // struct rlimit exactly; the kernel fills both fields of this local
+        // during the call and nothing outlives it.
+        let result = unsafe { getrlimit(RLIMIT_CPU, &mut limits) };
+        assert_eq!(result, 0, "getrlimit(RLIMIT_CPU) failed in test process");
+        limits
+    }
+
+    fn bounded_burn_assertions(result: &testgap_worker::ExecutionResult, started_at: Instant) {
+        assert!(
+            started_at.elapsed() < BOUNDED_BURN_WALL_CEILING,
+            "CPU burner outlived its finite limit; wall={:?}",
+            started_at.elapsed()
+        );
+        let cpu = observation(result, &ResourceLimitKind::CpuTime);
+        assert_eq!(
+            cpu.enforcement_status,
+            ResourceEnforcementStatus::RuntimeLimitEnforced
+        );
+        // Wall timeout was configured purely as safety and must NOT have
+        // fired for pure CPU exhaustion.
+        assert_eq!(
+            result.timeout,
+            TimeoutOutcome::NotTriggered {
+                limit: CPU_TEST_WALL_SAFETY
+            }
+        );
+        assert_eq!(result.cancellation, CancellationOutcome::NotSelected);
+    }
+
+    fn limited_burn(op: &'static str, cpu: Duration) -> (testgap_worker::ExecutionResult, Instant) {
+        let mut burn_request = request_with_cpu(vec![OsString::from(op)], Some(cpu));
+        burn_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
+        let started_at = Instant::now();
+        (ProcessSupervisor.execute(burn_request), started_at)
+    }
+
+    #[test]
+    fn child_rlimit_values_follow_rounding_policy() {
+        for (requested, expected_cur, expected_hard) in [
+            (Duration::from_millis(1), 1_u64, 2_u64),
+            (Duration::from_secs(1), 1, 2),
+            (Duration::from_millis(1001), 2, 3),
+        ] {
+            let result = execute_with_cpu(&["print_rlimit_cpu"], Some(requested));
+            assert!(result.is_success(), "fixture failed: {result:?}");
+            let stdout = String::from_utf8(result.stdout.captured_bytes.clone()).unwrap();
+            assert_eq!(
+                stdout,
+                format!("RLIMIT_CPU cur={expected_cur} max={expected_hard}\n"),
+                "kernel-visible values wrong for {requested:?}"
+            );
+
+            let cpu = observation(&result, &ResourceLimitKind::CpuTime);
+            assert_eq!(
+                cpu.enforcement_status,
+                ResourceEnforcementStatus::RuntimeLimitEnforced
+            );
+            assert_eq!(
+                cpu.configured_limit,
+                ResourceLimitValue::Duration(requested),
+                "configured_limit must preserve the ORIGINAL caller duration"
+            );
+            assert_eq!(cpu.observed_value, None);
+            assert!(!cpu.terminated_execution);
+        }
+    }
+
+    /// Regression distinguishing ARITHMETIC OVERFLOW from the REPRESENTABLE
+    /// RLIM_INFINITY SENTINEL — two different guards at the top of the range.
+    ///
+    /// * `Duration::MAX` fails in arithmetic: its rounded whole seconds
+    ///   (`u64::MAX`) cannot gain the mandatory +1s hard backstop.
+    /// * `Duration::from_secs(u64::MAX - 1)` passes every arithmetic step:
+    ///   rounding is exact and hard = `u64::MAX` fits natively. But on LP64
+    ///   Linux that value IS the kernel's `RLIM_INFINITY` sentinel
+    ///   (`(rlim_t)-1 == u64::MAX`), meaning "no limit". Accepting it would
+    ///   hand the child unlimited CPU while claiming enforcement, so the
+    ///   finite-only native conversion must reject it and the request must
+    ///   fail closed before the target can execute.
+    #[test]
+    fn near_infinity_cpu_duration_is_rejected_as_sentinel_not_overflow() {
+        let directory = TestDirectory::new("cpu-near-infinity-fail-closed");
+        let marker = directory.path().join("marker");
+        let mut near_infinity_request = request_with_cpu(
+            vec![
+                OsString::from("sleep_then_write"),
+                OsString::from("0"),
+                marker.clone().into_os_string(),
+            ],
+            Some(Duration::from_secs(u64::MAX - 1)),
+        );
+        near_infinity_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
+        let result = ProcessSupervisor.execute(near_infinity_request);
+
+        assert_never_started_spawn_failure(&result);
+        thread::sleep(Duration::from_millis(200));
+        assert!(!marker.exists(), "rejected target must not execute");
+
+        // The worker itself stays fully usable for normal finite limits.
+        let subsequent = execute(&["exit", "0"]);
+        assert!(subsequent.is_success());
+    }
+
+    #[test]
+    fn default_sigxcpu_terminates_burner_within_soft_limit() {
+        let (result, started_at) = limited_burn("cpu_burn", Duration::from_secs(1));
+
+        bounded_burn_assertions(&result, started_at);
+        // Default SIGXCPU disposition gives directly attributable evidence.
+        assert_eq!(result.process_exit, ProcessExit::ExitedWithoutCode);
+        assert!(matches!(
+            result.primary_failure(),
+            Some(ExecutionFailure::NonZeroExit { code: None })
+        ));
+        assert!(observation(&result, &ResourceLimitKind::CpuTime).terminated_execution);
+    }
+
+    #[test]
+    fn ignored_sigxcpu_still_hits_finite_hard_backstop() {
+        let (result, started_at) = limited_burn("cpu_burn_ignore_sigxcpu", Duration::from_secs(1));
+        let elapsed = started_at.elapsed();
+        let stdout = String::from_utf8_lossy(&result.stdout.captured_bytes);
+
+        // IGNORE_DISPOSITION_READY: the fixture emits this marker only after
+        // SIG_IGN was successfully installed and BEFORE burning begins, so
+        // its presence proves the target genuinely entered the burn loop with
+        // SIGXCPU ignored.
+        assert!(
+            stdout.contains("SIGXCPU_IGNORED_READY"),
+            "fixture never proved the ignore disposition was active before \
+             burning; stdout={stdout:?}"
+        );
+
+        // SURVIVED_SOFT_BOUNDARY: a burner killed at the soft boundary cannot
+        // exceed ~1 wall second, while reaching the hard backstop requires at
+        // least 2 full CPU (hence wall) seconds.
+        assert!(
+            elapsed >= HARD_BACKSTOP_WALL_FLOOR,
+            "burner ended before proving it survived the soft boundary: {elapsed:?}"
+        );
+
+        // EVENTUALLY_BOUNDED + WALL_TIMEOUT_TRIGGERED: NO.
+        bounded_burn_assertions(&result, started_at);
+        assert_eq!(
+            result.process_exit,
+            ProcessExit::ExitedWithoutCode,
+            "ignored SIGXCPU must not survive past the finite hard ceiling"
+        );
+
+        // A generic signal death is NOT attributed to the CPU limit: SIGKILL
+        // could have other causes, so terminated_execution stays unclaimed.
+        assert!(!observation(&result, &ResourceLimitKind::CpuTime).terminated_execution);
+    }
+
+    #[test]
+    fn caught_sigxcpu_still_hits_finite_hard_backstop() {
+        let (result, started_at) = limited_burn("cpu_burn_catch_sigxcpu", Duration::from_secs(1));
+        let elapsed = started_at.elapsed();
+        let stdout = String::from_utf8_lossy(&result.stdout.captured_bytes);
+
+        // HANDLER INSTALLED + DELIVERED + RETURNED: only an installed handler
+        // can emit this marker via its async-signal-safe write(2), so its
+        // presence proves the handler was installed, SIGXCPU was actually
+        // delivered, and control passed through the handler. The burner then
+        // continued consuming CPU past the soft boundary (proven by the wall
+        // floor below), which is only possible if the handler returned.
+        assert!(
+            stdout.contains("SIGXCPU_CAUGHT"),
+            "no externally observable proof of SIGXCPU delivery to the \
+             installed handler; stdout={stdout:?}"
+        );
+
+        // SURVIVED_SOFT_BOUNDARY: same physical argument as the ignored case.
+        assert!(
+            elapsed >= HARD_BACKSTOP_WALL_FLOOR,
+            "burner ended before proving it survived the soft boundary: {elapsed:?}"
+        );
+
+        // EVENTUALLY_BOUNDED + WALL_TIMEOUT_TRIGGERED: NO.
+        bounded_burn_assertions(&result, started_at);
+        assert_eq!(
+            result.process_exit,
+            ProcessExit::ExitedWithoutCode,
+            "caught SIGXCPU must not survive past the finite hard ceiling"
+        );
+        assert!(!observation(&result, &ResourceLimitKind::CpuTime).terminated_execution);
+    }
+
+    #[test]
+    fn cpu_exhaustion_wins_when_wall_timeout_is_far_away() {
+        let (result, _started_at) = limited_burn("cpu_burn_ignore_sigxcpu", Duration::from_secs(1));
+
+        // The independent wall timeout did not fire; the process ended from
+        // CPU exhaustion long before the 30s wall safety net.
+        assert_eq!(result.process_exit, ProcessExit::ExitedWithoutCode);
+        assert_eq!(
+            result.timeout,
+            TimeoutOutcome::NotTriggered {
+                limit: CPU_TEST_WALL_SAFETY
+            }
+        );
+    }
+
+    #[test]
+    fn unreached_cpu_limit_does_not_steal_timeout_attribution() {
+        let mut request = request_with_cpu(
+            vec![OsString::from("cpu_burn")],
+            Some(Duration::from_secs(300)),
+        );
+        request.resource_limits.timeout = Some(Duration::from_millis(150));
+        let result = ProcessSupervisor.execute(request);
+
+        assert!(matches!(
+            result.process_exit,
+            ProcessExit::TerminatedBySupervisor {
+                reason: SupervisorTermination::Timeout,
+                ..
+            }
+        ));
+        assert_eq!(
+            result.timeout,
+            TimeoutOutcome::Triggered {
+                limit: Duration::from_millis(150)
+            }
+        );
+        // Limit was truthfully installed but did not cause the termination.
+        let cpu = observation(&result, &ResourceLimitKind::CpuTime);
+        assert_eq!(
+            cpu.enforcement_status,
+            ResourceEnforcementStatus::RuntimeLimitEnforced
+        );
+        assert!(!cpu.terminated_execution);
+    }
+
+    #[test]
+    fn cancellation_composes_with_installed_cpu_limit() {
+        let mut request = request_with_cpu(
+            vec![OsString::from("cpu_burn")],
+            Some(Duration::from_secs(300)),
+        );
+        request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
+        let token = request.cancellation.clone();
+        let canceller = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(40));
+            token.cancel();
+        });
+        let result = ProcessSupervisor.execute(request);
+        canceller.join().unwrap();
+
+        assert!(matches!(
+            result.process_exit,
+            ProcessExit::TerminatedBySupervisor {
+                reason: SupervisorTermination::Cancellation,
+                ..
+            }
+        ));
+        assert_eq!(result.cancellation, CancellationOutcome::Selected);
+        let cpu = observation(&result, &ResourceLimitKind::CpuTime);
+        assert_eq!(
+            cpu.enforcement_status,
+            ResourceEnforcementStatus::RuntimeLimitEnforced
+        );
+        assert!(!cpu.terminated_execution);
+    }
+
+    #[test]
+    fn output_capture_composes_with_cpu_limit() {
+        let result = execute_with_cpu(&["stdout_text", "hello"], Some(Duration::from_secs(5)));
+
+        assert!(result.is_success());
+        assert_eq!(result.stdout.captured_bytes, b"hello");
+        assert_eq!(
+            observation(&result, &ResourceLimitKind::StdoutBytes).enforcement_status,
+            ResourceEnforcementStatus::CaptureBoundEnforced
+        );
+        let cpu = observation(&result, &ResourceLimitKind::CpuTime);
+        assert_eq!(
+            cpu.enforcement_status,
+            ResourceEnforcementStatus::RuntimeLimitEnforced
+        );
+        assert!(!cpu.terminated_execution);
+    }
+
+    #[test]
+    fn limited_children_do_not_leak_limits_across_siblings() {
+        let parent_before = parent_rlimit_cpu();
+
+        // limited → unlimited → limited → unlimited
+        let (first_limited, _) = limited_burn("cpu_burn", Duration::from_secs(1));
+        assert_eq!(first_limited.process_exit, ProcessExit::ExitedWithoutCode);
+
+        let unlimited_after = execute(&["exit", "0"]);
+        assert!(unlimited_after.is_success());
+
+        let (second_limited, _) =
+            limited_burn("cpu_burn_catch_sigxcpu", Duration::from_millis(100));
+        assert_eq!(second_limited.process_exit, ProcessExit::ExitedWithoutCode);
+
+        let final_unlimited = execute(&["stdout_text", "still-unrestricted"]);
+        assert!(final_unlimited.is_success());
+        assert_eq!(final_unlimited.stdout.captured_bytes, b"still-unrestricted");
+
+        assert_eq!(parent_rlimit_cpu(), parent_before);
+    }
+
+    #[test]
+    fn repeated_limited_children_each_get_their_own_limit() {
+        let parent_before = parent_rlimit_cpu();
+
+        for index in 0..3 {
+            let (result, started_at) = limited_burn("cpu_burn", Duration::from_secs(1));
+            bounded_burn_assertions(&result, started_at);
+            assert_eq!(
+                observation(&result, &ResourceLimitKind::CpuTime).enforcement_status,
+                ResourceEnforcementStatus::RuntimeLimitEnforced,
+                "iteration {index} lost its installed limit"
+            );
+        }
+
+        assert_eq!(parent_rlimit_cpu(), parent_before);
+    }
 }

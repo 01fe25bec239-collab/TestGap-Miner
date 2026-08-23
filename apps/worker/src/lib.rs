@@ -8,6 +8,7 @@ mod conformance;
 mod model;
 mod producer_result;
 mod producer_result_adapter;
+mod resource_limits;
 mod supervisor;
 
 pub use adapters::*;

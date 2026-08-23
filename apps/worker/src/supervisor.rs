@@ -1,4 +1,5 @@
 use crate::{
+    resource_limits::{self, CpuTimeDecision},
     BoundedOutput, CancellationOutcome, EnvironmentPolicy, ExecutionFailure, ExecutionRequest,
     ExecutionResult, OutputStream, ProcessExit, ResourceEnforcementStatus, ResourceLimitKind,
     ResourceLimitObservation, ResourceLimitRequest, ResourceLimitValue, RuntimeMetadata,
@@ -21,6 +22,29 @@ pub struct ProcessSupervisor;
 impl ProcessSupervisor {
     pub fn execute(&self, request: ExecutionRequest) -> ExecutionResult {
         let started_at = Instant::now();
+
+        // CPU runtime-limit policy is resolved before any fork. A limit that
+        // cannot be truthfully enforced on this platform fails closed before
+        // spawn so the target can never run unrestricted.
+        let cpu_decision = resource_limits::decide(request.resource_limits.cpu_time);
+        if let CpuTimeDecision::FailClosedBeforeSpawn(message) = &cpu_decision {
+            return finish_result(
+                &request,
+                None,
+                ProcessExit::NeverStarted,
+                TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
+                CancellationOutcome::NotSelected,
+                BoundedOutput::empty(request.resource_limits.stdout_bytes),
+                BoundedOutput::empty(request.resource_limits.stderr_bytes),
+                started_at.elapsed(),
+                vec![ExecutionFailure::SpawnFailure {
+                    kind: io::ErrorKind::Unsupported,
+                    message: message.clone(),
+                }],
+                None,
+            );
+        }
+
         let mut command = Command::new(&request.command.executable);
         command
             .args(&request.command.arguments)
@@ -41,11 +65,20 @@ impl ProcessSupervisor {
             }
         }
 
-        let mut child = match command.spawn() {
-            Ok(child) => child,
+        // Attaches the child-local RLIMIT_CPU pre_exec on Linux and reports
+        // whether a limit was requested; other platforms already failed
+        // closed above.
+        let cpu_limit_requested = resource_limits::prepare_command(&mut command, &cpu_decision);
+
+        match command.spawn() {
+            Ok(child) => {
+                // pre_exec closures complete before exec, so a successfully
+                // spawned child is guaranteed to carry its own CPU limits.
+                self.supervise_started_process(request, started_at, child, cpu_limit_requested)
+            }
             Err(error) => {
                 let duration = started_at.elapsed();
-                return finish_result(
+                finish_result(
                     &request,
                     None,
                     ProcessExit::NeverStarted,
@@ -58,9 +91,19 @@ impl ProcessSupervisor {
                         kind: error.kind(),
                         message: error.to_string(),
                     }],
-                );
+                    None,
+                )
             }
-        };
+        }
+    }
+
+    fn supervise_started_process(
+        &self,
+        request: ExecutionRequest,
+        started_at: Instant,
+        mut child: Child,
+        cpu_limit_installed: bool,
+    ) -> ExecutionResult {
         let process_id = child.id();
 
         let (stdout_reader, stdout_setup_failure) = child
@@ -114,8 +157,15 @@ impl ProcessSupervisor {
         failures.extend(stdout_setup_failure);
         failures.extend(stderr_setup_failure);
 
-        let (process_exit, timeout, cancellation) = if failures.is_empty() {
-            supervise_child(&mut child, &request, started_at, &mut failures)
+        let (process_exit, timeout, cancellation, terminated_by_cpu_limit) = if failures.is_empty()
+        {
+            supervise_child(
+                &mut child,
+                &request,
+                started_at,
+                cpu_limit_installed,
+                &mut failures,
+            )
         } else {
             let process_exit = terminate_and_reap(
                 &mut child,
@@ -126,6 +176,7 @@ impl ProcessSupervisor {
                 process_exit,
                 TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
                 CancellationOutcome::NotSelected,
+                false,
             )
         };
 
@@ -152,6 +203,11 @@ impl ProcessSupervisor {
             stderr,
             started_at.elapsed(),
             failures,
+            if cpu_limit_installed {
+                Some(terminated_by_cpu_limit)
+            } else {
+                None
+            },
         )
     }
 }
@@ -166,12 +222,15 @@ impl TimeoutOutcome {
     }
 }
 
+type SupervisedOutcome = (ProcessExit, TimeoutOutcome, CancellationOutcome, bool);
+
 fn supervise_child(
     child: &mut Child,
     request: &ExecutionRequest,
     started_at: Instant,
+    cpu_limit_installed: bool,
     failures: &mut Vec<ExecutionFailure>,
-) -> (ProcessExit, TimeoutOutcome, CancellationOutcome) {
+) -> SupervisedOutcome {
     loop {
         // This ordering is intentional: cancellation wins if both conditions
         // are first observed in the same polling iteration.
@@ -181,6 +240,7 @@ fn supervise_child(
                 terminate_and_reap(child, SupervisorTermination::Cancellation, failures),
                 TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
                 CancellationOutcome::Selected,
+                false,
             );
         }
 
@@ -194,6 +254,7 @@ fn supervise_child(
                 terminate_and_reap(child, SupervisorTermination::Timeout, failures),
                 TimeoutOutcome::from_limit(request.resource_limits.timeout, true),
                 CancellationOutcome::NotSelected,
+                false,
             );
         }
 
@@ -204,6 +265,10 @@ fn supervise_child(
                     process_exit,
                     TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
                     CancellationOutcome::NotSelected,
+                    resource_limits::terminated_by_installed_cpu_limit(
+                        cpu_limit_installed,
+                        &status,
+                    ),
                 );
             }
             Ok(None) => thread::sleep(next_poll_delay(
@@ -219,6 +284,7 @@ fn supervise_child(
                     terminate_and_reap(child, SupervisorTermination::WaitFailure, failures),
                     TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
                     CancellationOutcome::NotSelected,
+                    false,
                 );
             }
         }
@@ -444,6 +510,7 @@ fn finish_result(
     stderr: BoundedOutput,
     duration: Duration,
     failures: Vec<ExecutionFailure>,
+    cpu_limit_enforced: Option<bool>,
 ) -> ExecutionResult {
     let resource_observations = resource_observations(
         &request.resource_limits,
@@ -451,6 +518,7 @@ fn finish_result(
         &stderr,
         duration,
         matches!(timeout, TimeoutOutcome::Triggered { .. }),
+        cpu_limit_enforced,
     );
 
     ExecutionResult {
@@ -477,14 +545,29 @@ fn resource_observations(
     stderr: &BoundedOutput,
     duration: Duration,
     timeout_terminated: bool,
+    cpu_limit_enforced: Option<bool>,
 ) -> Vec<ResourceLimitObservation> {
     let mut observations = Vec::new();
 
     if let Some(limit) = limits.cpu_time {
-        observations.push(not_enforced(
-            ResourceLimitKind::CpuTime,
-            ResourceLimitValue::Duration(limit),
-        ));
+        // `Some(terminated)` is only produced after a child actually started
+        // with its own RLIMIT_CPU installed; `None` keeps the conservative
+        // NotEnforced claim (including every fail-closed rejection).
+        let observation = match cpu_limit_enforced {
+            Some(terminated_execution) => ResourceLimitObservation {
+                kind: ResourceLimitKind::CpuTime,
+                configured_limit: ResourceLimitValue::Duration(limit),
+                observed_value: None,
+                enforcement_status: ResourceEnforcementStatus::RuntimeLimitEnforced,
+                terminated_execution,
+                truncated: None,
+            },
+            None => not_enforced(
+                ResourceLimitKind::CpuTime,
+                ResourceLimitValue::Duration(limit),
+            ),
+        };
+        observations.push(observation);
     }
     if let Some(limit) = limits.memory_bytes {
         observations.push(not_enforced(
