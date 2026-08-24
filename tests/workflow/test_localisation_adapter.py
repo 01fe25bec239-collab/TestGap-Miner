@@ -21,7 +21,6 @@ from app.retrieval import (
     TrustLabel,
 )
 from app.workflow.localisation_adapter import (
-    LOCALISATION_ADAPTER_CONTRACT_VERSION,
     LocalisationBoundary,
     LocalisationBoundaryFailureCode,
     LocalisationRequest,
@@ -107,13 +106,6 @@ class NoLocaliseMethod:
 
 class NotCallableLocalise:
     localise = "not callable"
-
-
-def test_contract_version_is_stable() -> None:
-    assert (
-        LOCALISATION_ADAPTER_CONTRACT_VERSION
-        == "CONTRACT-WORKFLOW-LOCALISATION-ADAPTER-001@1.0.0-draft.1"
-    )
 
 
 def test_request_is_validated_and_canonical() -> None:

@@ -59,8 +59,6 @@ from .model_provider import (
 from .types import AbstentionCode, WorkflowStepKind
 
 
-PLANNING_CONTRACT_VERSION: Final = "CONTRACT-WORKFLOW-PLANNING-001@1.0.0-draft.1"
-
 PLANNER_OUTPUT_SCHEMA_VERSION: Final = "testgap.planner-plan.v1"
 
 PLANNER_OUTPUT_SCHEMA: Final[StructuredOutputSchema] = StructuredOutputSchema(

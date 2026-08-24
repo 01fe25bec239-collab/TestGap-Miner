@@ -22,9 +22,6 @@ from typing import Final, Protocol, runtime_checkable
 from app.retrieval import ContextBundle, RepositoryIdentity, RevisionIdentity
 
 
-LOCALISATION_ADAPTER_CONTRACT_VERSION: Final = (
-    "CONTRACT-WORKFLOW-LOCALISATION-ADAPTER-001@1.0.0-draft.1"
-)
 MAX_LOCALISATION_QUERY_BYTES: Final = 16_384
 
 
