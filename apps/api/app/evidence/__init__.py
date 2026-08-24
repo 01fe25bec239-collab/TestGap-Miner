@@ -18,6 +18,13 @@ from .bundle import (
     EvidenceBundle,
     compare_evidence_bundles,
 )
+from .card import (
+    EvidenceCard,
+    EvidenceCardContext,
+    EvidenceCardPhaseSummary,
+    compare_evidence_cards,
+    project_evidence_card,
+)
 from .candidate import (
     CandidateFinalizationState,
     CandidatePatch,
@@ -100,7 +107,10 @@ __all__ = [
     "EvidenceAvailability",
     "EvidenceBundle",
     "EvidenceBundleId",
+    "EvidenceCard",
+    "EvidenceCardContext",
     "EvidenceCardId",
+    "EvidenceCardPhaseSummary",
     "EvidenceComparison",
     "EvidenceCompleteness",
     "EvidenceIntegrityState",
@@ -136,8 +146,10 @@ __all__ = [
     "compare_candidate_patches",
     "compare_candidate_versions",
     "compare_evidence_bundles",
+    "compare_evidence_cards",
     "compare_execution_evidence",
     "compare_human_decision_links",
+    "project_evidence_card",
     "validate_candidate_lineage",
     "validate_candidate_patch_version",
 ]
