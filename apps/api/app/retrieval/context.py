@@ -458,6 +458,7 @@ class _Proposal:
     start: int
     end: int
     target: int | None
+    extra: tuple[int, ...] = ()
 
 
 def _select_windows(lines: tuple[str, ...], candidate: CandidateFile) -> list[_Proposal]:
@@ -490,26 +491,118 @@ def _select_windows(lines: tuple[str, ...], candidate: CandidateFile) -> list[_P
 
 
 def _merge_proposals(proposals: list[_Proposal]) -> list[_Proposal]:
-    """Same-file overlap policy: merge identical, nested and partial overlap.
+    """Same-file overlap policy: bounded, duplicate-free coverage segments.
 
-    Overlapping ranges collapse into their union range; the retained target is
-    the first non-unknown target in deterministic (start, end) order. Ranges
+    Proposals are processed in deterministic (start, end) order. Each proposal
+    contributes only the source lines not already covered by an earlier emitted
+    segment, so overlapping ranges normalize into consecutive bounded segments
+    instead of one unbounded union range. Every emitted segment therefore spans
+    at most MAX_CONTEXT_WINDOW_LINES lines (a segment never exceeds its own
+    proposal width), no source line is represented twice, and later evidence is
+    never discarded merely because it overlaps an earlier window. A proposal
+    whose lines are already fully covered is dropped only when its evidence is
+    already represented: identical ranges and nested ranges that share the
+    covering segment's end converge into it, and a distinct structural target
+    that cannot open coverage of its own is retained on that covering region as
+    secondary target evidence instead of being silently discarded. Otherwise a
+    distinct structural target that would land inside earlier coverage
+    repartitions the covering segment deterministically at (or just past,
+    when required to keep prior anchors representable) that target's own
+    window start, so both targets anchor separate bounded segments and remain
+    independently representable when a later budget shrinks either span, and
+    no carried primary or secondary target is ever stranded outside the range
+    it is attached to. One
+    normalized coverage region may therefore carry several distinct structural
+    target requirements while still emitting its source exactly once. Ranges
     that merely touch (next start == current end + 1) are deliberately NOT
     merged: adjacency is not overlap, so adjacent windows stay separate items.
     Different files are never merged regardless of textual equality because
     source identity and provenance win over content equality.
     """
 
-    merged: list[_Proposal] = []
+    normalized: list[_Proposal] = []
     for proposal in sorted(proposals, key=lambda item: (item.start, item.end)):
-        if merged and proposal.start <= merged[-1].end:
-            anchor = merged[-1]
-            anchor.end = max(anchor.end, proposal.end)
-            if anchor.target is None:
-                anchor.target = proposal.target
-        else:
-            merged.append(_Proposal(proposal.start, proposal.end, proposal.target))
-    return merged
+        covered_end = proposal.start - 1
+        progressed = True
+        while progressed:
+            progressed = False
+            for segment in normalized:
+                if segment.start <= covered_end + 1 and segment.end > covered_end:
+                    covered_end = segment.end
+                    progressed = True
+        target = proposal.target
+        if target is not None and target < covered_end + 1:
+            carrier = None
+            for segment in normalized:
+                if segment.start <= target <= segment.end:
+                    carrier = segment
+                    break
+            if (
+                carrier is not None
+                and target > carrier.start
+                and target != carrier.target
+                and (covered_end < proposal.end or proposal.end < carrier.end)
+            ):
+                # Preserve this distinct structural target: partition the
+                # covering segment so the target anchors its own bounded
+                # segment instead of being silently discarded. The split point
+                # mirrors window construction (_SYMBOL_WINDOW_LINES_BEFORE
+                # above the target), and is pushed just past the previous
+                # carrier target whenever that anchor would otherwise be left
+                # outside the resulting left half, so every already-carried
+                # target lands on the half that actually contains it and both
+                # halves keep valid, deterministic target metadata.
+                split = max(carrier.start + 1, target - _SYMBOL_WINDOW_LINES_BEFORE)
+                if carrier.target is not None and carrier.target >= split:
+                    split = min(carrier.target + 1, target)
+                index = normalized.index(carrier)
+                right_end = proposal.end if covered_end < proposal.end else carrier.end
+                carried_right = {
+                    *(anchor for anchor in carrier.extra if anchor >= split),
+                    target,
+                }
+                if carrier.target is not None and carrier.target >= split:
+                    carried_right.add(carrier.target)
+                normalized[index] = _Proposal(
+                    carrier.start,
+                    split - 1,
+                    (
+                        carrier.target
+                        if carrier.target is not None and carrier.target < split
+                        else None
+                    ),
+                    tuple(sorted(anchor for anchor in carrier.extra if anchor < split)),
+                )
+                normalized.insert(
+                    index + 1,
+                    _Proposal(split, right_end, target, tuple(sorted(carried_right))),
+                )
+                continue
+            if (
+                carrier is not None
+                and covered_end >= proposal.end
+                and target != carrier.target
+                and target not in carrier.extra
+            ):
+                # Fully collapsed overlap (identical windows, same-start or
+                # shared-end nesting): every proposed line is already covered,
+                # so the region keeps one bounded representation and one copy
+                # of the source, but retains the additional distinct structural
+                # target as secondary evidence for later budget fitting.
+                index = normalized.index(carrier)
+                normalized[index] = _Proposal(
+                    carrier.start,
+                    carrier.end,
+                    carrier.target,
+                    tuple(sorted({*carrier.extra, target})),
+                )
+                continue
+        if covered_end >= proposal.end:
+            continue
+        if target is not None and target < covered_end + 1:
+            target = None
+        normalized.append(_Proposal(covered_end + 1, proposal.end, target))
+    return normalized
 
 
 # --------------------------------------------------------------------------
@@ -531,11 +624,13 @@ def _fit_span(span: _Proposal, prefix: list[int], capacity: int) -> tuple[int, i
 
     The caller bounds ``capacity`` by both the remaining context token budget
     and MAX_CONTEXT_BYTES, so no fitted item can exceed either limit. Targeted
-    windows preserve the target line and expand deterministically around it
-    (toward later lines first) inside the original proposal bounds. Fallback
-    prefix windows grow deterministically from the first line. When even the
-    smallest permitted one-line item does not fit, the proposal is skipped
-    entirely rather than truncating arbitrary UTF-8 bytes.
+    windows preserve every distinct structural target carried by the span and
+    expand deterministically around them (toward later lines first) inside the
+    original proposal bounds; when even the contiguous target base exceeds the
+    capacity, the fit deterministically falls back to the primary target alone.
+    Fallback prefix windows grow deterministically from the first line. When
+    even the smallest permitted one-line item does not fit, the proposal is
+    skipped entirely rather than truncating arbitrary UTF-8 bytes.
     """
 
     if prefix[span.end] - prefix[span.start - 1] <= capacity:
@@ -552,10 +647,20 @@ def _fit_span(span: _Proposal, prefix: list[int], capacity: int) -> tuple[int, i
         if taken == 0:
             return None
         return span.start, span.start + taken - 1
-    low = high = min(max(span.target, span.start), span.end)
-    used = prefix[low] - prefix[low - 1]
+    anchors = sorted(
+        {span.target, *span.extra} & set(range(span.start, span.end + 1))
+    )
+    primary = min(max(span.target, span.start), span.end)
+    if anchors:
+        low, high = anchors[0], anchors[-1]
+    else:
+        low = high = primary
+    used = prefix[high] - prefix[low - 1]
     if used > capacity:
-        return None
+        low = high = primary
+        used = prefix[low] - prefix[low - 1]
+        if used > capacity:
+            return None
     while True:
         progressed = False
         if high < span.end:
@@ -565,7 +670,7 @@ def _fit_span(span: _Proposal, prefix: list[int], capacity: int) -> tuple[int, i
                 used += cost
                 progressed = True
         if low > span.start:
-            cost = prefix[low] - prefix[low - 1]
+            cost = prefix[low - 1] - prefix[low - 2]
             if used + cost <= capacity:
                 low -= 1
                 used += cost

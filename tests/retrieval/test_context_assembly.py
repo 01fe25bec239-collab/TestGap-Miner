@@ -83,6 +83,26 @@ EARLY_SOURCE = java_source("Generated", {"earlymarker": 5}, 200)
 LATE_SOURCE = java_source("Generated", {"latemarker": 195}, 200)
 OVERLAP_SOURCE = java_source("Generated", {"alphamarker": 30, "betamarker": 100}, 200)
 NESTED_SOURCE = java_source("Nested", {"gammapoint": 40}, 60)
+CHAIN_SOURCE = java_source(
+    "Chained", {"chainalpha": 40, "chainbeta": 119, "chaingamma": 198}, 240
+)
+SAME_END_SOURCE = java_source("Terminal", {"headmarker": 20, "tailmarker": 60}, 80)
+OPENING_SOURCE = java_source("Opening", {"alphamarker": 5, "betamarker": 18}, 150)
+
+
+def _anchor_edge_source() -> str:
+    lines = ["package com.example.gen;", "public class AnchorEdge {"]
+    lines += [f"    // boundary filler {number}" for number in range(3, 22)]
+    lines.append("    public void probemarker(int value) { }")
+    lines += [f"    // tail filler {number}" for number in range(23, 81)]
+    lines.append("}")
+    assert len(lines) == 81
+    assert lines[1].split()[2] == "AnchorEdge"
+    assert lines[21].strip().startswith("public void probemarker(")
+    return "\n".join(lines) + "\n"
+
+
+ANCHOR_EDGE_SOURCE = _anchor_edge_source()
 
 HANDBOOK_SOURCE = "".join(f"checkout handbook guidance {number}\n" for number in range(1, 101))
 SHARED_SOURCE = "".join(f"zephyr shared evidence line {number}\n" for number in range(1, 6))
@@ -192,6 +212,34 @@ def tree_digest(root: Path) -> str:
 
 def proposal(start: int, end: int, target: int | None = None) -> context_module._Proposal:
     return context_module._Proposal(start, end, target)
+
+
+def _assert_target_containment_invariants(
+    merged: list[context_module._Proposal], supplied: tuple[int, ...]
+) -> None:
+    """Every normalized segment carries only targets inside its own range.
+
+    A. no primary target outside [start, end];
+    B. no extra target outside [start, end];
+    C. every supplied distinct structural target stays represented exactly on
+       a segment whose range actually contains it.
+    """
+
+    for segment in merged:
+        assert segment.start <= segment.end
+        if segment.target is not None:
+            assert segment.start <= segment.target <= segment.end
+        for anchor in segment.extra:
+            assert segment.start <= anchor <= segment.end
+        assert segment.end - segment.start + 1 <= MAX_CONTEXT_WINDOW_LINES
+    for target in supplied:
+        carriers = [
+            segment
+            for segment in merged
+            if segment.start <= target <= segment.end
+            and (segment.target == target or target in segment.extra)
+        ]
+        assert len(carriers) == 1
 
 
 # --------------------------------------------------------------------------
@@ -346,14 +394,24 @@ def test_nested_range_proposals_merge_into_the_union_range(repository) -> None:
     assert (item.provenance.start_line, item.provenance.end_line) == (1, 60)
 
 
-def test_partial_overlap_proposals_merge_into_the_union_range(repository) -> None:
+def test_partial_overlap_proposals_normalize_into_bounded_segments(repository) -> None:
     bundle = run(repository, "alphamarker betamarker")
 
-    assert len(bundle.items) == 1
-    item = bundle.items[0]
-    assert (item.provenance.start_line, item.provenance.end_line) == (10, 159)
-    assert item.provenance.start_line <= 30 <= item.provenance.end_line
-    assert item.provenance.start_line <= 100 <= item.provenance.end_line
+    spans = [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items]
+    assert spans == [(10, 89), (90, 159)]
+    for item in bundle.items:
+        width = item.provenance.end_line - item.provenance.start_line + 1
+        assert width <= MAX_CONTEXT_WINDOW_LINES
+    represented = sorted(
+        line
+        for item in bundle.items
+        for line in range(item.provenance.start_line, item.provenance.end_line + 1)
+    )
+    assert represented == list(range(10, 160))
+    assert [item.candidate_id for item in bundle.items] == [
+        bundle.items[0].candidate_id,
+        bundle.items[0].candidate_id,
+    ]
 
 
 def test_adjacent_ranges_are_deliberately_not_merged() -> None:
@@ -362,14 +420,460 @@ def test_adjacent_ranges_are_deliberately_not_merged() -> None:
     assert [(item.start, item.end) for item in merged] == [(1, 10), (11, 20)]
 
 
-def test_identical_nested_and_partial_ranges_merge_to_union() -> None:
+def duplicated_source_lines(bundle) -> list[tuple[str, int]]:
+    seen: set[tuple[str, int]] = set()
+    duplicates: list[tuple[str, int]] = []
+    for item in bundle.items:
+        file_value = item.provenance.file_identity.value
+        for line in range(item.provenance.start_line, item.provenance.end_line + 1):
+            marker = (file_value, line)
+            if marker in seen:
+                duplicates.append(marker)
+            seen.add(marker)
+    return duplicates
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "alphamarker betamarker",
+        "middlemarker",
+        "validateOrder zephyr",
+        "nested gammapoint",
+        "OrderService validateOrder",
+        "checkout handbook guidance",
+    ],
+)
+def test_every_emitted_item_respects_the_max_window_width(repository, query: str) -> None:
+    bundle = run(repository, query)
+
+    assert bundle.items
+    for item in bundle.items:
+        width = item.provenance.end_line - item.provenance.start_line + 1
+        assert width <= MAX_CONTEXT_WINDOW_LINES
+
+
+def test_partial_overlap_never_duplicates_source_lines(repository) -> None:
+    bundle = run(repository, "alphamarker betamarker")
+
+    assert len(bundle.items) == 2
+    assert duplicated_source_lines(bundle) == []
+
+
+def test_partial_overlap_preserves_complete_union_coverage(repository) -> None:
+    bundle = run(repository, "alphamarker betamarker")
+    source_lines = OVERLAP_SOURCE.splitlines(keepends=True)
+
+    covered = sorted(
+        line
+        for item in bundle.items
+        for line in range(item.provenance.start_line, item.provenance.end_line + 1)
+    )
+    assert covered == list(range(10, 160))
+    for target in (30, 100):
+        owner = next(
+            item
+            for item in bundle.items
+            if item.provenance.start_line <= target <= item.provenance.end_line
+        )
+        assert source_lines[target - 1] in owner.content
+
+
+def test_three_way_chained_overlap_emits_bounded_nonduplicated_segments(
+    tmp_path: Path,
+) -> None:
+    root = build_fixture(tmp_path / "chained", {"gen/Chained.java": CHAIN_SOURCE.encode()})
+    prepared = prepared_workspace(root)
+    index = index_repository(prepared)
+    ranked = candidates_for(prepared, index, "chainalpha chainbeta chaingamma")
+    assert [candidate.file_identity.value for candidate in ranked] == ["gen/Chained.java"]
+
+    bundle = assemble(prepared, index, ranked)
+
+    spans = [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items]
+    assert spans == [(20, 99), (100, 178), (179, 240)]
+    for start, end in spans:
+        assert end - start + 1 <= MAX_CONTEXT_WINDOW_LINES
+    assert duplicated_source_lines(bundle) == []
+    covered = sorted(line for start, end in spans for line in range(start, end + 1))
+    assert covered == list(range(20, 241))
+
+
+def test_budget_constrained_overlapping_ranges_stay_within_the_window_bound(
+    repository,
+) -> None:
+    budget = 600
+    bundle = run(repository, "alphamarker betamarker", budget=budget)
+
+    assert bundle.items
+    for item in bundle.items:
+        width = item.provenance.end_line - item.provenance.start_line + 1
+        assert width <= MAX_CONTEXT_WINDOW_LINES
+    assert duplicated_source_lines(bundle) == []
+    assert bundle.token_budget.consumed_tokens <= budget
+    assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+
+
+def test_overlap_token_accounting_never_double_counts_deduplicated_lines(repository) -> None:
+    bundle = run(repository, "alphamarker betamarker")
+    source_lines = OVERLAP_SOURCE.splitlines(keepends=True)
+    expected_union_bytes = len("".join(source_lines[9:159]).encode("utf-8"))
+
+    assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+    assert bundle.token_budget.consumed_tokens <= bundle.token_budget.max_tokens
+    assert bundle.token_budget.consumed_tokens == expected_union_bytes
+
+
+def test_segmented_context_identities_remain_deterministic(repository) -> None:
+    first = run(repository, "alphamarker betamarker")
+    second = run(repository, "alphamarker betamarker")
+
+    assert [item.context_item_id.value for item in first.items] == [
+        item.context_item_id.value for item in second.items
+    ]
+    assert len({item.context_item_id for item in first.items}) == len(first.items)
+    assert first.context_bundle_id == second.context_bundle_id
+    assert first.canonical_json() == second.canonical_json()
+    for item in first.items:
+        encoded = item.content.encode("utf-8")
+        expected = context_module._context_item_identity(
+            REPOSITORY.value,
+            REVISION.value,
+            item.candidate_id.value,
+            item.provenance.file_identity.value,
+            item.provenance.start_line,
+            item.provenance.end_line,
+            hashlib.sha256(encoded).hexdigest(),
+            item.token_count,
+        )
+        assert expected == item.context_item_id
+
+
+def test_identical_nested_and_partial_ranges_converge_without_oversized_unions() -> None:
     identical = context_module._merge_proposals([proposal(5, 50, 7), proposal(5, 50, 9)])
     nested = context_module._merge_proposals([proposal(1, 60, 2), proposal(20, 60, 40)])
     partial = context_module._merge_proposals([proposal(10, 89, 30), proposal(80, 159, 100)])
 
-    assert [(item.start, item.end) for item in identical] == [(5, 50)]
+    assert [(item.start, item.end, item.target) for item in identical] == [(5, 50, 7)]
     assert [(item.start, item.end) for item in nested] == [(1, 60)]
-    assert [(item.start, item.end) for item in partial] == [(10, 159)]
+    assert [(item.start, item.end, item.target) for item in partial] == [
+        (10, 89, 30),
+        (90, 159, 100),
+    ]
+    for merged in (identical, nested, partial):
+        for segment in merged:
+            assert segment.end - segment.start + 1 <= MAX_CONTEXT_WINDOW_LINES
+
+
+def test_chained_overlap_normalizes_into_complete_bounded_coverage() -> None:
+    chain = context_module._merge_proposals(
+        [proposal(120, 199, 150), proposal(1, 80, 40), proposal(60, 139, 100)]
+    )
+
+    assert [(item.start, item.end) for item in chain] == [(1, 80), (81, 139), (140, 199)]
+    for segment in chain:
+        assert segment.end - segment.start + 1 <= MAX_CONTEXT_WINDOW_LINES
+    represented = sorted(
+        line for segment in chain for line in range(segment.start, segment.end + 1)
+    )
+    assert represented == list(range(1, 200))
+
+
+def _line_cost(source: str, start_line: int, end_line: int) -> int:
+    lines = source.splitlines(keepends=True)
+    return sum(len(line.encode("utf-8")) for line in lines[start_line - 1 : end_line])
+
+
+def test_merge_preserves_distinct_target_of_fully_contained_proposal() -> None:
+    merged = context_module._merge_proposals([proposal(1, 80, 20), proposal(30, 70, 60)])
+
+    assert [(item.start, item.end, item.target) for item in merged] == [
+        (1, 39, 20),
+        (40, 80, 60),
+    ]
+    for segment in merged:
+        assert segment.end - segment.start + 1 <= MAX_CONTEXT_WINDOW_LINES
+
+
+def test_merge_preserves_second_target_inside_the_partial_overlap_zone() -> None:
+    merged = context_module._merge_proposals([proposal(10, 89, 30), proposal(50, 139, 85)])
+
+    assert [(item.start, item.end, item.target) for item in merged] == [
+        (10, 64, 30),
+        (65, 139, 85),
+    ]
+    for segment in merged:
+        assert segment.end - segment.start + 1 <= MAX_CONTEXT_WINDOW_LINES
+    represented = sorted(
+        line for segment in merged for line in range(segment.start, segment.end + 1)
+    )
+    assert represented == list(range(10, 140))
+
+
+def test_contained_overlap_keeps_both_targets_under_constrained_budget(
+    repository, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, index = repository
+    monkeypatch.setattr(
+        context_module,
+        "_select_windows",
+        lambda lines, candidate: [
+            context_module._Proposal(1, 80, 20),
+            context_module._Proposal(30, 70, 60),
+        ],
+    )
+    budget = _line_cost(MIDDLE_SOURCE, 1, 39) + _line_cost(MIDDLE_SOURCE, 55, 70)
+    assert budget < _line_cost(MIDDLE_SOURCE, 1, 80)
+
+    supplied = ranked_candidates("gen/Middle.java")
+    bundle = assemble(prepared, index, supplied, budget=budget)
+    repeat = assemble(prepared, index, supplied, budget=budget)
+
+    spans = [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items]
+    assert any(start <= 20 <= end for start, end in spans)
+    assert any(start <= 60 <= end for start, end in spans)
+    assert all(end - start + 1 <= MAX_CONTEXT_WINDOW_LINES for start, end in spans)
+    assert duplicated_source_lines(bundle) == []
+    assert bundle.token_budget.consumed_tokens <= budget
+    assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+    assert bundle.canonical_json() == repeat.canonical_json()
+
+
+def test_partial_overlap_inside_shared_zone_keeps_both_targets_under_budget(
+    repository, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, index = repository
+    monkeypatch.setattr(
+        context_module,
+        "_select_windows",
+        lambda lines, candidate: [
+            context_module._Proposal(10, 89, 30),
+            context_module._Proposal(50, 139, 85),
+        ],
+    )
+    budget = _line_cost(MIDDLE_SOURCE, 10, 64) + _line_cost(MIDDLE_SOURCE, 80, 95)
+    assert budget < _line_cost(MIDDLE_SOURCE, 10, 89)
+
+    supplied = ranked_candidates("gen/Middle.java")
+    bundle = assemble(prepared, index, supplied, budget=budget)
+    repeat = assemble(prepared, index, supplied, budget=budget)
+
+    spans = [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items]
+    assert any(start <= 30 <= end for start, end in spans)
+    assert any(start <= 85 <= end for start, end in spans)
+    assert all(end - start + 1 <= MAX_CONTEXT_WINDOW_LINES for start, end in spans)
+    assert duplicated_source_lines(bundle) == []
+    assert bundle.token_budget.consumed_tokens <= budget
+    assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+    assert bundle.canonical_json() == repeat.canonical_json()
+
+
+def test_same_end_nested_windows_preserve_both_targets_under_constrained_budget(
+    tmp_path: Path,
+) -> None:
+    """Real _select_windows shape near EOF: 1..80 target 20 plus 40..80 target 60.
+
+    The second window is fully nested into the first and shares its end, so the
+    merged coverage region is one bounded representation of lines 1..80 that
+    carries both distinct structural targets. A budget that cannot retain the
+    whole source but can represent the target regions must still keep both
+    target lines, without duplicating source lines or exceeding the window.
+    """
+
+    root = build_fixture(tmp_path / "same_end", {"gen/Terminal.java": SAME_END_SOURCE.encode()})
+    prepared = prepared_workspace(root)
+    index = index_repository(prepared)
+    ranked = candidates_for(prepared, index, "headmarker tailmarker")
+    assert [candidate.file_identity.value for candidate in ranked] == ["gen/Terminal.java"]
+
+    windows = context_module._select_windows(SAME_END_SOURCE.splitlines(keepends=True), ranked[0])
+    assert [(item.start, item.end, item.target) for item in windows] == [
+        (1, 80, 20),
+        (40, 80, 60),
+    ]
+    merged = context_module._merge_proposals(
+        [proposal(item.start, item.end, item.target) for item in windows]
+    )
+    assert [(item.start, item.end, item.target) for item in merged] == [(1, 80, 20)]
+    assert merged[0].extra == (60,)
+
+    budget = _line_cost(SAME_END_SOURCE, 20, 60)
+    assert budget < _line_cost(SAME_END_SOURCE, 1, 80)
+
+    bundle = assemble(prepared, index, ranked, budget=budget)
+    repeat = assemble(prepared, index, ranked, budget=budget)
+
+    spans = [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items]
+    assert any(start <= 20 <= end for start, end in spans)
+    assert any(start <= 60 <= end for start, end in spans)
+    assert all(end - start + 1 <= MAX_CONTEXT_WINDOW_LINES for start, end in spans)
+    assert duplicated_source_lines(bundle) == []
+    assert bundle.token_budget.consumed_tokens == budget
+    assert bundle.token_budget.consumed_tokens <= budget
+    assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+    assert bundle.canonical_json() == repeat.canonical_json()
+
+
+def test_same_start_windows_carry_distinct_targets_through_budget_shrinking(
+    tmp_path: Path,
+) -> None:
+    """Targets near line one share their window start; evidence must survive.
+
+    Targets 5 and 18 both open their window at line 1, so the proposals are
+    identical ranges. The region keeps a single bounded representation (the
+    full source window is never duplicated merely to retain metadata) while
+    carrying both targets, so a budget that forces shrinking still represents
+    both structural target lines deterministically.
+    """
+
+    root = build_fixture(tmp_path / "same_start", {"gen/Opening.java": OPENING_SOURCE.encode()})
+    prepared = prepared_workspace(root)
+    index = index_repository(prepared)
+    ranked = candidates_for(prepared, index, "alphamarker betamarker")
+    assert [candidate.file_identity.value for candidate in ranked] == ["gen/Opening.java"]
+
+    windows = context_module._select_windows(OPENING_SOURCE.splitlines(keepends=True), ranked[0])
+    assert [(item.start, item.end, item.target) for item in windows] == [
+        (1, 80, 5),
+        (1, 80, 18),
+    ]
+    merged = context_module._merge_proposals(
+        [proposal(item.start, item.end, item.target) for item in windows]
+    )
+    assert [(item.start, item.end, item.target) for item in merged] == [(1, 80, 5)]
+    assert merged[0].extra == (18,)
+
+    budget = _line_cost(OPENING_SOURCE, 5, 18)
+    assert budget < _line_cost(OPENING_SOURCE, 1, 80)
+
+    bundle = assemble(prepared, index, ranked, budget=budget)
+    repeat = assemble(prepared, index, ranked, budget=budget)
+
+    spans = [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items]
+    assert any(start <= 5 <= end for start, end in spans)
+    assert any(start <= 18 <= end for start, end in spans)
+    assert len(spans) == 1
+    assert all(end - start + 1 <= MAX_CONTEXT_WINDOW_LINES for start, end in spans)
+    assert duplicated_source_lines(bundle) == []
+    assert bundle.token_budget.consumed_tokens <= budget
+    assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+    assert bundle.canonical_json() == repeat.canonical_json()
+
+
+def test_split_repartition_preserves_carried_primary_and_secondary_targets() -> None:
+    merged = context_module._merge_proposals(
+        [proposal(1, 80, 2), proposal(1, 80, 19), proposal(2, 81, 22)]
+    )
+
+    assert [
+        (segment.start, segment.end, segment.target, segment.extra) for segment in merged
+    ] == [(1, 2, 2, ()), (3, 81, 22, (19, 22))]
+    _assert_target_containment_invariants(merged, (2, 19, 22))
+    represented = sorted(
+        line for segment in merged for line in range(segment.start, segment.end + 1)
+    )
+    assert represented == list(range(1, 82))
+
+
+@pytest.mark.parametrize(
+    ("first_target", "second_target"),
+    [
+        (2, 22),
+        (2, 23),
+        (2, 24),
+        (2, 25),
+        (3, 22),
+        (3, 23),
+        (4, 22),
+        (4, 26),
+        (5, 25),
+        (6, 26),
+        (7, 27),
+        (8, 28),
+        (9, 29),
+        (2, 20),
+        (2, 21),
+        (2, 41),
+        (2, 42),
+        (2, 62),
+    ],
+)
+def test_boundary_window_pairs_keep_every_supplied_target_inside_its_segment(
+    first_target: int, second_target: int
+) -> None:
+    """Boundary-shaped canonical pairs near the beginning of a file.
+
+    Every pair uses real window shapes (_SYMBOL_WINDOW_LINES_BEFORE above the
+    target). The merge must keep each supplied structural target on a segment
+    whose range actually contains it - a stranded primary or extra anchor
+    outside its own range is invalid target metadata and fails here.
+    """
+
+    total_lines = 200
+    supplied = (first_target, second_target)
+
+    def window(target: int) -> context_module._Proposal:
+        start = max(1, target - context_module._SYMBOL_WINDOW_LINES_BEFORE)
+        end = min(total_lines, start + MAX_CONTEXT_WINDOW_LINES - 1)
+        return context_module._Proposal(start, end, target)
+
+    merged = context_module._merge_proposals(
+        [window(first_target), window(second_target)]
+    )
+
+    _assert_target_containment_invariants(merged, supplied)
+
+
+def test_canonical_81_line_source_keeps_targets_2_and_22_under_constrained_budget(
+    tmp_path: Path,
+) -> None:
+    """Real 81-line source with structural symbols at lines 2 and 22.
+
+    _select_windows yields 1..80 target=2 and 2..81 target=22. Repartitioning
+    the carrier around target 22 previously left a 1..1 remnant still claiming
+    target=2, so a constrained budget could emit line 1 as a substitute for
+    the objectively located line 2. Both targets must survive normalization
+    and remain represented under a budget that cannot hold all 81 lines but
+    can afford the two minimal target representations.
+    """
+
+    root = build_fixture(
+        tmp_path / "edge", {"gen/AnchorEdge.java": ANCHOR_EDGE_SOURCE.encode()}
+    )
+    prepared = prepared_workspace(root)
+    index = index_repository(prepared)
+    ranked = candidates_for(prepared, index, "AnchorEdge probemarker")
+    assert [candidate.file_identity.value for candidate in ranked] == ["gen/AnchorEdge.java"]
+
+    lines = ANCHOR_EDGE_SOURCE.splitlines(keepends=True)
+    assert len(lines) == 81
+
+    windows = context_module._select_windows(lines, ranked[0])
+    assert [(item.start, item.end, item.target) for item in windows] == [
+        (1, 80, 2),
+        (2, 81, 22),
+    ]
+
+    merged = context_module._merge_proposals(
+        [proposal(item.start, item.end, item.target) for item in windows]
+    )
+    _assert_target_containment_invariants(merged, (2, 22))
+
+    budget = _line_cost(ANCHOR_EDGE_SOURCE, 1, 2) + _line_cost(ANCHOR_EDGE_SOURCE, 22, 22)
+    assert budget < _line_cost(ANCHOR_EDGE_SOURCE, 1, 81)
+
+    bundle = assemble(prepared, index, ranked, budget=budget)
+    repeat = assemble(prepared, index, ranked, budget=budget)
+
+    spans = [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items]
+    assert spans == [(1, 2), (22, 22)]
+    assert any(start <= 2 <= end for start, end in spans)
+    assert any(start <= 22 <= end for start, end in spans)
+    assert all(end - start + 1 <= MAX_CONTEXT_WINDOW_LINES for start, end in spans)
+    assert duplicated_source_lines(bundle) == []
+    assert bundle.token_budget.consumed_tokens <= budget
+    assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+    assert bundle.canonical_json() == repeat.canonical_json()
 
 
 def test_different_files_with_identical_text_stay_distinct(repository) -> None:
@@ -541,6 +1045,177 @@ def test_never_overflows_any_supplied_budget(repository) -> None:
         assert bundle.token_budget.consumed_tokens <= budget
         assert bundle.token_budget.max_tokens == budget
         assert bundle.token_budget.consumed_tokens == sum(item.token_count for item in bundle.items)
+
+
+# --------------------------------------------------------------------------
+# RAG005-A4-F001: downward window expansion must charge the NEW line
+#
+# When _fit_span grows a fitted range toward earlier source lines, the newly
+# added line is low - 1. Charging the already-contained line low lets the
+# tracked cost diverge from the true contiguous span cost
+# prefix[high] - prefix[low - 1], so spans whose real byte cost exceeds the
+# capacity could be admitted and later fail closed with INVALID_TOKEN_BUDGET.
+# These regressions use deliberately non-uniform adjacent line costs.
+# --------------------------------------------------------------------------
+
+
+def _asymmetric_cost_lines() -> tuple[str, ...]:
+    lines = [
+        "aa\n",
+        "bb\n",
+        "cc\n",
+        "d" * 50 + "\n",
+        "t\n",
+        "e\n",
+        "f\n",
+        "g\n",
+        "h\n",
+        "i\n",
+    ]
+    assert [len(line.encode()) for line in lines] == [3, 3, 3, 51, 2, 2, 2, 2, 2, 2]
+    return tuple(lines)
+
+
+def _fit(prefix: list[int], proposal: context_module._Proposal, capacity: int):
+    return context_module._fit_span(proposal, prefix, capacity)
+
+
+def test_fit_span_downward_expansion_charges_the_newly_added_line() -> None:
+    lines = _asymmetric_cost_lines()
+    prefix = context_module._line_byte_prefix(lines)
+
+    fitted = _fit(prefix, context_module._Proposal(2, 10, 5), 10)
+    start, end = fitted
+
+    assert start <= 5 <= end
+    assert 4 not in range(start, end + 1)
+    assert prefix[end] - prefix[start - 1] == 10
+    assert (start, end) == (5, 9)
+
+
+def _a4_reproducer_lines() -> tuple[str, ...]:
+    return (
+        tuple(["pad\n"] * 97)  # lines 1..97
+        + ("y" * 19 + "\n",)  # line 98: expensive line just below the target
+        + ("p\n",)  # line 99: primary target
+        + ("q\n",)  # line 100
+        + ("rrr\n",)  # line 101: extra target
+        + ("z" * 49 + "\n",)  # line 102: bounds upward growth
+        + tuple(["tail\n"] * 45)  # lines 103..147
+    )
+
+
+def test_fit_span_a4_reproducer_shape_stays_within_capacity() -> None:
+    lines = _a4_reproducer_lines()
+    assert len(lines) >= 147
+    prefix = context_module._line_byte_prefix(lines)
+
+    fitted = _fit(prefix, context_module._Proposal(81, 147, 99, (101, 141)), 9)
+    start, end = fitted
+
+    assert start <= 99 <= end
+    assert start <= 101 <= end
+    assert prefix[end] - prefix[start - 1] <= 9
+
+
+def test_fit_span_exact_capacity_boundary_accepts_fitting_range() -> None:
+    lines = ("z\n", "yyy\n", "x\n", "w\n", "v\n", "u\n")
+    assert [len(line.encode()) for line in lines] == [2, 4, 2, 2, 2, 2]
+    prefix = context_module._line_byte_prefix(lines)
+
+    fitted = _fit(prefix, context_module._Proposal(1, 6, 3), 8)
+
+    assert fitted is not None
+    start, end = fitted
+    assert (start, end) == (2, 4)
+    assert prefix[end] - prefix[start - 1] == 8
+
+
+def test_fit_span_one_byte_under_boundary_excludes_overflowing_line() -> None:
+    lines = ("z\n", "yyy\n", "x\n", "w\n", "v\n", "u\n")
+    assert [len(line.encode()) for line in lines] == [2, 4, 2, 2, 2, 2]
+    prefix = context_module._line_byte_prefix(lines)
+
+    fitted = _fit(prefix, context_module._Proposal(1, 6, 3), 7)
+
+    assert fitted is not None
+    start, end = fitted
+    assert (start, end) == (3, 5)
+    assert prefix[end] - prefix[start - 1] == 6
+    assert 6 + (prefix[2] - prefix[1]) > 7
+
+
+HEAVY_LINE = "H" * 5000
+HEAVY_TAIL_LINE = "G" * 5000
+
+
+def _heavy_java_source() -> str:
+    lines = []
+    for index in range(1, 201):
+        if index == 98:
+            lines.append(HEAVY_LINE)
+        elif index == 99:
+            lines.append("void probe(){}")
+        elif index == 100:
+            lines.append(HEAVY_TAIL_LINE)
+        else:
+            lines.append(f"// filler {index}")
+    return "\n".join(lines) + "\n"
+
+
+def heavy_java_workspace(tmp_path: Path):
+    root = build_fixture(
+        tmp_path / "heavy",
+        {
+            "gen/Heavy.java": _heavy_java_source().encode(),
+            **FIXTURE_FILES,
+        },
+    )
+    prepared = prepared_workspace(root)
+    return prepared, index_repository(prepared)
+
+
+def heavy_java_candidate() -> CandidateFile:
+    path = "gen/Heavy.java"
+    return CandidateFile(
+        candidate_id=candidate_identity(REPOSITORY.value, REVISION.value, path),
+        repository_id=REPOSITORY,
+        revision_id=REVISION,
+        file_identity=FileIdentity(path),
+        explanation=RankingExplanation(
+            1,
+            150_000,
+            (RankingSignal("JAVA_SYMBOL", 150_000, "method=probe"),),
+        ),
+    )
+
+
+def test_heavy_java_assembly_returns_bundle_within_budget(tmp_path: Path) -> None:
+    prepared, index = heavy_java_workspace(tmp_path)
+
+    bundle = assemble(prepared, index, (heavy_java_candidate(),), budget=30)
+
+    assert bundle.token_budget.max_tokens == 30
+    assert bundle.token_budget.consumed_tokens <= bundle.token_budget.max_tokens
+    assert bundle.token_budget.consumed_tokens == sum(
+        item.token_count for item in bundle.items
+    )
+    assert bundle.token_budget.within_budget
+    assert [(item.provenance.start_line, item.provenance.end_line) for item in bundle.items] == [
+        (99, 99)
+    ]
+    assert bundle.items[0].content == "void probe(){}\n"
+    assert bundle.items[0].token_count == len("void probe(){}\n")
+
+
+def test_heavy_java_assembly_is_deterministic(tmp_path: Path) -> None:
+    prepared, index = heavy_java_workspace(tmp_path)
+    supplied = (heavy_java_candidate(),)
+
+    first = assemble(prepared, index, supplied, budget=30)
+    second = assemble(prepared, index, supplied, budget=30)
+
+    assert first.canonical_json() == second.canonical_json()
 
 
 # --------------------------------------------------------------------------
