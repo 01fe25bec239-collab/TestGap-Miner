@@ -136,10 +136,9 @@ services:
     network_mode: none
     init: true
     read_only: true
-    volumes:
-      - runner-workspace:/workspace
     tmpfs:
       - /tmp:size=512m,mode=1777
+      - /workspace:size=512m,mode=1777
     cap_drop:
       - ALL
     security_opt:
@@ -150,7 +149,6 @@ services:
 
 volumes:
   postgres-data:
-  runner-workspace:
 
 networks:
   runtime:
