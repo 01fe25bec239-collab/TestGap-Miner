@@ -9,7 +9,15 @@ from sqlalchemy import inspect, select
 from sqlalchemy.engine import Engine
 
 from app.db.models import Run, RunRequest
-from support import DB_002_TABLES, DB_003_TABLES, DB_CURRENT_TABLES, FORBIDDEN_TABLES
+from support import (
+    DB_002_TABLES,
+    DB_003_TABLES,
+    DB_004_TABLES,
+    DB_CURRENT_TABLES,
+    FORBIDDEN_TABLES,
+)
+
+POST_DB_002_TABLES = DB_003_TABLES | DB_004_TABLES
 
 
 def _tables(engine: Engine) -> set[str]:
@@ -47,7 +55,7 @@ def test_populated_db_002_upgrade_downgrade_and_reupgrade(
     command.downgrade(alembic_config, "ad3f80907336")
     try:
         assert DB_002_TABLES <= _tables(migrated_engine)
-        assert _tables(migrated_engine) & DB_003_TABLES == set()
+        assert _tables(migrated_engine) & POST_DB_002_TABLES == set()
 
         with migrated_engine.begin() as connection:
             connection.execute(
@@ -89,7 +97,7 @@ def test_populated_db_002_upgrade_downgrade_and_reupgrade(
 
         command.downgrade(alembic_config, "ad3f80907336")
         assert DB_002_TABLES <= _tables(migrated_engine)
-        assert _tables(migrated_engine) & DB_003_TABLES == set()
+        assert _tables(migrated_engine) & POST_DB_002_TABLES == set()
         with migrated_engine.connect() as connection:
             assert connection.scalar(
                 select(RunRequest.id).where(RunRequest.id == request_id)
@@ -99,7 +107,7 @@ def test_populated_db_002_upgrade_downgrade_and_reupgrade(
         command.upgrade(alembic_config, "head")
         assert DB_CURRENT_TABLES <= _tables(migrated_engine)
         assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-            "e7b4c2d9a631"
+            "e52607712c32"
         ]
     finally:
         command.upgrade(alembic_config, "head")

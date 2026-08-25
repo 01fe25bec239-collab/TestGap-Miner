@@ -8,9 +8,10 @@ from app.db.models import Base
 from support import (
     DB_002_TABLES,
     DB_003_TABLES,
+    DB_004_TABLES,
     DB_CURRENT_TABLES,
     FORBIDDEN_TABLES,
-    SECRET_NAME_PATTERN,
+    secret_named_columns,
 )
 
 
@@ -31,7 +32,7 @@ def test_no_model_column_looks_like_a_secret() -> None:
         for table in Base.metadata.tables.values()
         for column in table.columns
         # authorization_source is a provenance label, not a credential.
-        if SECRET_NAME_PATTERN.search(column.name)
+        if secret_named_columns([column.name])
     ]
     assert offenders == []
 
@@ -50,24 +51,52 @@ def test_no_db_004_or_queue_table_exists(migrated_engine: Engine) -> None:
     assert present - {"alembic_version"} == DB_CURRENT_TABLES
 
 
+def test_every_db_004_table_exists_in_the_database(migrated_engine: Engine) -> None:
+    assert DB_004_TABLES <= set(inspect(migrated_engine).get_table_names())
+
+
 def test_no_database_column_looks_like_a_secret(migrated_engine: Engine) -> None:
     inspector = inspect(migrated_engine)
     offenders = [
         f"{table}.{column['name']}"
         for table in DB_CURRENT_TABLES
         for column in inspector.get_columns(table)
-        if SECRET_NAME_PATTERN.search(column["name"])
+        if secret_named_columns([column["name"]])
     ]
     assert offenders == []
 
 
-def test_every_primary_key_is_a_uuid(migrated_engine: Engine) -> None:
+def test_pre_db004_primary_keys_are_durable_uuids(migrated_engine: Engine) -> None:
     inspector = inspect(migrated_engine)
-    for table in DB_CURRENT_TABLES:
+    for table in DB_002_TABLES | DB_003_TABLES:
         primary_key = inspector.get_pk_constraint(table)
         assert primary_key["constrained_columns"] == ["id"], table
         types = {c["name"]: str(c["type"]) for c in inspector.get_columns(table)}
         assert types["id"] == "UUID", table
+
+
+def test_every_db_004_primary_key_is_an_evidence_or_rag_identity(
+    migrated_engine: Engine,
+) -> None:
+    """DB-004 rows are keyed by the domain identities they converge on."""
+    identity_keys = {
+        "rag_context_bundles": ["context_bundle_id"],
+        "rag_context_items": ["context_item_id"],
+        "candidate_patch_records": ["candidate_patch_id"],
+        "candidate_changed_files": ["candidate_patch_id", "path"],
+        "candidate_version_records": ["candidate_version_id"],
+        "execution_evidence_records": ["execution_evidence_id"],
+        "execution_test_case_results": ["execution_evidence_id", "ordinal"],
+        "execution_resource_observations": ["execution_evidence_id", "ordinal"],
+        "artefact_references": ["artefact_id"],
+        "execution_artefact_roles": ["execution_evidence_id", "artefact_id"],
+        "artefact_manifests": ["artefact_manifest_id"],
+        "artefact_manifest_members": ["artefact_manifest_id", "artefact_id"],
+    }
+    inspector = inspect(migrated_engine)
+    for table, expected_columns in identity_keys.items():
+        primary_key = inspector.get_pk_constraint(table)
+        assert primary_key["constrained_columns"] == expected_columns, table
 
 
 def test_every_timestamp_column_is_timezone_aware(migrated_engine: Engine) -> None:
@@ -229,6 +258,120 @@ def test_repository_access_foreign_keys_are_explicit(migrated_engine: Engine) ->
                 "ck_run_events_fingerprint_version_positive",
                 "ck_run_events_payload_is_object",
                 "ck_run_events_payload_bounded",
+            },
+        ),
+        (
+            "rag_context_bundles",
+            {
+                "ck_rag_context_bundles_max_tokens_range",
+                "ck_rag_context_bundles_consumed_tokens_range",
+                "ck_rag_context_bundles_consumed_tokens_within_budget",
+            },
+        ),
+        (
+            "rag_context_items",
+            {
+                "ck_rag_context_items_position_positive",
+                "ck_rag_context_items_start_line_positive",
+                "ck_rag_context_items_end_line_not_before_start",
+                "ck_rag_context_items_token_count_positive",
+                "ck_rag_context_items_trust_label_allowed",
+                "ck_rag_context_items_file_identity_bounded",
+            },
+        ),
+        (
+            "candidate_patch_records",
+            {
+                "ck_candidate_patch_records_finalization_state_allowed",
+                "ck_candidate_patch_records_finalized_at_matches_state",
+            },
+        ),
+        (
+            "candidate_changed_files",
+            {
+                "ck_candidate_changed_files_path_nonempty",
+                "ck_candidate_changed_files_path_repository_relative",
+                "ck_candidate_changed_files_path_bounded",
+                "ck_candidate_changed_files_change_summary_bounded",
+            },
+        ),
+        (
+            "candidate_version_records",
+            {
+                "ck_candidate_version_records_finalization_state_allowed",
+                "ck_candidate_version_records_repair_level_allowed",
+                "ck_candidate_version_records_lineage_shape_matches_repair_level",
+                "ck_candidate_version_records_parent_not_self",
+            },
+        ),
+        (
+            "execution_evidence_records",
+            {
+                "ck_execution_evidence_records_execution_phase_allowed",
+                "ck_execution_evidence_records_outcome_allowed",
+                "ck_execution_evidence_records_completeness_allowed",
+                "ck_execution_evidence_records_integrity_state_allowed",
+                "ck_execution_evidence_records_failure_category_allowed",
+                "ck_execution_evidence_records_compile_status_allowed",
+                "ck_execution_evidence_records_ended_at_not_before_started_at",
+                "ck_execution_evidence_records_duration_non_negative",
+                "ck_execution_evidence_records_timeout_requires_classification",
+                "ck_execution_evidence_records_timeout_limit_non_negative",
+                "ck_execution_evidence_records_signal_number_positive",
+                "ck_execution_evidence_records_integrity_verification_required",
+                "ck_execution_evidence_records_secondary_failures_is_array",
+                "ck_execution_evidence_records_secondary_failures_bounded",
+                "ck_execution_evidence_records_phase_structured_result_shape",
+                "ck_execution_evidence_records_compile_status_matches_outcome",
+                "ck_execution_evidence_records_test_counts_within_executed",
+                "ck_execution_evidence_records_success_has_no_test_failures",
+                "ck_execution_evidence_records_phase_outcome_compatible",
+                "ck_execution_evidence_records_failure_evidence_matches_outcome",
+            },
+        ),
+        (
+            "execution_test_case_results",
+            {
+                "ck_execution_test_case_results_case_status_allowed",
+                "ck_execution_test_case_results_failure_reference_failing_only",
+                "ck_execution_test_case_results_ordinal_positive",
+            },
+        ),
+        (
+            "execution_resource_observations",
+            {
+                "ck_execution_resource_observations_resource_category_allowed",
+                "ck_execution_resource_observations_enforcement_status_allowed",
+                "ck_execution_resource_observations_configured_value_pairing",
+                "ck_execution_resource_observations_observed_value_pairing",
+                "ck_execution_resource_observations_configuration_present",
+                "ck_execution_resource_observations_other_category_shape",
+                "ck_execution_resource_observations_not_enforced_no_termination",
+                "ck_execution_resource_observations_ordinal_positive",
+            },
+        ),
+        (
+            "artefact_references",
+            {
+                "ck_artefact_references_artefact_type_allowed",
+                "ck_artefact_references_availability_state_allowed",
+                "ck_artefact_references_integrity_state_allowed",
+                "ck_artefact_references_byte_size_non_negative",
+                "ck_artefact_references_storage_locator_distinct_from_identity",
+                "ck_artefact_references_verified_integrity_requires_reference",
+            },
+        ),
+        (
+            "artefact_manifests",
+            {
+                "ck_artefact_manifests_finalization_state_allowed",
+                "ck_artefact_manifests_integrity_state_allowed",
+                "ck_artefact_manifests_execution_phase_allowed",
+                "ck_artefact_manifests_assembling_has_no_finalization_timestamp",
+                "ck_artefact_manifests_finalized_requires_final_metadata",
+                "ck_artefact_manifests_manifest_digest_pairing",
+                "ck_artefact_manifests_verified_integrity_requires_reference",
+                "ck_artefact_manifests_finalization_not_before_creation",
             },
         ),
     ],
