@@ -3,7 +3,7 @@ use crate::{
     Defects4JOutcome, Defects4JRequest, EnvironmentPolicy, ExecutionCommand, ExecutionFailure,
     ExecutionPhase, ExecutionRequest, ExecutionResult, JUnitRequest, JavaClassName,
     JavaCompileRequest, ProcessExit, ProcessSupervisor, SupervisorTermination, TestOutcome,
-    TestRunSummary, TimeoutOutcome,
+    TestRunSummary, TimeoutOutcome, TrustedLocalExecution,
 };
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -363,7 +363,12 @@ impl RuntimeConformanceHarness {
     pub fn new(config: RuntimeConformanceConfig) -> Self {
         Self {
             config,
-            supervisor: ProcessSupervisor,
+            // The conformance harness probes operator-controlled local
+            // tooling by explicit, typed trusted-local opt-in. It is not an
+            // untrusted execution boundary.
+            supervisor: ProcessSupervisor::trusted_local(
+                TrustedLocalExecution::for_local_conformance_and_developer_harnesses(),
+            ),
         }
     }
 
@@ -1179,6 +1184,12 @@ mod tests {
             .into_os_string()
     }
 
+    fn trusted_supervisor() -> ProcessSupervisor {
+        ProcessSupervisor::trusted_local(
+            TrustedLocalExecution::for_local_conformance_and_developer_harnesses(),
+        )
+    }
+
     #[test]
     fn parses_java_version_from_stdout() {
         assert_eq!(
@@ -1228,7 +1239,7 @@ mod tests {
                 }),
                 &[OsString::from("-version")],
                 &cwd,
-                &ProcessSupervisor,
+                &trusted_supervisor(),
             );
             assert_eq!(
                 probe.availability,
@@ -1265,7 +1276,7 @@ mod tests {
             missing("defects4j"),
             &[OsString::from("info")],
             &env::current_dir().unwrap(),
-            &ProcessSupervisor,
+            &trusted_supervisor(),
         );
         assert_eq!(
             probe.availability,
@@ -1319,7 +1330,7 @@ mod tests {
             config.defects4j_executable.clone(),
             &[OsString::from("info")],
             &config.working_directory,
-            &ProcessSupervisor,
+            &trusted_supervisor(),
         );
         let checks = RuntimeConformanceHarness::new(config).run_defects4j(&probe);
 
@@ -1348,7 +1359,7 @@ mod tests {
             config.defects4j_executable.clone(),
             &[OsString::from("info")],
             &config.working_directory,
-            &ProcessSupervisor,
+            &trusted_supervisor(),
         );
         probe.availability = ToolAvailability::Available;
         let checks = RuntimeConformanceHarness::new(config).run_defects4j(&probe);
@@ -1370,7 +1381,7 @@ mod tests {
             missing("mapping"),
             &[],
             &env::current_dir().unwrap(),
-            &ProcessSupervisor,
+            &trusted_supervisor(),
         )
         .execution;
         result.process_exit = ProcessExit::TerminatedBySupervisor {
@@ -1421,14 +1432,14 @@ mod tests {
             missing("isolation-a"),
             &[],
             &cwd,
-            &ProcessSupervisor,
+            &trusted_supervisor(),
         );
         let second = probe_tool(
             RuntimeTool::Javac,
             missing("isolation-b"),
             &[],
             &cwd,
-            &ProcessSupervisor,
+            &trusted_supervisor(),
         );
         assert_ne!(first.executable_requested, second.executable_requested);
         assert_eq!(first.tool, RuntimeTool::Java);
