@@ -43,7 +43,26 @@ DB_003_TABLES = frozenset(
     {"workflow_steps", "workflow_step_attempts", "run_events"}
 )
 
-DB_CURRENT_TABLES = DB_002_TABLES | DB_003_TABLES
+# DB-004: RAG context-selection metadata plus Evidence-owned candidate,
+# execution, artefact, and manifest metadata.
+DB_004_TABLES = frozenset(
+    {
+        "rag_context_bundles",
+        "rag_context_items",
+        "candidate_patch_records",
+        "candidate_changed_files",
+        "candidate_version_records",
+        "execution_evidence_records",
+        "execution_test_case_results",
+        "execution_resource_observations",
+        "artefact_references",
+        "execution_artefact_roles",
+        "artefact_manifests",
+        "artefact_manifest_members",
+    }
+)
+
+DB_CURRENT_TABLES = DB_002_TABLES | DB_003_TABLES | DB_004_TABLES
 
 # DB-004+, Queue, and other unauthorized domains that must not exist.
 FORBIDDEN_TABLES = frozenset(
@@ -96,6 +115,22 @@ SECRET_NAME_PATTERN = re.compile(
     r"authorization_header|session_key|signing_key|jwt",
     re.IGNORECASE,
 )
+
+# CONTRACT-RAG-001 requires token-budget accounting columns; they carry
+# integer quantities, never credential material.
+SAFE_TOKEN_ACCOUNTING_COLUMNS = frozenset(
+    {"max_tokens", "consumed_tokens", "token_count"}
+)
+
+
+def secret_named_columns(columns: object) -> list[str]:
+    """Column names matching the credential-name heuristic, minus the safe set."""
+    return [
+        name
+        for name in columns  # type: ignore[union-attr]
+        if SECRET_NAME_PATTERN.search(name)
+        and name not in SAFE_TOKEN_ACCOUNTING_COLUMNS
+    ]
 
 
 def assert_rejected(session: Session, *objects: object) -> None:

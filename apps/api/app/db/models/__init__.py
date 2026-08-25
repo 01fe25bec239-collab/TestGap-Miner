@@ -9,6 +9,19 @@ from app.db.models.auth import (
     RepositoryAccess,
     User,
 )
+from app.db.models.context import ContextBundle, ContextBundleItem
+from app.db.models.evidence import (
+    ArtefactManifestMember,
+    ArtefactManifestRecord,
+    ArtefactReferenceRecord,
+    CandidateChangedFile,
+    CandidatePatchRecord,
+    CandidateVersionRecord,
+    ExecutionArtefactRole,
+    ExecutionEvidenceRecord,
+    ExecutionResourceObservation,
+    ExecutionTestCaseResult,
+)
 from app.db.models.workflow import (
     Run,
     RunEvent,
@@ -18,8 +31,20 @@ from app.db.models.workflow import (
 )
 
 __all__ = [
+    "ArtefactManifestMember",
+    "ArtefactManifestRecord",
+    "ArtefactReferenceRecord",
     "AuthSubject",
     "Base",
+    "CandidateChangedFile",
+    "CandidatePatchRecord",
+    "CandidateVersionRecord",
+    "ContextBundle",
+    "ContextBundleItem",
+    "ExecutionArtefactRole",
+    "ExecutionEvidenceRecord",
+    "ExecutionResourceObservation",
+    "ExecutionTestCaseResult",
     "GitHubInstallation",
     "Repository",
     "RepositoryAccess",
