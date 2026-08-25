@@ -11,10 +11,19 @@ use testgap_worker::{
     CancellationOutcome, CompileOutcome, Defects4JCommand, Defects4JOutcome, Defects4JProjectId,
     Defects4JRequest, Defects4JTestIdentifier, EnvironmentPolicy, ExecutionAdapterError,
     ExecutionFailure, ExecutionPhase, JUnitRequest, JavaClassName, JavaCompileRequest, ProcessExit,
-    ProcessSupervisor, TestOutcome, TestRunSummary, TimeoutOutcome,
+    ProcessSupervisor, TestOutcome, TestRunSummary, TimeoutOutcome, TrustedLocalExecution,
 };
 
 const FIXTURE: &str = env!("CARGO_BIN_EXE_process_fixture");
+
+/// Adapter regression coverage runs on the explicitly opted-in
+/// trusted-local boundary; restricted-boundary adapter behavior has its own
+/// adversarial tests in execution_authority.rs.
+fn supervisor() -> ProcessSupervisor {
+    ProcessSupervisor::trusted_local(
+        TrustedLocalExecution::for_local_conformance_and_developer_harnesses(),
+    )
+}
 
 struct TestDirectory(PathBuf);
 
@@ -166,7 +175,7 @@ fn invalid_javac_is_tool_unavailable_and_preserves_raw_result() {
         .path()
         .join("guaranteed-absent-javac")
         .into_os_string();
-    let result = request.execute(&ProcessSupervisor).unwrap();
+    let result = request.execute(&supervisor()).unwrap();
 
     assert_eq!(result.outcome, CompileOutcome::ToolUnavailable);
     assert_eq!(result.execution.process_exit, ProcessExit::NeverStarted);
@@ -183,7 +192,7 @@ fn invalid_javac_is_tool_unavailable_and_preserves_raw_result() {
 fn compile_success_and_failure_preserve_raw_facts() {
     let directory = TestDirectory::new("compile-results");
     let success = compile_request(directory.path(), &[])
-        .execute(&ProcessSupervisor)
+        .execute(&supervisor())
         .unwrap();
     let failure = compile_request(
         directory.path(),
@@ -193,7 +202,7 @@ fn compile_success_and_failure_preserve_raw_facts() {
             ("TESTGAP_FIXTURE_STDERR", "compiler stderr"),
         ],
     )
-    .execute(&ProcessSupervisor)
+    .execute(&supervisor())
     .unwrap();
 
     assert_eq!(success.outcome, CompileOutcome::Success);
@@ -289,7 +298,7 @@ fn junit_pass_and_failure_use_exit_and_parse_supported_summaries() {
         )],
         &["com.example.FirstTest", "com.example.SecondTest"],
     )
-    .execute(&ProcessSupervisor)
+    .execute(&supervisor())
     .unwrap();
     let failed = junit_request(
         directory.path(),
@@ -299,7 +308,7 @@ fn junit_pass_and_failure_use_exit_and_parse_supported_summaries() {
         ],
         &["com.example.FailingTest"],
     )
-    .execute(&ProcessSupervisor)
+    .execute(&supervisor())
     .unwrap();
 
     assert_eq!(passed.outcome, TestOutcome::Passed);
@@ -375,7 +384,7 @@ fn unavailable_defects4j_is_not_a_test_failure() {
         execution_options: AdapterExecutionOptions::new(directory.path()),
         phase: ExecutionPhase::BuggyExecution,
     };
-    let result = request.execute(&ProcessSupervisor).unwrap();
+    let result = request.execute(&supervisor()).unwrap();
 
     assert_eq!(result.outcome, Defects4JOutcome::ToolUnavailable);
     assert_eq!(result.execution.process_exit, ProcessExit::NeverStarted);
@@ -386,7 +395,7 @@ fn timeout_and_cancellation_propagate_from_supervisor() {
     let directory = TestDirectory::new("termination");
     let mut timed = compile_request(directory.path(), &[("TESTGAP_FIXTURE_SLEEP_MS", "500")]);
     timed.execution_options.resource_limits.timeout = Some(Duration::from_millis(20));
-    let timed = timed.execute(&ProcessSupervisor).unwrap();
+    let timed = timed.execute(&supervisor()).unwrap();
 
     let cancelled = compile_request(directory.path(), &[("TESTGAP_FIXTURE_SLEEP_MS", "500")]);
     let token = cancelled.execution_options.cancellation.clone();
@@ -394,7 +403,7 @@ fn timeout_and_cancellation_propagate_from_supervisor() {
         thread::sleep(Duration::from_millis(20));
         token.cancel();
     });
-    let cancelled = cancelled.execute(&ProcessSupervisor).unwrap();
+    let cancelled = cancelled.execute(&supervisor()).unwrap();
     canceller.join().unwrap();
 
     assert_eq!(timed.outcome, CompileOutcome::TimedOut);
@@ -421,7 +430,7 @@ fn bounded_output_and_runtime_metadata_are_preserved() {
     );
     request.execution_options.resource_limits.stdout_bytes = 111;
     request.execution_options.resource_limits.stderr_bytes = 222;
-    let result = request.execute(&ProcessSupervisor).unwrap();
+    let result = request.execute(&supervisor()).unwrap();
 
     assert_eq!(result.execution.stdout.captured_bytes, vec![b'O'; 111]);
     assert_eq!(result.execution.stdout.total_bytes_observed, 2000);
@@ -461,7 +470,7 @@ fn invalid_identifiers_and_phases_are_rejected_before_spawn() {
     let mut junit = junit_request(directory.path(), &[], &["com.example.Test"]);
     junit.phase = ExecutionPhase::Compile;
     assert!(matches!(
-        junit.execute(&ProcessSupervisor),
+        junit.execute(&supervisor()),
         Err(ExecutionAdapterError::InvalidExecutionPhase(
             ExecutionPhase::Compile
         ))
@@ -483,7 +492,7 @@ fn path_metacharacters_remain_literal_and_no_shell_is_inserted() {
     request.classpath_entries = vec![PathBuf::from("class path/semi;colon.jar")];
     request.output_directory = Some(PathBuf::from("output/$(not-command) && *"));
     let command = request.command().unwrap();
-    let result = request.execute(&ProcessSupervisor).unwrap();
+    let result = request.execute(&supervisor()).unwrap();
 
     assert_eq!(command.executable, FIXTURE);
     for path in opaque_paths {
@@ -554,8 +563,8 @@ fn repeated_adapter_executions_do_not_leak_request_state() {
 
     let first_command = first.command().unwrap();
     let second_command = second.command().unwrap();
-    let first_result = first.execute(&ProcessSupervisor).unwrap();
-    let second_result = second.execute(&ProcessSupervisor).unwrap();
+    let first_result = first.execute(&supervisor()).unwrap();
+    let second_result = second.execute(&supervisor()).unwrap();
 
     assert!(first_command
         .arguments
@@ -586,14 +595,14 @@ fn structurally_invalid_requests_fail_without_execution_results() {
     let mut compile = compile_request(directory.path(), &[]);
     compile.source_files.clear();
     assert!(matches!(
-        compile.execute(&ProcessSupervisor),
+        compile.execute(&supervisor()),
         Err(ExecutionAdapterError::EmptySourceSet)
     ));
 
     compile.source_files.push(PathBuf::from("Main.java"));
     compile.javac_executable = OsString::new();
     assert!(matches!(
-        compile.execute(&ProcessSupervisor),
+        compile.execute(&supervisor()),
         Err(ExecutionAdapterError::InvalidExecutable)
     ));
 
@@ -603,14 +612,14 @@ fn structurally_invalid_requests_fail_without_execution_results() {
     #[cfg(not(windows))]
     compile.classpath_entries.push(PathBuf::from("bad:entry"));
     assert!(matches!(
-        compile.execute(&ProcessSupervisor),
+        compile.execute(&supervisor()),
         Err(ExecutionAdapterError::ClasspathConstructionFailed)
     ));
 
     let mut junit = junit_request(directory.path(), &[], &["com.example.Test"]);
     junit.test_targets.clear();
     assert!(matches!(
-        junit.execute(&ProcessSupervisor),
+        junit.execute(&supervisor()),
         Err(ExecutionAdapterError::EmptyTestTargetSet)
     ));
 }

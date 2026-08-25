@@ -1,4 +1,5 @@
 use crate::{
+    execution_authority::{ExecutionAuthority, SpawnDenial},
     resource_limits::{self, CpuTimeDecision},
     BoundedOutput, CancellationOutcome, EnvironmentPolicy, ExecutionFailure, ExecutionRequest,
     ExecutionResult, OutputStream, ProcessExit, ResourceEnforcementStatus, ResourceLimitKind,
@@ -16,32 +17,195 @@ use std::os::unix::process::CommandExt;
 
 const POLL_INTERVAL: Duration = Duration::from_millis(5);
 
-#[derive(Debug, Default)]
-pub struct ProcessSupervisor;
+/// Zero-sized witness of an explicit, caller-side opt-in to UNRESTRICTED
+/// trusted local execution.
+///
+/// This type exists so that ambient-host behavior — `PATH`-resolved bare
+/// executable names, unconfined working directories, and inherited host
+/// environments (`EnvironmentPolicy::InheritAndOverride`) — remains
+/// available exclusively to genuinely trusted local workloads such as the
+/// developer runtime-conformance harness. It can never be constructed from
+/// execution request data, repository data, model output, candidate data, or
+/// task data: choosing it is a deliberate act by the calling code.
+///
+/// Untrusted process execution MUST go through
+/// [`ProcessSupervisor::restricted`] instead.
+#[derive(Debug, Clone, Copy)]
+pub struct TrustedLocalExecution {
+    _private: (),
+}
+
+impl TrustedLocalExecution {
+    /// Explicitly opts this caller into unrestricted trusted local
+    /// execution. Intended only for local conformance and developer
+    /// harnesses running operator-controlled tooling.
+    pub fn for_local_conformance_and_developer_harnesses() -> Self {
+        Self { _private: () }
+    }
+}
+
+#[derive(Debug)]
+enum SupervisorMode {
+    /// The untrusted execution boundary. Every request is validated against
+    /// pre-established [`ExecutionAuthority`] (canonical authorized
+    /// executable identity, confined workspace root, default-deny child
+    /// environment) before any spawn attempt; every violation fails closed
+    /// with the target never started.
+    Restricted(Box<ExecutionAuthority>),
+    /// Deliberately opted-in unrestricted local execution for trusted
+    /// callers. Never reachable through request data.
+    TrustedLocal(TrustedLocalExecution),
+}
+
+/// Deterministic process supervisor.
+///
+/// Trust class is fixed at construction and can never be upgraded by
+/// request content:
+///
+/// - [`ProcessSupervisor::restricted`] enforces command/executable/path/
+///   workspace/environment authority before spawning and is the ONLY
+///   appropriate boundary for untrusted repository, model, candidate, or
+///   task material.
+/// - [`ProcessSupervisor::trusted_local`] preserves the historical
+///   unrestricted behavior for explicitly opted-in trusted local callers.
+///
+/// Supervision itself is unchanged: structured argv with no shell,
+/// Unix process groups, cancellation-before-timeout ordering, wall
+/// timeouts, process-tree termination with direct-child fallback,
+/// concurrent bounded stdout/stderr draining, and child wait/reap.
+#[derive(Debug)]
+pub struct ProcessSupervisor {
+    mode: SupervisorMode,
+}
 
 impl ProcessSupervisor {
+    /// Creates the restricted (untrusted) execution boundary backed by
+    /// pre-established trusted authority.
+    ///
+    /// The authority must have been built from trusted configuration; its
+    /// own construction already failed closed on any canonicalization or
+    /// validation problem. Request data cannot widen, replace, or select
+    /// around it.
+    pub fn restricted(authority: ExecutionAuthority) -> Self {
+        Self {
+            mode: SupervisorMode::Restricted(Box::new(authority)),
+        }
+    }
+
+    /// Creates an unrestricted supervisor for explicitly opted-in trusted
+    /// local execution only.
+    ///
+    /// NEVER hand request-derived, repository-derived, model-derived,
+    /// candidate-derived, or task-derived command material to this
+    /// supervisor: it resolves bare executables through the ambient host
+    /// `PATH`, applies working directories verbatim, and honors
+    /// `EnvironmentPolicy::InheritAndOverride`, inheriting the full host
+    /// environment.
+    pub fn trusted_local(witness: TrustedLocalExecution) -> Self {
+        Self {
+            mode: SupervisorMode::TrustedLocal(witness),
+        }
+    }
+
     pub fn execute(&self, request: ExecutionRequest) -> ExecutionResult {
         let started_at = Instant::now();
+        match &self.mode {
+            SupervisorMode::Restricted(authority) => {
+                self.execute_restricted(authority, request, started_at)
+            }
+            SupervisorMode::TrustedLocal(_) => self.execute_trusted_local(request, started_at),
+        }
+    }
+
+    /// Restricted boundary: authority checks run entirely before spawn and
+    /// deny with `NeverStarted`; the spawned values are the authorized
+    /// canonical ones rather than anything from the request.
+    fn execute_restricted(
+        &self,
+        authority: &ExecutionAuthority,
+        request: ExecutionRequest,
+        started_at: Instant,
+    ) -> ExecutionResult {
+        // Command/executable/workspace/environment authorization happens
+        // first, entirely before any fork: a denied target can never start.
+        let prepared = match authority.prepare(
+            &request.command.executable,
+            &request.command.working_directory,
+            &request.command.environment,
+        ) {
+            Ok(prepared) => prepared,
+            Err(SpawnDenial { kind, message }) => {
+                return fail_closed_before_spawn(&request, started_at, kind, message)
+            }
+        };
 
         // CPU runtime-limit policy is resolved before any fork. A limit that
         // cannot be truthfully enforced on this platform fails closed before
         // spawn so the target can never run unrestricted.
         let cpu_decision = resource_limits::decide(request.resource_limits.cpu_time);
         if let CpuTimeDecision::FailClosedBeforeSpawn(message) = &cpu_decision {
-            return finish_result(
+            return fail_closed_before_spawn(
                 &request,
-                None,
-                ProcessExit::NeverStarted,
-                TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
-                CancellationOutcome::NotSelected,
-                BoundedOutput::empty(request.resource_limits.stdout_bytes),
-                BoundedOutput::empty(request.resource_limits.stderr_bytes),
-                started_at.elapsed(),
-                vec![ExecutionFailure::SpawnFailure {
-                    kind: io::ErrorKind::Unsupported,
-                    message: message.clone(),
-                }],
-                None,
+                started_at,
+                io::ErrorKind::Unsupported,
+                message.clone(),
+            );
+        }
+
+        // Spawn material comes exclusively from validated authority state.
+        // Command::new receives the authorized CANONICAL executable, never
+        // the requested spelling, so no PATH or lexical-path authority
+        // exists at the OS boundary either.
+        let mut command = Command::new(&prepared.executable);
+        command
+            .args(&request.command.arguments)
+            .current_dir(&prepared.working_directory)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+
+        #[cfg(unix)]
+        command.process_group(0);
+
+        // Default-deny child environment: wipe everything, then apply only
+        // the explicitly authorized surface. The parent's environment is
+        // never inherited on this boundary.
+        command.env_clear();
+        command.envs(prepared.environment.iter().map(|(key, value)| (key, value)));
+
+        // Attaches the child-local RLIMIT_CPU pre_exec on Linux and reports
+        // whether a limit was requested; other platforms already failed
+        // closed above.
+        let cpu_limit_requested = resource_limits::prepare_command(&mut command, &cpu_decision);
+
+        match command.spawn() {
+            Ok(child) => {
+                // pre_exec closures complete before exec, so a successfully
+                // spawned child is guaranteed to carry its own CPU limits.
+                self.supervise_started_process(request, started_at, child, cpu_limit_requested)
+            }
+            Err(error) => {
+                fail_closed_before_spawn(&request, started_at, error.kind(), error.to_string())
+            }
+        }
+    }
+
+    /// Historical unrestricted path, available only behind an explicit
+    /// [`TrustedLocalExecution`] opt-in. Behavior is unchanged.
+    fn execute_trusted_local(
+        &self,
+        request: ExecutionRequest,
+        started_at: Instant,
+    ) -> ExecutionResult {
+        // CPU runtime-limit policy is resolved before any fork. A limit that
+        // cannot be truthfully enforced on this platform fails closed before
+        // spawn so the target can never run unrestricted.
+        let cpu_decision = resource_limits::decide(request.resource_limits.cpu_time);
+        if let CpuTimeDecision::FailClosedBeforeSpawn(message) = &cpu_decision {
+            return fail_closed_before_spawn(
+                &request,
+                started_at,
+                io::ErrorKind::Unsupported,
+                message.clone(),
             );
         }
 
@@ -77,22 +241,7 @@ impl ProcessSupervisor {
                 self.supervise_started_process(request, started_at, child, cpu_limit_requested)
             }
             Err(error) => {
-                let duration = started_at.elapsed();
-                finish_result(
-                    &request,
-                    None,
-                    ProcessExit::NeverStarted,
-                    TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
-                    CancellationOutcome::NotSelected,
-                    BoundedOutput::empty(request.resource_limits.stdout_bytes),
-                    BoundedOutput::empty(request.resource_limits.stderr_bytes),
-                    duration,
-                    vec![ExecutionFailure::SpawnFailure {
-                        kind: error.kind(),
-                        message: error.to_string(),
-                    }],
-                    None,
-                )
+                fail_closed_before_spawn(&request, started_at, error.kind(), error.to_string())
             }
         }
     }
@@ -497,6 +646,29 @@ fn output_failure(
         kind,
         message,
     }
+}
+
+/// Deterministic pre-spawn failure shape shared by every authorization and
+/// setup denial: the target never starts, no process ID exists, and the
+/// single failure is a spawn failure.
+fn fail_closed_before_spawn(
+    request: &ExecutionRequest,
+    started_at: Instant,
+    kind: io::ErrorKind,
+    message: String,
+) -> ExecutionResult {
+    finish_result(
+        request,
+        None,
+        ProcessExit::NeverStarted,
+        TimeoutOutcome::from_limit(request.resource_limits.timeout, false),
+        CancellationOutcome::NotSelected,
+        BoundedOutput::empty(request.resource_limits.stdout_bytes),
+        BoundedOutput::empty(request.resource_limits.stderr_bytes),
+        started_at.elapsed(),
+        vec![ExecutionFailure::SpawnFailure { kind, message }],
+        None,
+    )
 }
 
 #[allow(clippy::too_many_arguments)]

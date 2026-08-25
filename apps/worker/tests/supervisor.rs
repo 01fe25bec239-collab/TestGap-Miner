@@ -10,10 +10,20 @@ use testgap_worker::{
     CancellationOutcome, CancellationToken, EnvironmentPolicy, ExecutionCommand, ExecutionFailure,
     ExecutionPhase, ExecutionRequest, ProcessExit, ProcessSupervisor, ResourceEnforcementStatus,
     ResourceLimitKind, ResourceLimitObservation, ResourceLimitValue, SupervisorTermination,
-    TimeoutOutcome,
+    TimeoutOutcome, TrustedLocalExecution,
 };
 
 const FIXTURE: &str = env!("CARGO_BIN_EXE_process_fixture");
+
+/// These tests cover supervision behavior itself (argv fidelity, timeouts,
+/// cancellation, bounded output, CPU policy). They deliberately run on the
+/// explicitly opted-in trusted-local boundary; the restricted boundary has
+/// its own dedicated adversarial suite in execution_authority.rs.
+fn supervisor() -> ProcessSupervisor {
+    ProcessSupervisor::trusted_local(
+        TrustedLocalExecution::for_local_conformance_and_developer_harnesses(),
+    )
+}
 
 fn strings(values: &[&str]) -> Vec<OsString> {
     values.iter().map(OsString::from).collect()
@@ -26,7 +36,7 @@ fn request(arguments: Vec<OsString>) -> ExecutionRequest {
 }
 
 fn execute(arguments: &[&str]) -> testgap_worker::ExecutionResult {
-    ProcessSupervisor.execute(request(strings(arguments)))
+    supervisor().execute(request(strings(arguments)))
 }
 
 fn observation<'a>(
@@ -191,7 +201,7 @@ fn spawn_failure_reports_runtime_metadata_without_process_id() {
     let directory = TestDirectory::new("runtime-metadata-spawn-failure");
     let mut request = request(Vec::new());
     request.command.executable = directory.path().join("absent-executable").into_os_string();
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
 
     assert_eq!(result.runtime_metadata.operating_system, env::consts::OS);
     assert_eq!(result.runtime_metadata.architecture, env::consts::ARCH);
@@ -245,7 +255,7 @@ fn stderr_capture_preserves_exact_bytes() {
 fn bounded_stdout_is_fully_drained() {
     let mut request = request(strings(&["stdout", "100000"]));
     request.resource_limits.stdout_bytes = 1024;
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
 
     assert!(result.is_success());
     assert_eq!(result.stdout.captured_bytes, vec![b'O'; 1024]);
@@ -258,7 +268,7 @@ fn bounded_stdout_is_fully_drained() {
 fn bounded_stderr_is_fully_drained_independently() {
     let mut request = request(strings(&["stderr", "100000"]));
     request.resource_limits.stderr_bytes = 513;
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
 
     assert!(result.is_success());
     assert_eq!(result.stderr.captured_bytes, vec![b'E'; 513]);
@@ -273,7 +283,7 @@ fn timeout_terminates_and_reaps_direct_child() {
     let mut request = request(strings(&["sleep_ms", "2000"]));
     request.resource_limits.timeout = Some(Duration::from_millis(40));
     let started_at = Instant::now();
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
 
     assert!(started_at.elapsed() < Duration::from_secs(1));
     assert!(matches!(
@@ -306,7 +316,7 @@ fn cancellation_terminates_and_reaps_direct_child() {
         token.cancel();
     });
     let started_at = Instant::now();
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
     canceller.join().unwrap();
 
     assert!(started_at.elapsed() < Duration::from_secs(1));
@@ -343,7 +353,7 @@ fn timeout_terminates_real_descendant_tree() {
     request.resource_limits.timeout = Some(Duration::from_millis(500));
 
     let started_at = Instant::now();
-    let execution = thread::spawn(move || ProcessSupervisor.execute(request));
+    let execution = thread::spawn(move || supervisor().execute(request));
     let descendant_id = wait_for_descendant(
         &descendant_path,
         Instant::now() + Duration::from_millis(400),
@@ -396,7 +406,7 @@ fn cancellation_terminates_real_descendant_tree() {
     let token = request.cancellation.clone();
 
     let started_at = Instant::now();
-    let execution = thread::spawn(move || ProcessSupervisor.execute(request));
+    let execution = thread::spawn(move || supervisor().execute(request));
     let descendant_id =
         wait_for_descendant(&descendant_path, Instant::now() + Duration::from_secs(1));
     let mut descendant_guard = DescendantGuard::new(descendant_id);
@@ -445,7 +455,7 @@ fn cleanup_after_timeout_prevents_late_marker_write() {
     ]);
     request.resource_limits.timeout = Some(Duration::from_millis(40));
 
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
     assert!(matches!(
         result.primary_failure(),
         Some(ExecutionFailure::Timeout)
@@ -470,7 +480,7 @@ fn cleanup_after_cancellation_prevents_late_marker_write() {
         token.cancel();
     });
 
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
     canceller.join().unwrap();
     assert!(matches!(
         result.primary_failure(),
@@ -485,7 +495,7 @@ fn working_directory_is_applied() {
     let directory = TestDirectory::new("cwd");
     let mut request = request(strings(&["print_cwd"]));
     request.command.working_directory = directory.path().to_path_buf();
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
 
     assert!(result.is_success());
     assert_eq!(
@@ -507,7 +517,7 @@ fn argument_vector_preserves_boundaries_and_metacharacters() {
     ];
     let mut arguments = vec![OsString::from("echo_args")];
     arguments.extend(values.iter().map(OsString::from));
-    let result = ProcessSupervisor.execute(request(arguments));
+    let result = supervisor().execute(request(arguments));
     let expected: String = values
         .iter()
         .map(|value| format!("{}:{value}\n", value.len()))
@@ -525,14 +535,14 @@ fn clear_environment_sets_only_explicit_values() {
         OsString::from("WORKER_TEST_VALUE"),
         OsString::from("known-value"),
     )]);
-    let explicit_result = ProcessSupervisor.execute(explicit);
+    let explicit_result = supervisor().execute(explicit);
 
     let mut parent_only = request(strings(&["print_env", "PATH"]));
     parent_only.command.environment = EnvironmentPolicy::ClearAndSet(vec![(
         OsString::from("WORKER_TEST_VALUE"),
         OsString::from("known-value"),
     )]);
-    let parent_only_result = ProcessSupervisor.execute(parent_only);
+    let parent_only_result = supervisor().execute(parent_only);
 
     assert_eq!(explicit_result.stdout.captured_bytes, b"known-value");
     assert_eq!(parent_only_result.stdout.captured_bytes, b"<unset>");
@@ -546,16 +556,16 @@ fn deterministic_classification_and_cancellation_precedence() {
     let directory = TestDirectory::new("classification");
     let mut invalid = request(strings(&["unused"]));
     invalid.command.executable = directory.path().join("does-not-exist").into_os_string();
-    let spawn_failure = ProcessSupervisor.execute(invalid);
+    let spawn_failure = supervisor().execute(invalid);
 
     let mut timed = request(strings(&["sleep_ms", "500"]));
     timed.resource_limits.timeout = Some(Duration::from_millis(20));
-    let timeout = ProcessSupervisor.execute(timed);
+    let timeout = supervisor().execute(timed);
 
     let mut cancelled = request(strings(&["sleep_ms", "500"]));
     cancelled.resource_limits.timeout = Some(Duration::ZERO);
     cancelled.cancellation.cancel();
-    let cancellation = ProcessSupervisor.execute(cancelled);
+    let cancellation = supervisor().execute(cancelled);
 
     assert!(success.primary_failure().is_none());
     assert!(matches!(
@@ -590,7 +600,7 @@ fn invalid_executable_is_a_typed_spawn_failure() {
     request.command.executable = directory.path().join("absent-executable").into_os_string();
     request.resource_limits.timeout = Some(Duration::ZERO);
     request.cancellation.cancel();
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
 
     assert_eq!(result.process_exit, ProcessExit::NeverStarted);
     assert!(matches!(
@@ -621,7 +631,7 @@ fn resource_observations_preserve_units_and_enforcement_truth() {
     request.resource_limits.stdout_bytes = 8;
     request.resource_limits.stderr_bytes = 9;
     request.resource_limits.timeout = Some(Duration::from_secs(1));
-    let result = ProcessSupervisor.execute(request);
+    let result = supervisor().execute(request);
 
     for kind in [
         ResourceLimitKind::MemoryBytes,
@@ -693,7 +703,7 @@ fn suspicious_argument_is_data_not_shell_input() {
     let directory = TestDirectory::new("no-shell");
     let marker = directory.path().join("marker");
     let payload = format!("; touch {}", marker.display());
-    let result = ProcessSupervisor.execute(request(vec![
+    let result = supervisor().execute(request(vec![
         OsString::from("echo_args"),
         OsString::from(&payload),
     ]));
@@ -722,8 +732,8 @@ fn repeated_executions_do_not_leak_request_state() {
     second.command.environment = EnvironmentPolicy::ClearAndSet(Vec::new());
     second.resource_limits.stdout_bytes = 512;
 
-    let first_result = ProcessSupervisor.execute(first);
-    let second_result = ProcessSupervisor.execute(second);
+    let first_result = supervisor().execute(first);
+    let second_result = supervisor().execute(second);
     let first_expected = format!(
         "cwd={}\nenv=first\narg=alpha\n",
         first_directory.path().display()
@@ -818,7 +828,7 @@ fn execute_with_cpu(
     arguments: &[&str],
     cpu_time: Option<Duration>,
 ) -> testgap_worker::ExecutionResult {
-    ProcessSupervisor.execute(request_with_cpu(strings(arguments), cpu_time))
+    supervisor().execute(request_with_cpu(strings(arguments), cpu_time))
 }
 
 #[test]
@@ -834,7 +844,7 @@ fn zero_cpu_duration_fails_closed_before_spawn() {
         Some(Duration::ZERO),
     );
     zero_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
-    let result = ProcessSupervisor.execute(zero_request);
+    let result = supervisor().execute(zero_request);
 
     assert_never_started_spawn_failure(&result);
     thread::sleep(Duration::from_millis(200));
@@ -854,7 +864,7 @@ fn overflow_cpu_duration_fails_closed_before_spawn() {
         Some(Duration::MAX),
     );
     overflow_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
-    let result = ProcessSupervisor.execute(overflow_request);
+    let result = supervisor().execute(overflow_request);
 
     assert_never_started_spawn_failure(&result);
     thread::sleep(Duration::from_millis(200));
@@ -879,7 +889,7 @@ mod macos_cpu_rejection {
         );
         rejected.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
         rejected.command.working_directory = directory.path().to_path_buf();
-        let result = ProcessSupervisor.execute(rejected);
+        let result = supervisor().execute(rejected);
 
         assert_never_started_spawn_failure(&result);
         assert!(matches!(
@@ -956,7 +966,7 @@ mod linux_cpu_enforcement {
         let mut burn_request = request_with_cpu(vec![OsString::from(op)], Some(cpu));
         burn_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
         let started_at = Instant::now();
-        (ProcessSupervisor.execute(burn_request), started_at)
+        (supervisor().execute(burn_request), started_at)
     }
 
     #[test]
@@ -1015,7 +1025,7 @@ mod linux_cpu_enforcement {
             Some(Duration::from_secs(u64::MAX - 1)),
         );
         near_infinity_request.resource_limits.timeout = Some(CPU_TEST_WALL_SAFETY);
-        let result = ProcessSupervisor.execute(near_infinity_request);
+        let result = supervisor().execute(near_infinity_request);
 
         assert_never_started_spawn_failure(&result);
         thread::sleep(Duration::from_millis(200));
@@ -1133,7 +1143,7 @@ mod linux_cpu_enforcement {
             Some(Duration::from_secs(300)),
         );
         request.resource_limits.timeout = Some(Duration::from_millis(150));
-        let result = ProcessSupervisor.execute(request);
+        let result = supervisor().execute(request);
 
         assert!(matches!(
             result.process_exit,
@@ -1169,7 +1179,7 @@ mod linux_cpu_enforcement {
             thread::sleep(Duration::from_millis(40));
             token.cancel();
         });
-        let result = ProcessSupervisor.execute(request);
+        let result = supervisor().execute(request);
         canceller.join().unwrap();
 
         assert!(matches!(
