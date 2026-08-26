@@ -81,6 +81,11 @@ from .execution import (
     WorkflowAttemptId,
     compare_execution_evidence,
 )
+from .reference import (
+    EvidenceReference,
+    EvidenceReferenceId,
+    compare_evidence_references,
+)
 
 __all__ = [
     "ARTEFACT_MANIFEST_CARDINALITY_BOUND",
@@ -114,6 +119,8 @@ __all__ = [
     "EvidenceComparison",
     "EvidenceCompleteness",
     "EvidenceIntegrityState",
+    "EvidenceReference",
+    "EvidenceReferenceId",
     "ExecutionEvidence",
     "ExecutionEvidenceId",
     "ExecutionOutcome",
@@ -147,6 +154,7 @@ __all__ = [
     "compare_candidate_versions",
     "compare_evidence_bundles",
     "compare_evidence_cards",
+    "compare_evidence_references",
     "compare_execution_evidence",
     "compare_human_decision_links",
     "project_evidence_card",
