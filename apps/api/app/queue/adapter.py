@@ -76,6 +76,7 @@ class InMemoryQueueAdapter:
             ProducerResultId, list[ResultSubmissionRecord]
         ] = {}
         self._conflicted_messages: set[QueueMessageId] = set()
+        self._security_rejected_requests: set[SemanticRequestId] = set()
         self._failure_counts: dict[
             tuple[QueueDeliveryId, FailureClassification], int
         ] = {}
@@ -219,9 +220,13 @@ class InMemoryQueueAdapter:
         *,
         redrive: bool = False,
     ) -> DeliveryRecord:
+        envelope = self._messages[queue_message_id]
+        if envelope.semantic_request_id in self._security_rejected_requests:
+            raise QueueStateError(
+                "security-rejected semantic work cannot receive a new delivery"
+            )
         if not redrive and self._dead_letter_for_message(queue_message_id) is not None:
             raise QueueStateError("dead-lettered work requires explicit redrive")
-        envelope = self._messages[queue_message_id]
         self._delivery_sequence += 1
         prior = sum(
             record.queue_message_id == queue_message_id
@@ -254,7 +259,8 @@ class InMemoryQueueAdapter:
         )
         delivery = self._deliveries[queue_delivery_id]
         return (
-            queue_delivery_id not in self._dead_letters
+            delivery.semantic_request_id not in self._security_rejected_requests
+            and queue_delivery_id not in self._dead_letters
             and queue_delivery_id not in self._acknowledged
             and self.control_state(delivery.semantic_request_id) == ControlState.ACTIVE
         )
@@ -268,7 +274,12 @@ class InMemoryQueueAdapter:
         if not isinstance(state, ControlState):
             raise TypeError("state must be a ControlState")
         current = self._controls.get(semantic_request_id, ControlState.ACTIVE)
-        if current != ControlState.ACTIVE and state == ControlState.ACTIVE:
+        if semantic_request_id in self._security_rejected_requests:
+            if state == ControlState.ACTIVE:
+                raise QueueStateError(
+                    "security-rejected work cannot be reactivated"
+                )
+        elif current != ControlState.ACTIVE and state == ControlState.ACTIVE:
             raise QueueStateError("Queue control cannot reactivate invalid work")
         self._controls[semantic_request_id] = state
 
@@ -354,6 +365,7 @@ class InMemoryQueueAdapter:
             and self._current_claim.get(delivery.queue_message_id) == claim_or_lease_id
             and claim.queue_delivery_id not in self._dead_letters
             and claim.queue_delivery_id not in self._acknowledged
+            and delivery.semantic_request_id not in self._security_rejected_requests
             and self.control_state(delivery.semantic_request_id) == ControlState.ACTIVE
         )
 
@@ -465,6 +477,7 @@ class InMemoryQueueAdapter:
             readiness.execution_succeeded is True
             and self.required_durable_effects <= readiness.ready_effects
             and claim.queue_delivery_id == queue_delivery_id
+            and delivery.semantic_request_id not in self._security_rejected_requests
             and self.can_produce_protected_effect(claim_or_lease_id)
             and delivery.queue_message_id not in self._conflicted_messages
         )
@@ -497,10 +510,16 @@ class InMemoryQueueAdapter:
             raise QueueStateError("dead-letter disposition is immutable")
         if self.control_state(delivery.semantic_request_id) != ControlState.ACTIVE:
             raise QueueStateError("controlled work is not a retry classification")
-        if classification in {
-            FailureClassification.APPLICATION,
-            FailureClassification.SECURITY_REJECTION,
-        }:
+        if delivery.semantic_request_id in self._security_rejected_requests:
+            if classification == FailureClassification.SECURITY_REJECTION:
+                return RetryDecision(False, False)
+            raise QueueStateError(
+                "security-rejected work cannot re-enter ordinary retry classification"
+            )
+        if classification == FailureClassification.SECURITY_REJECTION:
+            self._establish_security_rejection(delivery)
+            return RetryDecision(False, False)
+        if classification == FailureClassification.APPLICATION:
             return RetryDecision(False, False)
         key = (queue_delivery_id, classification)
         count = self._failure_counts.get(key, 0) + 1
@@ -521,6 +540,27 @@ class InMemoryQueueAdapter:
             }:
                 self._claims[claim_id] = replace(claim, state=ClaimState.REVOKED)
         return RetryDecision(False, True)
+
+    def _establish_security_rejection(self, delivery: DeliveryRecord) -> None:
+        """Make a security rejection sticky for the whole semantic request.
+
+        Queue-owned transport disposition: revokes every authoritative claim
+        tied to the semantic request and is never removable by ordinary
+        public operations.
+        """
+        self._security_rejected_requests.add(delivery.semantic_request_id)
+        for claim_id, claim in self._claims.items():
+            if claim.state not in {
+                ClaimState.CURRENT,
+                ClaimState.RENEWAL_UNCERTAIN,
+            }:
+                continue
+            claim_delivery = self._deliveries.get(claim.queue_delivery_id)
+            if (
+                claim_delivery is not None
+                and claim_delivery.semantic_request_id == delivery.semantic_request_id
+            ):
+                self._claims[claim_id] = replace(claim, state=ClaimState.REVOKED)
 
     def dead_letter(
         self, identity: QueueDeliveryId | QueueMessageId
@@ -580,6 +620,8 @@ class InMemoryQueueAdapter:
         semantic_request_id = dead_letter.source_delivery.semantic_request_id
         if self.control_state(semantic_request_id) != ControlState.ACTIVE:
             raise QueueStateError("controlled work cannot be redriven")
+        if semantic_request_id in self._security_rejected_requests:
+            raise QueueStateError("security-rejected work cannot be redriven")
         self.validator.validate_envelope(self._messages[queue_message_id])
         count = self._redrive_counts.get(queue_message_id, 0)
         if count >= self.retry_policy.max_redrives:
