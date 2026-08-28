@@ -47,6 +47,8 @@ _BUILD_DIRECTORIES: Final = frozenset({".gradle", ".mvn"})
 
 
 class CandidatePatchOperation(StrEnum):
+    """Permitted operation types for candidate patch changes."""
+
     ADD = "ADD"
     MODIFY = "MODIFY"
     DELETE = "DELETE"
@@ -55,6 +57,8 @@ class CandidatePatchOperation(StrEnum):
 
 
 class CandidatePatchObjectKind(StrEnum):
+    """Object types that may appear in patch candidates."""
+
     TEXT = "TEXT"
     REGULAR_FILE = "REGULAR_FILE"
     GITLINK = "GITLINK"
@@ -62,11 +66,15 @@ class CandidatePatchObjectKind(StrEnum):
 
 
 class CandidatePatchPolicyStatus(StrEnum):
+    """Policy evaluation outcome status for candidate patches."""
+
     ALLOWED_TEST_ONLY_CANDIDATE = "ALLOWED_TEST_ONLY_CANDIDATE"
     BLOCKED_POLICY_VIOLATION = "BLOCKED_POLICY_VIOLATION"
 
 
 class CandidatePatchPolicyReason(StrEnum):
+    """Detailed reason codes for policy decisions on candidate patches."""
+
     ALLOWED = "ALLOWED"
     INVALID_CANDIDATE = "INVALID_CANDIDATE"
     MODEL_GENERATED_REQUIRED = "MODEL_GENERATED_REQUIRED"
@@ -141,6 +149,8 @@ class TrustedTestScope:
 
 @dataclass(frozen=True, slots=True)
 class CandidatePatchChange:
+    """A single file change within a generated test patch candidate."""
+
     operation: CandidatePatchOperation | str
     target_path: object
     content: object = None
@@ -151,6 +161,8 @@ class CandidatePatchChange:
 
 @dataclass(frozen=True, slots=True)
 class GeneratedTestPatchCandidate:
+    """Model-generated test patch candidate requiring policy evaluation before use."""
+
     trust_label: object
     changes: object
     metadata: object = ()
@@ -158,12 +170,15 @@ class GeneratedTestPatchCandidate:
 
 @dataclass(frozen=True, slots=True)
 class CandidatePatchPolicyDecision:
+    """Policy evaluation result for a candidate patch; never grants execution authority."""
+
     status: CandidatePatchPolicyStatus
     reason: CandidatePatchPolicyReason
     detail: str
 
     @property
     def allowed(self) -> bool:
+        """Return True if the candidate is structurally eligible as a test-only change."""
         return self.status is CandidatePatchPolicyStatus.ALLOWED_TEST_ONLY_CANDIDATE
 
 
