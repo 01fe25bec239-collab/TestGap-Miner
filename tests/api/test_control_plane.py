@@ -237,8 +237,13 @@ def test_request_validation_returns_safe_error_envelope() -> None:
     assert "detail" not in response.json()
 
 
-def test_versioned_router_exists_without_business_routes() -> None:
+def test_versioned_router_exposes_back004_read_only_routes() -> None:
     assert api_v1_router.prefix == "/api/v1"
-    assert not [
-        path for path in main.app.openapi()["paths"] if path.startswith("/api/v1")
-    ]
+    expected = {
+        "/api/v1/runs": {"get"},
+        "/api/v1/runs/{run_id}": {"get"},
+        "/api/v1/runs/{run_id}/timeline": {"get"},
+    }
+    paths = main.app.openapi()["paths"]
+    methods = {path: set(paths[path]) for path in expected if path in paths}
+    assert methods == expected
