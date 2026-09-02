@@ -11,6 +11,7 @@
 mod adapters;
 mod conformance;
 mod execution_authority;
+mod execution_export;
 mod model;
 mod producer_result;
 mod producer_result_adapter;
@@ -20,6 +21,7 @@ mod supervisor;
 pub use adapters::*;
 pub use conformance::*;
 pub use execution_authority::*;
+pub use execution_export::*;
 pub use model::*;
 pub use producer_result::*;
 pub use producer_result_adapter::*;
