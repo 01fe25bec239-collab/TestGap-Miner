@@ -422,8 +422,8 @@ def test_no_direct_out_of_contract_linkage_or_authority_semantics_exist() -> Non
     }
 
 
-def test_out_of_scope_evidence_aggregates_and_human_decision_are_not_implemented() -> None:
-    assert not hasattr(evidence_domain, "HumanDecision")
+def test_human_decision_is_publicly_available() -> None:
+    assert evidence_domain.HumanDecision.__name__ == "HumanDecision"
 
 
 def test_construction_requires_no_database_queue_auth_or_rag_runtime() -> None:

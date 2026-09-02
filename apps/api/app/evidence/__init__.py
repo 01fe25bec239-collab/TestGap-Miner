@@ -41,10 +41,13 @@ from .decision import (
     DecisionDisposition,
     EvidenceBundleId,
     EvidenceCardId,
+    HumanDecision,
     HumanDecisionId,
     HumanDecisionLink,
     HumanDecisionLinkId,
+    compare_human_decisions,
     compare_human_decision_links,
+    validate_human_decision_link_binding,
 )
 from .execution import (
     EVIDENCE_CONTRACT_VERSION,
@@ -129,6 +132,7 @@ __all__ = [
     "FailureCategory",
     "FailureEvidence",
     "GenerationProvenance",
+    "HumanDecision",
     "HumanDecisionId",
     "HumanDecisionLink",
     "HumanDecisionLinkId",
@@ -156,8 +160,10 @@ __all__ = [
     "compare_evidence_cards",
     "compare_evidence_references",
     "compare_execution_evidence",
+    "compare_human_decisions",
     "compare_human_decision_links",
     "project_evidence_card",
     "validate_candidate_lineage",
     "validate_candidate_patch_version",
+    "validate_human_decision_link_binding",
 ]
