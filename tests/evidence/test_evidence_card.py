@@ -1689,10 +1689,15 @@ def test_no_evidence_bundle_modification_api_is_added() -> None:
     assert "EvidenceCard(" not in source
 
 
-def test_no_human_decision_production_record_is_added() -> None:
-    assert not hasattr(app.evidence, "HumanDecision")
-    assert "HumanDecision" not in vars(decision_module)
-    assert "HumanDecisionLink" in vars(decision_module)
+def test_human_decision_is_exported_without_evidence_card_authority() -> None:
+    assert app.evidence.HumanDecision is decision_module.HumanDecision
+    assert app.evidence.HumanDecisionLink is decision_module.HumanDecisionLink
+    assert not {field.name for field in fields(EvidenceCard)} & {
+        "human_decision_id",
+        "human_actor_reference",
+        "decision_timestamp",
+        "disposition",
+    }
 
 
 def test_no_runtime_component_behavior_is_exposed() -> None:
@@ -1730,10 +1735,10 @@ def test_stale_evidence_card_absence_guard_is_removed() -> None:
     assert 'hasattr(evidence_domain, "EvidenceCard")' not in source
 
 
-def test_human_decision_absence_guard_remains() -> None:
-    assert not hasattr(app.evidence, "HumanDecision")
+def test_human_decision_negative_absence_guard_is_removed() -> None:
+    assert hasattr(app.evidence, "HumanDecision")
     source = HUMAN_DECISION_TEST_PATH.read_text(encoding="utf-8")
-    assert 'hasattr(evidence_domain, "HumanDecision")' in source
+    assert 'assert not hasattr(evidence_domain, "HumanDecision")' not in source
 
 
 def test_evidence_bundle_regression_remains_pass() -> None:

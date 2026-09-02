@@ -48,6 +48,52 @@ class DecisionDisposition(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class HumanDecision:
+    human_decision_id: HumanDecisionId
+    human_actor_reference: OpaqueReference
+    decision_timestamp: datetime
+    disposition: DecisionDisposition
+    rationale_reference: OpaqueReference | None
+    contract_version: str = EVIDENCE_CONTRACT_VERSION
+
+    def __post_init__(self) -> None:
+        _require_type(
+            self.human_decision_id,
+            HumanDecisionId,
+            "human_decision_id",
+        )
+        _require_type(
+            self.human_actor_reference,
+            OpaqueReference,
+            "human_actor_reference",
+        )
+        _require_type(self.disposition, DecisionDisposition, "disposition")
+        _require_optional_type(
+            self.rationale_reference,
+            OpaqueReference,
+            "rationale_reference",
+        )
+        _validate_timestamp(self.decision_timestamp)
+        _validate_reference(self.human_actor_reference, "human_actor_reference")
+        if self.rationale_reference is not None:
+            _validate_reference(self.rationale_reference, "rationale_reference")
+        if self.contract_version != EVIDENCE_CONTRACT_VERSION:
+            raise ValueError("unsupported Evidence contract version")
+
+    def to_domain_dict(self) -> dict[str, object]:
+        return _domain_value(self)  # type: ignore[return-value]
+
+    def to_domain_json(self) -> str:
+        return json.dumps(
+            self.to_domain_dict(),
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class HumanDecisionLink:
     human_decision_link_id: HumanDecisionLinkId
     human_decision_id: HumanDecisionId
@@ -128,6 +174,39 @@ def compare_human_decision_links(
     if existing.to_domain_json() == incoming.to_domain_json():
         return EvidenceComparison.EQUIVALENT
     return EvidenceComparison.CONFLICTING
+
+
+def compare_human_decisions(
+    existing: HumanDecision,
+    incoming: HumanDecision,
+) -> EvidenceComparison:
+    """Classify immutable decision convergence without changing either value."""
+    _require_type(existing, HumanDecision, "existing")
+    _require_type(incoming, HumanDecision, "incoming")
+    if existing.human_decision_id != incoming.human_decision_id:
+        return EvidenceComparison.DISTINCT_IDENTITY
+    if existing.to_domain_json() == incoming.to_domain_json():
+        return EvidenceComparison.EQUIVALENT
+    return EvidenceComparison.CONFLICTING
+
+
+def validate_human_decision_link_binding(
+    decision: HumanDecision,
+    link: HumanDecisionLink,
+) -> None:
+    """Reject a link that contradicts its supplied immutable decision fact."""
+    _require_type(decision, HumanDecision, "decision")
+    _require_type(link, HumanDecisionLink, "link")
+    for name in (
+        "human_decision_id",
+        "human_actor_reference",
+        "decision_timestamp",
+        "disposition",
+        "rationale_reference",
+        "contract_version",
+    ):
+        if getattr(decision, name) != getattr(link, name):
+            raise ValueError(f"human decision and link disagree on {name}")
 
 
 def _validate_timestamp(value: object) -> None:
