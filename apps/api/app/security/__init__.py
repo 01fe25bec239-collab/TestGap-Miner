@@ -17,12 +17,6 @@ from .redaction import (
     redact_text,
     scan_text,
 )
-from .structured_output import (
-    MAX_CONTROL_SCAN_DEPTH,
-    MAX_CONTROL_SCAN_NODES,
-    StructuredOutputSecurityResult,
-    validate_model_action_output,
-)
 from .tool_policy import (
     MAX_ACTION_NAME_LENGTH,
     MAX_ACTIONS_PER_TOOL,
@@ -72,6 +66,27 @@ from .untrusted_content import (
     untrusted_content_from_rag_context_item,
     untrusted_trust_from_rag_label,
 )
+
+_STRUCTURED_OUTPUT_EXPORTS = frozenset(
+    {
+        "MAX_CONTROL_SCAN_DEPTH",
+        "MAX_CONTROL_SCAN_NODES",
+        "StructuredOutputSecurityResult",
+        "validate_model_action_output",
+    }
+)
+
+
+def __getattr__(name: str) -> object:
+    if name not in _STRUCTURED_OUTPUT_EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    from importlib import import_module
+
+    value = getattr(import_module(".structured_output", __name__), name)
+    globals()[name] = value
+    return value
+
 
 __all__ = [
     "MAX_ACTION_NAME_LENGTH",
